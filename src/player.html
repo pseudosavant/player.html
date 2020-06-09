@@ -1,0 +1,881 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>player.html</title>
+  <link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQBAMAAAAVaP+LAAAAMFBMVEX////+8vn+4fP+zuz+tuL+n9r+l9f+gc7+bMb+XcD+Rbj+MK/+Hqj+D6P+BZ/+AJ2hzeniAAABZ0lEQVR42u3UO3HDQABF0QdhISgMdiYEBEEAMokgWBBEQRAiCBYE2xAsCJLzmdTWZ1/KtClu5dkL4JRXuVwul8vl/tmzoF5bMb3tNQR5LSHISwFBngME+UJBHijop4MgpwaCvFUQ5DVCkO8FBHkMEJTOEOTUQ5BTB0H+PkBQ+ioZyF4iBHkOEOQrBXmgIL9TkBsK2msISmsEoL+nEJCnAEE+U1A6QpDdUdDeQJC3EoK8RAjyLUCQRwpKJwiyewpKLQR5ryHIawlB/iggKE2BgewLBfkIQamFoF4MNIiBrmKgOTDQEoVAWykE2hsxUCcG6sVAZzHQFBjoXgiB1igE2iohUGrEQJ0YaBADXcVAc2CgJQqBtlIItB+EQKkVA/VioJMYaAwMdC+EQJ9RCLRVQqDUiIE6MdBRDHQRA02BgZZCCLSWQqC9FgKlVgzUi4FOYqBRDHQrGGiJQnqpxPSkXC6Xy+VyD9ovn971FIU9/uIAAAAASUVORK5CYII=" />
+  <meta property="description" content="Drop player.html in a folder of videos and play them on the web" />
+  <style>
+    *, *::before, *::after {
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+
+      user-select: none;
+
+      line-height: 1rem;
+
+      --tile-width: 20rem;
+      --tile-border-radius: 0.25rem;
+      --inter-tile-margin: 0.5rem;
+
+      --theme-color: #FD009C;
+    }
+
+    html {
+      font-family: Calibri, Arial, Helvetica, sans-serif;
+      font-size: 16px;
+      background-color: #111;
+      color: #FFF;
+    }
+
+    body {
+      padding: 0;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    video {
+      width: 100vw;
+      min-height: 30vw;
+      max-height: calc(100vh - var(--tile-width));
+      margin: auto;
+      background: #000;
+    }
+
+    .buttons {
+      width: 100%;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .buttons button {
+      background: none;
+      border: 0 none;
+      cursor: pointer;
+      padding: 0;
+      font-size: 2rem;
+      margin: 1rem 0;
+    }
+
+    .buttons svg {
+      fill: var(--theme-color);
+    }
+
+    .buttons svg:hover {
+      filter: saturate(0.25) brightness(4);
+    }
+    
+    .buttons .stop svg {
+      margin: 0 0.5rem;
+    }
+
+    .links {
+      max-width: 100vw;
+      margin-top: 1rem;
+      display: grid;
+      grid-gap: var(--inter-tile-margin);
+      grid-template-columns: repeat(auto-fill, var(--tile-width));
+
+      padding-bottom: 2rem;
+    }
+  
+    .links a { /* background */
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+
+      width: var(--tile-width);
+      height: calc(var(--tile-width) * 0.5625); /* 9/16 */
+
+      padding: 0;
+      border-radius: var(--tile-border-radius);
+      
+      background-color: #666;
+      color: #DDD;
+      text-decoration: none;
+    }
+    
+    .links a .title { /* Title */
+      position: absolute;
+      display: block;
+      bottom: 0;
+      left: 0;
+
+      width: 100%;
+
+      overflow-wrap: break-word;
+      font-size: 1.25rem;
+      line-height: 1.5rem;
+      text-align: left;
+      padding: 1rem;
+      
+      background: rgba(32,32,32,0.75);
+      border-radius: 0 0 var(--tile-border-radius) var(--tile-border-radius);
+    }
+
+    .folder:first-of-type .title::before {
+      content: '⤴ ';
+    }
+
+    .links a.folder .arrow, .links a.file .arrow { /* Arrow */
+      font-size: 3rem;
+      display: block;
+      text-align: center;
+      padding: 0;
+    }
+
+    .links a.file .arrow {
+      filter: drop-shadow(0 0 0.1rem rgba(0,0,0,0.5));
+    }
+
+    .links a.file {
+      background-size: cover;
+      background-image: var(--image-url);
+    }
+
+
+    .links a.file:hover .arrow {
+      color: var(--theme-color);
+    }
+
+    .links a.folder {
+      background-color: #333;
+    }
+
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+</head>
+
+<body>
+  <video controls></video>
+
+  <section class="buttons">
+    <button class="replay" type="button" title="Replay"><svg viewBox="0 0 36 24" width="36" height="24"><polygon points="0,12 18,0, 18,24"/><polygon points="18,12 36,0, 36,24"/>
+    </svg></button><button class="stop" type="button" title="Stop"><svg viewBox="0 0 24 24" width="24" height="24"><rect width="24" height="24" rx="3" ry="3"/>
+    </svg></button><button class="skip" type="button" title="Skip"><svg viewBox="0 0 36 24" width="36" height="24"><polygon points="0,0 18,12 0,24"/><polygon points="18,0 36,12 18,24"/></svg></button>
+  </section>
+  <section class="links"></section>
+
+  <script>
+    (async function pwaIIFE() {
+      const icon = document.querySelector('link[rel="shortcut icon"').href;
+      const metadata = await imageMetadata(icon);
+
+      const manifest = {
+        short_name: document.title,
+        name: document.title,
+        description: document.querySelector('meta[property="description"]').content,
+        background_color: '#FFFFFF',
+        theme_color: getComputedStyle(document.body).getPropertyValue('--theme-color'),
+        color: getComputedStyle(document.body).getPropertyValue('--theme-color'),
+        icons: [
+          {
+            src: icon,
+            sizes: `${metadata.width}x${metadata.height}`,
+            type: metadata.type
+          }
+        ],
+        display: 'standalone',
+        start_url: `${window.location.origin}${window.location.pathname}`
+
+      }
+
+      function setPWAManifest(manifest) {
+        const json = JSON.stringify(manifest);
+        const base64 = btoa(json);
+        const mimetype = 'application/json';
+        const dataURI = `data:${mimetype};base64,${base64}`;
+
+        const link = document.createElement('link');
+        link.setAttribute('rel', 'manifest');
+        link.setAttribute('href', dataURI);
+
+        document.querySelector('head').appendChild(link);
+      }
+
+      setPWAManifest(manifest);
+
+      function imageMetadata(dataURI) {
+        const img = document.createElement('img');
+
+        const mimeRe = /data:([\w\/]+);/i;
+        const type = mimeRe.exec(dataURI)[1];
+        
+        const promise = new Promise(function (resolve, reject) {
+          img.onload = function imageSizeLoad() {
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
+            resolve({ height, width, type });
+          }
+        });
+
+        img.src = dataURI;
+
+        return promise;
+      }
+    })();
+
+    (function socialMetadataIIFE(){
+    const metadata = {
+      title: document.querySelector('title').textContent,
+      description: document.querySelector('meta[property="description"]').content,
+      type: 'video.movie',
+      icon: document.querySelector('link[rel="shortcut icon"').href,
+      backgroundColor: '#FF0099'
+    };
+
+    setMetadata(metadata);
+
+    function setMetadata(metadata) {
+
+      function setTitle(title){
+        const metas = [
+          'og:site_name',
+          'twitter:title',
+          'og:title'
+        ];
+
+        setMetas(metas, title);
+      }
+
+      function setIcon(iconDataURI) {
+        const metas = [
+          'twitter:image:src',
+          'msapplicationTileImage',
+          'og:image'
+        ];
+
+        setMetas(metas, iconDataURI);
+
+        const links = [
+          'apple-touch-icon'
+        ];
+
+        setLinks(links, iconDataURI);       
+      }
+
+      function setMetas(metas, content) {
+        metas.forEach(function metaFn(meta) {
+          const metadata = {
+            prop: meta,
+            content: content
+          };
+          
+          append(createMeta(metadata));
+        });
+      }
+
+      function setLinks(links, href) {
+        links.forEach(function linkFn(rel) {
+          const link = {
+            rel: rel,
+            href: href
+          };
+
+          append(createLink(link));
+        });
+      }
+
+      function setDescription(desc) {
+        const metas = [
+          'og:desctription',
+          'twitter:description'
+        ];
+
+        setMetas(metas, desc);
+      }
+
+      function setType(type){
+        const metadata = {
+          prop: type,
+          content: 'og:type'
+        };
+
+        append(createMeta(metadata));
+      }
+      
+      function createLink(linkMetadata) {
+        const rel = linkMetadata.rel;
+        const href = linkMetadata.href;
+
+        const link = document.createElement('link');
+        link.rel = rel;
+        link.href = href;
+        
+        return link;
+      }
+
+      function createMeta(metaMetadata) {
+        const prop = metaMetadata.prop;
+        const content = metaMetadata.content;
+
+        const meta = document.createElement('meta');
+        meta.property = prop;
+        meta.name = prop;
+        meta.content = content;
+
+        return meta;
+      }
+
+      function append(el) {
+        const $head = document.querySelector('head');
+        $head.appendChild(el);
+      }
+
+
+      if (metadata.title) {
+        setTitle(metadata.title);
+      }
+
+      if (metadata.icon) {
+        setIcon(metadata.icon);
+      }
+
+      if (metadata.type) {
+        setType(metadata.type);
+      }
+
+      if (metadata.description) {
+        setDescription(metadata.description);
+      }
+
+      if (metadata.backgroundColor) {
+        append(createMeta({prop: 'msapplication-TileColor', content: metadata.backgroundColor}));
+      }
+    }
+
+  })();
+
+    (function globalIIFE() {
+      'use strict';
+      const options = {
+        thumbnails: {
+          enabled: true && canThumbnail(),
+          timestamp: 0.10,
+          size: 480,
+          opacity: '0.5',
+          color: '32,32,32',
+          resizeQuality: 'high',
+          concurrency: 1,
+          mimeType: getIdealMimeType()
+        }
+      }
+
+      function getIdealMimeType(){
+        const webp = {
+          type: 'image/webp',
+          quality: 0.2
+        }
+
+        const jpeg = {
+          type: 'image/jpeg',
+          quality: 0.4
+        }
+
+        const webpSupport = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0;
+
+        return (webpSupport ? webp : jpeg);
+      }
+
+      // Must support `localStorage` and `createImageBitmap`
+      function canThumbnail(){
+        try {
+            const key = '__canThumbnailTest__';
+            const val = 'true';
+
+            localStorage.setItem(key, val);
+            const getItemSuccess = localStorage.getItem(key) === val;
+            localStorage.removeItem(key);
+          return (!!createImageBitmap && !!getItemSuccess);
+        } catch (e) {
+          return false;
+        }
+      }
+
+      const hashState = { location: '', video: '' };
+
+      function isHiddenFileOrFolder(url) {
+        const reHidden = /\/\..+$/i;
+        return url.toString().match(reHidden);
+      }
+
+      function getLinksFromFrame(frame) {
+        const links = [...frame.contentDocument.querySelectorAll('a')];
+
+        const folders = [];
+        const files = [];
+
+        links.forEach(function(link){
+          const url = link.toString();
+          const type = urlType(url);
+
+          switch (type) {
+            case 'hidden':
+              break;
+            case 'file':
+              files.push(url);
+              break;
+            case 'folder':
+              folders.push(url);
+              break;
+          }
+        });
+
+        return { folders, files };
+      }
+
+      function urlType(url) {
+        function end(haystack, needle) {
+          needle = needle.replace('.', '\.'); // Escape `.` in regexes
+          const re = new RegExp(`${needle}\$`, 'i');
+          return re.test(haystack);
+        };
+
+        if (isHiddenFileOrFolder(url)) {
+          return 'hidden';
+        } else if (url[url.length - 1] === '/') {
+          return 'folder';
+        } else if (end(url, '.mp4')) {
+          return 'file';
+        } else {
+          return 'unknown';
+        }
+      }
+
+      function sortFiles(a, b) {
+        const labelA = urlToLabel(a);
+        const labelB = urlToLabel(b);
+        
+        return labelA < labelB ? -1 : 1;
+      }
+
+      function urlToLabel(url) {
+        if (typeof url !== 'string') return;
+
+        const fragments = url.split('/');
+
+        const label = decodeURIComponent(
+          fragments[fragments.length - 1]
+          .replace('.mp4', '')
+        );
+        const prefixRe = /^(the|a)(\s|%20)/i;
+        const hasPrefix = prefixRe.test(label);
+
+        if (hasPrefix) {
+          const prefix = prefixRe.exec(label);
+          const length = prefix[1].length + prefix[2].length;
+          return `${label.substring(length)}, ${prefix[1]}`;
+        } else {
+          return label;
+        }
+      }
+
+      function asyncLinkRequest(url) {
+        const $frame = $(document.createElement('iframe'));
+        $('body').appendChild($frame);
+        
+        const promise = new Promise(function asyncLinkRequestPromise(resolve, reject){
+          $frame.on('error', reject);
+          
+          $frame.on('load', function frameLoad() {
+            const links = getLinksFromFrame($frame);
+            $('body').removeChild($frame);
+
+            resolve(links);
+          });
+
+          hideElement($frame);
+        });
+        
+        $frame.src = url; // Setting src starts loading
+
+        return promise;
+      }
+      
+      function urlToFolder(url){
+        var pieces = url.split('/'); // Break the URL into pieces
+        pieces.pop(); // Remove the last piece (the filename)
+        return pieces.join('/') + '/'; // Put it back together with a trailing /
+      }
+
+      function hideElement(el) {
+        const s = el.style;
+        s.width = 0;
+        s.height = 0;
+        s.margin = 0;
+        s.padding = 0;
+        s.border = '0 none';
+      }
+
+      async function createLinks(url) {
+        const links = await asyncLinkRequest(urlToFolder(url || window.location.href));
+        showLinks(links);
+      }
+
+      function showLinks(links) {
+        var html = '';
+        const folders = links.folders;
+        const files = links.files;
+        const base = getBaseLocation(window.location);
+
+        files.sort(sortFiles);
+
+        folders.forEach(function(folder){
+          const rawUrl = folder;
+          const url = decodeURI(rawUrl).replace(base, '');
+          const label = url;
+
+          html += createFolderTemplate(rawUrl, label);
+        });
+
+        files.forEach(function(file){
+          const rawUrl = file;
+          const url = decodeURI(rawUrl).replace(base, '');
+          const label = urlToLabel(url);
+
+          html += createFileTemplate(rawUrl, label);
+        });
+
+        function createFileTemplate(url, label) {
+          return `<a href="${url}" class="file" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false">▶</div></a>`;
+        }
+
+        function createFolderTemplate(url, label, parentClass) {
+          return `<a href="${url}" class="folder ${parentClass}" draggable="false"><div class="title" draggable="false">${label}</div></div><div class="arrow" draggable="false">📁</div></a>`;
+        }
+
+
+        $('.links').innerHTML = html;
+
+        const $links = [...document.querySelectorAll('.file, .folder')];
+        $links.forEach((link) => $(link).on('click', clickLink));
+
+        if (options.thumbnails.enabled) {
+          try {
+            populateThumbnails();
+          } catch (e) { }
+        }
+      }
+
+      async function populateThumbnails(){
+        const $files = [...document.querySelectorAll('.file')];
+        const promises = [];
+        const queue = [];
+
+        $files.forEach(function ($file){
+          const url = $file.href;
+          promises.push({$file, url});
+        });
+
+        const concurrency = options.thumbnails.concurrency;
+
+        for (let j = 0; j < promises.length; j + concurrency) {            
+          // If there are promises left shift the first one into the queue            
+          if (promises.length > 0) {
+            let work = promises.shift();
+            queue.push(setThumbnail(work.$file, work.url));
+          }
+
+          // If the queue is full/ready run all the promises
+          if (queue.length >= concurrency) {
+            const results = await Promise.all(queue);
+            queue.length = 0; // clears array
+          }
+        }
+      }
+
+      function urlToName(url) {
+        return url.split('/').pop().replace('.mp4', '');
+      }
+
+      function getBaseLocation(l) {
+        return l.protocol + '//' + l.host;
+      }
+
+      function clickLink(e) {
+        e.preventDefault();
+
+        // `this` always refers to the parent element. `e.target` can be children too instead.
+        const $el = $(this);
+
+        if ($el.hasClass('folder')) {
+          hashState.location = $el.href;
+          createLinks($el.href);
+        }
+
+        if ($el.hasClass('file')) {
+          hashState.video = $el.href;
+          actionPlay($el.href);
+        }
+
+        updateHash();
+      }
+      
+      function getState() {
+        const location = hashState.location;
+        const video = getVideoUrl();
+        const state = { location, video }
+
+        return state;
+      }
+
+      function getVideoUrl(){
+        return $('video').src;
+      }
+
+      function getHash() {
+        const urlHash = window.location.hash.substr(1);
+
+        var hash = {};
+        try {
+          hash = decodeHash(urlHash);
+        } catch (e) { }
+        
+        return hash;
+      }
+
+      function updateHash() {
+        location.hash = encodeHash(getState());
+      }
+
+      function encodeHash(hash) {
+        return encodeURIComponent(btoa(JSON.stringify(hash)));
+      }
+
+      function decodeHash(hash) {
+        return JSON.parse(atob(decodeURIComponent(hash)));
+      }
+
+      
+      function actionPlay(url) {
+        $('video').autoplay = !!url;
+        
+        if (!!url) {
+          $('video').src = url;
+          $('video').play();
+          hashState.video = url;
+        } else {
+          $('video').src = '';
+        }
+      }
+
+      function actionStop() {
+        actionPlay('');
+      }
+      
+      function actionReplay() {
+        const $video = $('video');
+        $video.currentTime = Math.max($video.currentTime - 10, 0);
+      }
+      
+      function actionSkip () {
+        const $video = $('video');
+        $video.currentTime = Math.min($video.currentTime + 30, $video.duration);
+      }        
+      
+      function setVideoPoster(r,g,b){
+        return $('video').poster = createColorDataURI(r,g,b);
+      }
+
+      function createColorDataURI(r, g, b, a) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+
+        const context = canvas.getContext('2d');
+        const imageData = context.getImageData(0, 0, 1, 1);
+        const subPixels = imageData.data;
+
+        subPixels[0] = r || 0; // r
+        subPixels[1] = g || 0; // g
+        subPixels[2] = b || 0; // b
+        subPixels[3] = a || 255;
+
+        context.putImageData(imageData, 0, 0);
+
+        return canvas.toDataURL('image/png');
+      }
+
+      // Thumbnail generation
+      function getVideo(url) {
+        const $video = document.createElement('video');
+        $video.crossorigin = 'anonymous';
+        $video.muted = true;
+        $video.autoplay = false;
+        $video.preload = false;
+        $video.playbackRate = 0;
+        
+        const promise = new Promise(function(resolve, reject){
+          $video.addEventListener('loadedmetadata', function loadedmetadata(){
+            $video.pause();
+            resolve($video);
+          }, false);
+          
+          $video.addEventListener('error', reject);
+        });
+        $video.src = url;
+
+        return promise;
+      }
+
+      function getBitmap(videoSrc, time) {
+        const $video = videoSrc;
+        
+        const promise = new Promise(function(resolve, reject){
+          $video.addEventListener('seeked', function seeked(){
+            const opts = {
+              resizeWidth: options.thumbnails.size,
+              resizeQuality: options.thumbnails.resizeQuality
+            };
+
+            return createImageBitmap($video, opts).then(resolve).catch(reject);
+          }, false);
+
+          $video.addEventListener('error', reject);
+        });
+
+        if (time > 1) {
+          $video.currentTime = time;
+        } else if (time > 0) {
+          $video.currentTime = $video.duration * time;
+        }
+        
+        return promise;
+      }
+        
+      function bitmapToCanvas(bitmap) {
+        const canvas = document.createElement('canvas');
+        canvas.height = bitmap.height;
+        canvas.width = bitmap.width;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
+        
+        return canvas;
+      }
+        
+      function bitmapToDataURI(bitmap) {
+        const mimeType = options.thumbnails.mimeType.type;
+        const quality = options.thumbnails.mimeType.quality;
+
+        const canvas = bitmapToCanvas(bitmap);
+        return canvas.toDataURL(mimeType, quality);
+      }
+
+      async function setThumbnail(node, url) {
+        const time = options.thumbnails.timestamp;
+        const color = options.thumbnails.color;
+        const opacity = options.thumbnails.opacity;
+
+        const thumbnail = await getThumbnailDataURI(url, time);
+
+        if (thumbnail && thumbnail.length > 30) {
+          node.style.setProperty('--image-url',`url(${thumbnail})`);
+          node.style.setProperty('--rgba-color', `${color}, ${opacity}`);
+        }
+
+        return thumbnail;
+      }
+        
+      async function getThumbnailDataURI(url, time) {
+        const size = options.thumbnails.size;
+        
+        const key = `${size}|${time}|${url};`;
+        try {
+          const cached = retrieve(key);
+
+          if (cached) {
+            return cached;
+          } else {
+            const $video = await getVideo(url);
+
+            time = (time >= 1 ? time : $video.duration * time);
+
+            const bitmap = await getBitmap($video, time);
+
+            $video.src = ''; // Unset video
+
+            const dataURI = bitmapToDataURI(bitmap);
+            store(key, dataURI);
+
+            return dataURI;
+          }
+        } catch (e) { }
+      }
+
+      function store(key, val) {
+        try {
+          return localStorage.setItem(key, val);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function retrieve(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          return null;
+        }
+      }
+
+
+      // main()
+      async function main() {       
+        $('.replay').on('click', actionReplay);
+        $('.skip').on('click', actionSkip);
+        $('.stop').on('click', actionStop);
+        
+        setVideoPoster(0,0,0);
+
+        const hash = getHash();
+        
+        if (hash && hash.location && hash.location.length > 1) {
+          createLinks(hash.location);
+        } else {
+          createLinks();
+        }
+
+        if (hash && hash.video && hash.video.length > 1) {
+          $('video').muted = true;
+          actionPlay(hash.video);
+        }
+      }
+
+      main();
+
+
+      // jQuery-like syntactic sugar
+      function $(query) {
+        const el = (typeof query === 'string' ? document.querySelector.apply(document, arguments) : query);
+
+        if (el) {
+          el.on = function $on(e, fn, ...args) {
+            if (args.length > 0) {
+              return el.addEventListener(e, fn, ...args);
+            } else {
+              return el.addEventListener(e, fn, false);
+            }
+          }
+
+          el.trigger = (eventType, detail) => {
+            detail = (detail ? { detail: detail } : undefined);
+            const e = new CustomEvent(eventType, detail);
+            el.dispatchEvent(e);
+          };
+
+          el.hasClass = (c) => el.classList.contains(c);
+        }
+
+        return el;
+      }
+    })(this);
+  </script>
+</body>
+
+</html>
