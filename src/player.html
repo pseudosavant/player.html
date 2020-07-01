@@ -14,7 +14,9 @@
 
       line-height: 1rem;
 
+      --tile-aspect-ratio: calc(9/16);
       --tile-width: 20rem;
+      --tile-height: calc(var(--tile-width) * var(--tile-aspect-ratio));
       --tile-border-radius: 0.25rem;
       --inter-tile-margin: 0.5rem;
 
@@ -40,7 +42,10 @@
     video {
       width: 100vw;
       min-height: 30vw;
-      max-height: calc(100vh - var(--tile-width));
+      max-height: min(
+        calc(100vh - var(--tile-height)), /* Full height minus some space to see the first row of tiles */
+        calc(100vw * var(--tile-aspect-ratio)) /* Height for the current width at the specified aspect ratio */
+      );
       margin: auto;
       background: #000;
     }
@@ -60,7 +65,7 @@
       margin: 1rem 0;
     }
 
-    .buttons svg {
+    .buttons svg path {
       fill: var(--theme-color);
     }
 
@@ -90,7 +95,7 @@
       overflow: hidden;
 
       width: var(--tile-width);
-      height: calc(var(--tile-width) * 0.5625); /* 9/16 */
+      height: var(--tile-height);
 
       padding: 0;
       border-radius: var(--tile-border-radius);
@@ -117,6 +122,7 @@
       background: rgba(32,32,32,0.75);
       border-radius: 0 0 var(--tile-border-radius) var(--tile-border-radius);
     }
+
 
     .folder:first-of-type .title::before {
       content: '⤴ ';
@@ -147,6 +153,59 @@
       background-color: #333;
     }
 
+    /* SVG Icons */
+    svg, svg path {
+      width: 30px;
+      height: 30px;
+      transform: scale(1.25);
+      fill: #FFF;
+    }
+
+    .file:hover svg, .folder:hover svg {
+      transform: scale(2) rotate(360deg);
+    }
+
+    .file svg, .file svg path, .folder svg, .folder svg path {
+      transition: all 500ms ease;
+    }
+
+    .file svg path {
+      /* ic_fluent_play_24_filled.svg */
+      d: path("M6.33994976,2.27500912 C5.25284495,1.67304649 3.88358525,2.06633193 3.28162262,3.15343674 C3.09690734,3.48702035 3,3.86207592 3,4.2433865 L3,19.7591388 C3,21.0017795 4.00735931,22.0091388 5.25,22.0091388 C5.63140051,22.0091388 6.00654154,21.9121858 6.34018202,21.7273876 L20.3484443,13.9684314 C21.4354781,13.3663405 21.8286019,11.9970344 21.226511,10.9100006 C21.0219396,10.540661 20.7175758,10.2363331 20.348212,10.0318053 L6.33994976,2.27500912 Z");
+    }
+
+    .file:hover svg path {
+      fill: var(--theme-color);
+    }
+
+    .folder svg path {
+      /* ic_fluent_folder_24_filled.svg */
+      d: path("M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z");
+      fill: #FED45A;
+      transition: all 250ms;
+    }
+
+    .folder:hover svg {
+      filter: brightness(2);
+    }
+
+    .stop svg path {
+      /* ic_fluent_stop_24_filled.svg */
+      d: path("M4.75 3C3.7835 3 3 3.7835 3 4.75V19.25C3 20.2165 3.7835 21 4.75 21H19.25C20.2165 21 21 20.2165 21 19.25V4.75C21 3.7835 20.2165 3 19.25 3H4.75Z");
+    }
+
+    .replay svg path {
+      /* ic_fluent_rewind_24_filled.svg */
+      d: path("M21.0015268,4.75008179 L21,18.7500818 C20.9999319,19.374155 20.2821581,19.7251581 19.7895445,19.3420142 L12.5,13.6726109 L12.5,18.7500818 C12.4999319,19.374155 11.7821581,19.7251581 11.2895445,19.3420142 L2.28954454,12.3420142 C1.90346505,12.0417301 1.90348904,11.4582003 2.28959321,11.157948 L11.29112,4.15794799 C11.7838024,3.77481559 12.5015268,4.12596134 12.5015268,4.75008179 L12.5,9.82661094 L19.79112,4.15794799 C20.2838024,3.77481559 21.0015268,4.12596134 21.0015268,4.75008179 Z");
+    }
+
+    .skip svg path {
+      /* ic_fluent_fast_forward_24_filled.svg */
+      d: path("M12.7104555,4.15798491 L21.7104555,11.1579849 C22.0965349,11.458269 22.096511,12.0417988 21.7104068,12.3420511 L12.70888,19.3420511 C12.2161976,19.7251835 11.4984732,19.3740377 11.4984732,18.7499173 L11.4984732,13.6726109 L4.20887999,19.3420511 C3.71619763,19.7251835 2.9984732,19.3740377 2.9984732,18.7499173 L3,4.74991728 C3.00006806,4.12584403 3.71784185,3.774841 4.21045546,4.15798491 L11.4984732,9.82661094 L11.5,4.74991728 C11.5000681,4.12584403 12.2178419,3.774841 12.7104555,4.15798491 Z");
+    }
+
+
+
   </style>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 </head>
@@ -155,9 +214,9 @@
   <video controls></video>
 
   <section class="buttons">
-    <button class="replay" type="button" title="Replay"><svg viewBox="0 0 36 24" width="36" height="24"><polygon points="0,12 18,0, 18,24"/><polygon points="18,12 36,0, 36,24"/>
-    </svg></button><button class="stop" type="button" title="Stop"><svg viewBox="0 0 24 24" width="24" height="24"><rect width="24" height="24" rx="3" ry="3"/>
-    </svg></button><button class="skip" type="button" title="Skip"><svg viewBox="0 0 36 24" width="36" height="24"><polygon points="0,0 18,12 0,24"/><polygon points="18,0 36,12 18,24"/></svg></button>
+    <button class="replay play" type="button" title="Replay"><svg><path></path>
+    </svg></button><button class="stop" type="button" title="Stop"><svg><path></path>
+    </svg></button><button class="skip" type="button" title="Skip"><svg><path></path></svg></button>
   </section>
   <section class="links"></section>
 
@@ -185,6 +244,8 @@
 
       }
 
+      setPWAManifest(manifest);
+
       function setPWAManifest(manifest) {
         const json = JSON.stringify(manifest);
         const base64 = btoa(json);
@@ -197,8 +258,6 @@
 
         document.querySelector('head').appendChild(link);
       }
-
-      setPWAManifest(manifest);
 
       function imageMetadata(dataURI) {
         const img = document.createElement('img');
@@ -363,7 +422,26 @@
           resizeQuality: 'high',
           concurrency: 1,
           mimeType: getIdealMimeType()
-        }
+        },
+        supportedFileExtensions: getSupportedVideoTypes(),
+        poster: getSVGPoster()
+      }
+
+      function getSupportedVideoTypes() {
+        const supported = [];
+        
+        const types = [
+          { mime: 'video/mp4', extensions: ['mp4', 'm4v'] },
+          { mime: 'video/webm', extensions: ['webm', 'mkv'] },
+          { mime: 'video/ogg', extensions: ['ogg'] }
+        ];
+
+        const v = document.createElement('video');
+        types.forEach(type => {
+          if (v.canPlayType(type.mime) !== '') supported.push(...type.extensions);
+        });
+
+        return supported;
       }
 
       function getIdealMimeType(){
@@ -382,8 +460,8 @@
         return (webpSupport ? webp : jpeg);
       }
 
-      // Must support `localStorage` and `createImageBitmap`
       function canThumbnail(){
+      // Must support `localStorage` and `createImageBitmap`
         try {
             const key = '__canThumbnailTest__';
             const val = 'true';
@@ -429,29 +507,16 @@
         return { folders, files };
       }
 
-      function urlType(url) {
-        function end(haystack, needle) {
-          needle = needle.replace('.', '\.'); // Escape `.` in regexes
-          const re = new RegExp(`${needle}\$`, 'i');
-          return re.test(haystack);
-        };
-
-        if (isHiddenFileOrFolder(url)) {
-          return 'hidden';
-        } else if (url[url.length - 1] === '/') {
-          return 'folder';
-        } else if (end(url, '.mp4')) {
-          return 'file';
-        } else {
-          return 'unknown';
-        }
+      function urlToFolder(url){
+        var pieces = url.split('/'); // Break the URL into pieces
+        pieces.pop(); // Remove the last piece (the filename)
+        return pieces.join('/') + '/'; // Put it back together with a trailing /
       }
 
-      function sortFiles(a, b) {
-        const labelA = urlToLabel(a);
-        const labelB = urlToLabel(b);
-        
-        return labelA < labelB ? -1 : 1;
+      function urlToName(url) {
+        return removeFileExtension(
+          url.split('/').pop()
+        );
       }
 
       function urlToLabel(url) {
@@ -459,10 +524,12 @@
 
         const fragments = url.split('/');
 
-        const label = decodeURIComponent(
-          fragments[fragments.length - 1]
-          .replace('.mp4', '')
+        const label = removeFileExtension(
+          decodeURIComponent(
+            fragments[fragments.length - 1]
+          )
         );
+
         const prefixRe = /^(the|a)(\s|%20)/i;
         const hasPrefix = prefixRe.test(label);
 
@@ -473,6 +540,36 @@
         } else {
           return label;
         }
+      }
+
+      function urlType(url) {
+        function isVideo(haystack, fileExtensions) {
+          const re = new RegExp(`\.+(${ options.supportedFileExtensions.join('|')})+$`, 'i');
+          return re.test(haystack);
+        };
+
+
+        if (isHiddenFileOrFolder(url)) {
+          return 'hidden';
+        } else if (url[url.length - 1] === '/') {
+          return 'folder';
+        } else if (isVideo(url)) {
+          return 'file';
+        } else {
+          return 'unknown';
+        }
+      }
+
+      function removeFileExtension(s) {
+        const re = new RegExp(`\\.+(${options.supportedFileExtensions.join('|')})+$`, 'i');
+        return s.replace(re, '');
+      }
+
+      function sortFiles(a, b) {
+        const labelA = urlToLabel(a);
+        const labelB = urlToLabel(b);
+        
+        return labelA < labelB ? -1 : 1;
       }
 
       function asyncLinkRequest(url) {
@@ -495,21 +592,6 @@
         $frame.src = url; // Setting src starts loading
 
         return promise;
-      }
-      
-      function urlToFolder(url){
-        var pieces = url.split('/'); // Break the URL into pieces
-        pieces.pop(); // Remove the last piece (the filename)
-        return pieces.join('/') + '/'; // Put it back together with a trailing /
-      }
-
-      function hideElement(el) {
-        const s = el.style;
-        s.width = 0;
-        s.height = 0;
-        s.margin = 0;
-        s.padding = 0;
-        s.border = '0 none';
       }
 
       async function createLinks(url) {
@@ -542,11 +624,11 @@
         });
 
         function createFileTemplate(url, label) {
-          return `<a href="${url}" class="file" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false">▶</div></a>`;
+          return `<a href="${url}" class="file" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
         }
 
         function createFolderTemplate(url, label, parentClass) {
-          return `<a href="${url}" class="folder ${parentClass}" draggable="false"><div class="title" draggable="false">${label}</div></div><div class="arrow" draggable="false">📁</div></a>`;
+          return `<a href="${url}" class="folder ${parentClass}" draggable="false"><div class="title" draggable="false">${label}</div></div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
         }
 
 
@@ -560,6 +642,34 @@
             populateThumbnails();
           } catch (e) { }
         }
+      }
+
+      function clickLink(e) {
+        e.preventDefault();
+
+        // `this` always refers to the parent element. `e.target` can be children too instead.
+        const $el = $(this);
+
+        if ($el.hasClass('folder')) {
+          hashState.location = $el.href;
+          createLinks($el.href);
+        }
+
+        if ($el.hasClass('file')) {
+          hashState.video = $el.href;
+          actionPlay($el.href);
+        }
+
+        updateHash();
+      }
+
+      function hideElement(el) {
+        const s = el.style;
+        s.width = 0;
+        s.height = 0;
+        s.margin = 0;
+        s.padding = 0;
+        s.border = '0 none';
       }
 
       async function populateThumbnails(){
@@ -589,33 +699,6 @@
         }
       }
 
-      function urlToName(url) {
-        return url.split('/').pop().replace('.mp4', '');
-      }
-
-      function getBaseLocation(l) {
-        return l.protocol + '//' + l.host;
-      }
-
-      function clickLink(e) {
-        e.preventDefault();
-
-        // `this` always refers to the parent element. `e.target` can be children too instead.
-        const $el = $(this);
-
-        if ($el.hasClass('folder')) {
-          hashState.location = $el.href;
-          createLinks($el.href);
-        }
-
-        if ($el.hasClass('file')) {
-          hashState.video = $el.href;
-          actionPlay($el.href);
-        }
-
-        updateHash();
-      }
-      
       function getState() {
         const location = hashState.location;
         const video = getVideoUrl();
@@ -624,6 +707,10 @@
         return state;
       }
 
+      function getBaseLocation(l) {
+        return l.protocol + '//' + l.host;
+      }
+      
       function getVideoUrl(){
         return $('video').src;
       }
@@ -651,7 +738,6 @@
         return JSON.parse(atob(decodeURIComponent(hash)));
       }
 
-      
       function actionPlay(url) {
         $('video').autoplay = !!url;
         
@@ -679,7 +765,31 @@
       }        
       
       function setVideoPoster(r,g,b){
+        if (options.poster) {
+          return $('video').poster = options.poster;
+        }
+
         return $('video').poster = createColorDataURI(r,g,b);
+      }
+
+      function getSVGPoster() {
+        const svg = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+          <svg width="57" height="35" viewBox="0 0 55 36" version="1.1" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(4,-6.952508)">
+              <path fill="${getThemeColor()}" d="M 13.750134,8.4121203 38.167189,21.116929 c 1.592276,0.828502 2.211438,2.790929 1.382936,4.383205 -0.308051,0.592037 -0.790899,1.074885 -1.382936,1.382937 L 13.750134,39.58788 C 12.157858,40.416381 10.195431,39.797219 9.3669293,38.204943 9.125863,37.741644 9,37.227072 9,36.704809 V 11.295191 c 0,-1.7949254 1.455075,-3.25 3.25,-3.25 0.447654,0 0.889658,0.092471 1.298566,0.2706995 z m -1.153949,2.2177467 -0.110487,-0.04668 c -0.07579,-0.02509 -0.15535,-0.038 -0.235698,-0.038 -0.414214,0 -0.75,0.335786 -0.75,0.75 v 25.409618 c 0,0.120522 0.02904,0.23927 0.08468,0.346185 0.191193,0.367448 0.644061,0.510332 1.011509,0.319139 L 37.01324,24.665324 c 0.136624,-0.07109 0.24805,-0.182515 0.319139,-0.319139 0.191192,-0.367449 0.04831,-0.820316 -0.319139,-1.011509 z"/>
+            </g>
+          </svg>`;
+
+        const base64 = btoa(svg);
+        return `data:image/svg+xml;base64,${base64}`;
+      }
+
+      function getThemeColor() {
+        return getComputedStyle(document.documentElement).getPropertyValue('--theme-color');
+      }
+
+      function getTileAspectRatio() {
+        return +getComputedStyle(document.documentElement).getPropertyValue('--tile-aspect-ratio');
       }
 
       function createColorDataURI(r, g, b, a) {
@@ -842,7 +952,7 @@
         }
 
         if (hash && hash.video && hash.video.length > 1) {
-          $('video').muted = true;
+          $('video').muted = true; /* Autoplay on load only works if it is muted */
           actionPlay(hash.video);
         }
       }
