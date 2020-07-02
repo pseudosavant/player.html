@@ -8,9 +8,10 @@ To use it copy the [`./src/player.html`](src/player.html) file into a folder tha
 
 ### Supported features
 
-* Only 1 file with zero external dependencies, even images are inlined as data URIs
+* Only 1 file with zero external dependencies
+* [`SVG images`](https://github.com/microsoft/fluentui-system-icons/) are inlined as data URIs
 * May be installed as a PWA (Progressive Web App) app. Dynamically generated inline data URI manifest file.
-* Playback of MP4 files using the browser video engine
+* Playback of MP4, M4V, MKV, WEBM, and OGG files using the browser video engine
 * Sharable URL that will load `player.html` in the same folder location, and video position
 * Jump forward/backward 15 seconds
 * Video thumbnail generation, with concurrency configuration (default 1)
