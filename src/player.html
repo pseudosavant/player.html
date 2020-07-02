@@ -21,11 +21,13 @@
       --inter-tile-margin: 0.5rem;
 
       --theme-color: #FD009C;
+      --folder-color: #FED45A;
+      --playing-color: #8cff00;
     }
 
     html {
-      font-family: Calibri, Arial, Helvetica, sans-serif;
-      font-size: 16px;
+      font-family: 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
+      font-size: 12px;
       background-color: #111;
       color: #FFF;
     }
@@ -144,9 +146,12 @@
       background-image: var(--image-url);
     }
 
+    .links a.file:hover:not(.current) {
+      background-blend-mode: luminosity;
+    }
 
-    .links a.file:hover .arrow {
-      color: var(--theme-color);
+    .current {
+      background-blend-mode: soft-light;
     }
 
     .links a.folder {
@@ -161,7 +166,7 @@
       fill: #FFF;
     }
 
-    .file:hover svg, .folder:hover svg {
+    .file:hover svg, .folder:hover svg, .file.current svg {
       transform: scale(2) rotate(360deg);
     }
 
@@ -178,11 +183,20 @@
       fill: var(--theme-color);
     }
 
+    .current .arrow svg path {
+      fill: var(--playing-color);
+    }
+
     .folder svg path {
       /* ic_fluent_folder_24_filled.svg */
       d: path("M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z");
-      fill: #FED45A;
+      fill: var(--folder-color);
       transition: all 250ms;
+    }
+
+    .folder:first-of-type .arrow svg path {
+      /* ic_fluent_folder_open_24_filled.svg*/
+      d: path("M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z");
     }
 
     .folder:hover svg {
@@ -412,6 +426,8 @@
 
     (function globalIIFE() {
       'use strict';
+      const $video = $('video');
+
       const options = {
         thumbnails: {
           enabled: true && canThumbnail(),
@@ -477,36 +493,6 @@
 
       const hashState = { location: '', video: '' };
 
-      function isHiddenFileOrFolder(url) {
-        const reHidden = /\/\..+$/i;
-        return url.toString().match(reHidden);
-      }
-
-      function getLinksFromFrame(frame) {
-        const links = [...frame.contentDocument.querySelectorAll('a')];
-
-        const folders = [];
-        const files = [];
-
-        links.forEach(function(link){
-          const url = link.toString();
-          const type = urlType(url);
-
-          switch (type) {
-            case 'hidden':
-              break;
-            case 'file':
-              files.push(url);
-              break;
-            case 'folder':
-              folders.push(url);
-              break;
-          }
-        });
-
-        return { folders, files };
-      }
-
       function urlToFolder(url){
         var pieces = url.split('/'); // Break the URL into pieces
         pieces.pop(); // Remove the last piece (the filename)
@@ -542,6 +528,18 @@
         }
       }
 
+      function removeFileExtension(s) {
+        const re = new RegExp(`\\.+(${options.supportedFileExtensions.join('|')})+$`, 'i');
+        return s.replace(re, '');
+      }
+
+      function sortFiles(a, b) {
+        const labelA = urlToLabel(a);
+        const labelB = urlToLabel(b);
+        
+        return labelA < labelB ? -1 : 1;
+      }
+
       function urlType(url) {
         function isVideo(haystack, fileExtensions) {
           const re = new RegExp(`\.+(${ options.supportedFileExtensions.join('|')})+$`, 'i');
@@ -560,16 +558,34 @@
         }
       }
 
-      function removeFileExtension(s) {
-        const re = new RegExp(`\\.+(${options.supportedFileExtensions.join('|')})+$`, 'i');
-        return s.replace(re, '');
+      function isHiddenFileOrFolder(url) {
+        const reHidden = /\/\..+$/i;
+        return url.toString().match(reHidden);
       }
 
-      function sortFiles(a, b) {
-        const labelA = urlToLabel(a);
-        const labelB = urlToLabel(b);
-        
-        return labelA < labelB ? -1 : 1;
+      function getLinksFromFrame(frame) {
+        const links = [...frame.contentDocument.querySelectorAll('a')];
+
+        const folders = [];
+        const files = [];
+
+        links.forEach(function(link){
+          const url = link.toString();
+          const type = urlType(url);
+
+          switch (type) {
+            case 'hidden':
+              break;
+            case 'file':
+              files.push(url);
+              break;
+            case 'folder':
+              folders.push(url);
+              break;
+          }
+        });
+
+        return { folders, files };
       }
 
       function asyncLinkRequest(url) {
@@ -619,18 +635,10 @@
           const rawUrl = file;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
+          const cssClasses = (rawUrl === $video.src ? 'current' : '');
 
-          html += createFileTemplate(rawUrl, label);
+          html += createFileTemplate(rawUrl, label, cssClasses);
         });
-
-        function createFileTemplate(url, label) {
-          return `<a href="${url}" class="file" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
-        }
-
-        function createFolderTemplate(url, label, parentClass) {
-          return `<a href="${url}" class="folder ${parentClass}" draggable="false"><div class="title" draggable="false">${label}</div></div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
-        }
-
 
         $('.links').innerHTML = html;
 
@@ -642,6 +650,14 @@
             populateThumbnails();
           } catch (e) { }
         }
+      }
+
+      function createFileTemplate(url, label, optionalClasses = '') {
+        return `<a href="${url}" class="file ${optionalClasses}" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
+      }
+
+      function createFolderTemplate(url, label, optionalClasses = '') {
+        return `<a href="${url}" class="folder ${optionalClasses}" draggable="false"><div class="title" draggable="false">${label}</div></div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
       }
 
       function clickLink(e) {
@@ -712,7 +728,7 @@
       }
       
       function getVideoUrl(){
-        return $('video').src;
+        return $video.src;
       }
 
       function getHash() {
@@ -739,37 +755,50 @@
       }
 
       function actionPlay(url) {
-        $('video').autoplay = !!url;
+        // Don't restart playback if it is the currently playing video
+        if (url === $video.src) return;
+
+        $video.autoplay = !!url;
         
         if (!!url) {
-          $('video').src = url;
-          $('video').play();
+          $video.poster = '';
+          $video.src = url;
+          $video.play();
           hashState.video = url;
         } else {
-          $('video').src = '';
+          $video.src = '';
+          $video.poster = options.poster;
         }
+
+        setCurrentVideoTile();
+      }
+
+      function setCurrentVideoTile() {
+        const $former = $('.links .current')        
+        if ($former && $former.classList) $former.classList.remove('current');
+
+        const $current = $(`.file[href="${$video.src}"]`);
+        if ($current && $current.classList) $current.classList.add('current');
       }
 
       function actionStop() {
-        actionPlay('');
+        actionPlay();
       }
       
       function actionReplay() {
-        const $video = $('video');
         $video.currentTime = Math.max($video.currentTime - 10, 0);
       }
       
       function actionSkip () {
-        const $video = $('video');
         $video.currentTime = Math.min($video.currentTime + 30, $video.duration);
       }        
       
       function setVideoPoster(r,g,b){
         if (options.poster) {
-          return $('video').poster = options.poster;
+          return $video.poster = options.poster;
         }
 
-        return $('video').poster = createColorDataURI(r,g,b);
+        return $video.poster = createColorDataURI(r,g,b);
       }
 
       function getSVGPoster() {
@@ -940,7 +969,8 @@
         $('.replay').on('click', actionReplay);
         $('.skip').on('click', actionSkip);
         $('.stop').on('click', actionStop);
-        
+        $video.on('error', (e) => $video.poster = options.poster);
+
         setVideoPoster(0,0,0);
 
         const hash = getHash();
@@ -951,8 +981,13 @@
           createLinks();
         }
 
+        $(window).on('popstate', (e) => {
+          const hash = getHash();
+          if (hash && hash.location && hash.location.length > 1) createLinks(hash.location)
+        });
+
         if (hash && hash.video && hash.video.length > 1) {
-          $('video').muted = true; /* Autoplay on load only works if it is muted */
+          $video.muted = true; /* Autoplay on load only works if it is muted */
           actionPlay(hash.video);
         }
       }
