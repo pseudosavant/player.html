@@ -2,10 +2,19 @@
 <html lang="en">
 <head>
   <title>player.html</title>
-  <link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQBAMAAAAVaP+LAAAAMFBMVEX////+8vn+4fP+zuz+tuL+n9r+l9f+gc7+bMb+XcD+Rbj+MK/+Hqj+D6P+BZ/+AJ2hzeniAAABZ0lEQVR42u3UO3HDQABF0QdhISgMdiYEBEEAMokgWBBEQRAiCBYE2xAsCJLzmdTWZ1/KtClu5dkL4JRXuVwul8vl/tmzoF5bMb3tNQR5LSHISwFBngME+UJBHijop4MgpwaCvFUQ5DVCkO8FBHkMEJTOEOTUQ5BTB0H+PkBQ+ioZyF4iBHkOEOQrBXmgIL9TkBsK2msISmsEoL+nEJCnAEE+U1A6QpDdUdDeQJC3EoK8RAjyLUCQRwpKJwiyewpKLQR5ryHIawlB/iggKE2BgewLBfkIQamFoF4MNIiBrmKgOTDQEoVAWykE2hsxUCcG6sVAZzHQFBjoXgiB1igE2iohUGrEQJ0YaBADXcVAc2CgJQqBtlIItB+EQKkVA/VioJMYaAwMdC+EQJ9RCLRVQqDUiIE6MdBRDHQRA02BgZZCCLSWQqC9FgKlVgzUi4FOYqBRDHQrGGiJQnqpxPSkXC6Xy+VyD9ovn971FIU9/uIAAAAASUVORK5CYII=" />
-  <meta property="description" content="Drop player.html in a folder of videos and play them on the web" />
+  <meta charset="utf-8">
+  <meta name="description" content="Drop player.html in a folder of videos and play them on the web" />
+  <meta name="version" content="1.0.0">
+  <meta name="Copyright" content=" ©2020 Paul Ellis">
+  <meta name="license" content="https://opensource.org/licenses/MIT">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="shortcut icon"
+    href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQBAMAAAAVaP+LAAAAMFBMVEX////+8vn+4fP+zuz+tuL+n9r+l9f+gc7+bMb+XcD+Rbj+MK/+Hqj+D6P+BZ/+AJ2hzeniAAABZ0lEQVR42u3UO3HDQABF0QdhISgMdiYEBEEAMokgWBBEQRAiCBYE2xAsCJLzmdTWZ1/KtClu5dkL4JRXuVwul8vl/tmzoF5bMb3tNQR5LSHISwFBngME+UJBHijop4MgpwaCvFUQ5DVCkO8FBHkMEJTOEOTUQ5BTB0H+PkBQ+ioZyF4iBHkOEOQrBXmgIL9TkBsK2msISmsEoL+nEJCnAEE+U1A6QpDdUdDeQJC3EoK8RAjyLUCQRwpKJwiyewpKLQR5ryHIawlB/iggKE2BgewLBfkIQamFoF4MNIiBrmKgOTDQEoVAWykE2hsxUCcG6sVAZzHQFBjoXgiB1igE2iohUGrEQJ0YaBADXcVAc2CgJQqBtlIItB+EQKkVA/VioJMYaAwMdC+EQJ9RCLRVQqDUiIE6MdBRDHQRA02BgZZCCLSWQqC9FgKlVgzUi4FOYqBRDHQrGGiJQnqpxPSkXC6Xy+VyD9ovn971FIU9/uIAAAAASUVORK5CYII=" />
   <style>
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       -moz-box-sizing: border-box;
       -webkit-box-sizing: border-box;
       box-sizing: border-box;
@@ -15,7 +24,7 @@
       line-height: 1rem;
 
       --tile-aspect-ratio: calc(9/16);
-      --tile-width: 20rem;
+      --tile-width: 22rem;
       --tile-height: calc(var(--tile-width) * var(--tile-aspect-ratio));
       --tile-border-radius: 0.25rem;
       --inter-tile-margin: 0.5rem;
@@ -45,8 +54,10 @@
       width: 100vw;
       min-height: 30vw;
       max-height: min(
-        calc(100vh - var(--tile-height)), /* Full height minus some space to see the first row of tiles */
-        calc(100vw * var(--tile-aspect-ratio)) /* Height for the current width at the specified aspect ratio */
+        calc(100vh - var(--tile-height)),
+        /* Full height minus some space to see the first row of tiles */
+        calc(100vw * var(--tile-aspect-ratio))
+        /* Height for the current width at the specified aspect ratio */
       );
       margin: auto;
       background: #000;
@@ -67,14 +78,14 @@
       margin: 1rem 0;
     }
 
-    .buttons svg path {
+    .buttons svg {
       fill: var(--theme-color);
     }
 
     .buttons svg:hover {
       filter: saturate(0.25) brightness(4);
     }
-    
+
     .buttons .stop svg {
       margin: 0 0.5rem;
     }
@@ -88,8 +99,9 @@
 
       padding-bottom: 2rem;
     }
-  
-    .links a { /* background */
+
+    .links a {
+      /* background */
       position: relative;
       display: flex;
       justify-content: center;
@@ -101,13 +113,14 @@
 
       padding: 0;
       border-radius: var(--tile-border-radius);
-      
+
       background-color: #666;
       color: #DDD;
       text-decoration: none;
     }
-    
-    .links a .title { /* Title */
+
+    .links a .title {
+      /* Title */
       position: absolute;
       display: block;
       bottom: 0;
@@ -120,17 +133,23 @@
       line-height: 1.5rem;
       text-align: left;
       padding: 1rem;
-      
-      background: rgba(32,32,32,0.75);
+
+      background: rgba(32, 32, 32, 0.75);
       border-radius: 0 0 var(--tile-border-radius) var(--tile-border-radius);
     }
 
-
-    .folder:first-of-type .title::before {
-      content: '⤴ ';
+    .folder .title svg, .folder .title svg g {
+      height: 1em;
+      width: 1em;
+      margin-bottom: -0.18em;
+    }
+    .folder:first-of-type .title svg {
+      display: inline-block;
     }
 
-    .links a.folder .arrow, .links a.file .arrow { /* Arrow */
+    .links a.folder .arrow,
+    .links a.file .arrow {
+      /* Arrow */
       font-size: 3rem;
       display: block;
       text-align: center;
@@ -138,7 +157,7 @@
     }
 
     .links a.file .arrow {
-      filter: drop-shadow(0 0 0.1rem rgba(0,0,0,0.5));
+      filter: drop-shadow(0 0 0.1rem rgba(0, 0, 0, 0.5));
     }
 
     .links a.file {
@@ -159,81 +178,85 @@
     }
 
     /* SVG Icons */
-    svg, svg path {
+    .xlinks {
+      display: none;
+    }
+    
+    .buttons svg, .buttons svg g, .arrow svg, .arrow svg g {
       width: 30px;
       height: 30px;
       transform: scale(1.25);
-      fill: #FFF;
     }
 
-    .file:hover svg, .folder:hover svg, .file.current svg {
+    .file:hover .arrow svg,
+    .folder:hover .arrow svg,
+    .file.current .arrow svg {
       transform: scale(2) rotate(360deg);
     }
 
-    .file svg, .file svg path, .folder svg, .folder svg path {
+    .file svg,
+    .file svg path,
+    .folder svg,
+    .folder svg path {
+      fill: #FFF;
       transition: all 500ms ease;
     }
 
-    .file svg path {
-      /* ic_fluent_play_24_filled.svg */
-      d: path("M6.33994976,2.27500912 C5.25284495,1.67304649 3.88358525,2.06633193 3.28162262,3.15343674 C3.09690734,3.48702035 3,3.86207592 3,4.2433865 L3,19.7591388 C3,21.0017795 4.00735931,22.0091388 5.25,22.0091388 C5.63140051,22.0091388 6.00654154,21.9121858 6.34018202,21.7273876 L20.3484443,13.9684314 C21.4354781,13.3663405 21.8286019,11.9970344 21.226511,10.9100006 C21.0219396,10.540661 20.7175758,10.2363331 20.348212,10.0318053 L6.33994976,2.27500912 Z");
-    }
-
-    .file:hover svg path {
+    .file:hover svg {
       fill: var(--theme-color);
     }
 
-    .current .arrow svg path {
+    .current .arrow svg {
       fill: var(--playing-color);
     }
 
-    .folder svg path {
-      /* ic_fluent_folder_24_filled.svg */
-      d: path("M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z");
+    .folder svg {
       fill: var(--folder-color);
       transition: all 250ms;
-    }
-
-    .folder:first-of-type .arrow svg path {
-      /* ic_fluent_folder_open_24_filled.svg*/
-      d: path("M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z");
     }
 
     .folder:hover svg {
       filter: brightness(2);
     }
 
-    .stop svg path {
-      /* ic_fluent_stop_24_filled.svg */
-      d: path("M4.75 3C3.7835 3 3 3.7835 3 4.75V19.25C3 20.2165 3.7835 21 4.75 21H19.25C20.2165 21 21 20.2165 21 19.25V4.75C21 3.7835 20.2165 3 19.25 3H4.75Z");
+    .folder .arrow .closed, .folder:first-of-type .arrow .open {
+      display: block;
+    }
+    .folder .arrow .open, .folder:first-of-type .arrow .closed {
+      display: none;
     }
 
-    .replay svg path {
-      /* ic_fluent_rewind_24_filled.svg */
-      d: path("M21.0015268,4.75008179 L21,18.7500818 C20.9999319,19.374155 20.2821581,19.7251581 19.7895445,19.3420142 L12.5,13.6726109 L12.5,18.7500818 C12.4999319,19.374155 11.7821581,19.7251581 11.2895445,19.3420142 L2.28954454,12.3420142 C1.90346505,12.0417301 1.90348904,11.4582003 2.28959321,11.157948 L11.29112,4.15794799 C11.7838024,3.77481559 12.5015268,4.12596134 12.5015268,4.75008179 L12.5,9.82661094 L19.79112,4.15794799 C20.2838024,3.77481559 21.0015268,4.12596134 21.0015268,4.75008179 Z");
-    }
-
-    .skip svg path {
-      /* ic_fluent_fast_forward_24_filled.svg */
-      d: path("M12.7104555,4.15798491 L21.7104555,11.1579849 C22.0965349,11.458269 22.096511,12.0417988 21.7104068,12.3420511 L12.70888,19.3420511 C12.2161976,19.7251835 11.4984732,19.3740377 11.4984732,18.7499173 L11.4984732,13.6726109 L4.20887999,19.3420511 C3.71619763,19.7251835 2.9984732,19.3740377 2.9984732,18.7499173 L3,4.74991728 C3.00006806,4.12584403 3.71784185,3.774841 4.21045546,4.15798491 L11.4984732,9.82661094 L11.5,4.74991728 C11.5000681,4.12584403 12.2178419,3.774841 12.7104555,4.15798491 Z");
-    }
-
-
-
+    
   </style>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 </head>
 
 <body>
   <video controls></video>
 
   <section class="buttons">
-    <button class="replay play" type="button" title="Replay"><svg><path></path>
-    </svg></button><button class="stop" type="button" title="Stop"><svg><path></path>
-    </svg></button><button class="skip" type="button" title="Skip"><svg><path></path></svg></button>
+    <button class="replay play" type="button" title="Replay"><svg><g><use xlink:href="#svgReplay"></g>
+    </svg></button><button class="stop" type="button" title="Stop"><svg><g><use xlink:href="#svgStop"></g>
+    </svg></button><button class="skip" type="button" title="Skip"><svg><g><use xlink:href="#svgSkip"></g>
+    </svg></button>
   </section>
   <section class="links"></section>
-
+  <section class="xlinks">
+    <!-- https://github.com/microsoft/fluentui-system-icons -->
+    <!-- ic_fluent_play_24_filled.svg -->
+    <svg id="svgFile"><path d="M6.33994976,2.27500912 C5.25284495,1.67304649 3.88358525,2.06633193 3.28162262,3.15343674 C3.09690734,3.48702035 3,3.86207592 3,4.2433865 L3,19.7591388 C3,21.0017795 4.00735931,22.0091388 5.25,22.0091388 C5.63140051,22.0091388 6.00654154,21.9121858 6.34018202,21.7273876 L20.3484443,13.9684314 C21.4354781,13.3663405 21.8286019,11.9970344 21.226511,10.9100006 C21.0219396,10.540661 20.7175758,10.2363331 20.348212,10.0318053 L6.33994976,2.27500912 Z"/></svg>
+    <!-- ic_fluent_folder_24_filled.svg -->
+    <svg id="svgFolderClosed"><path d="M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z"/></svg>
+    <!-- ic_fluent_folder_open_24_filled.svg -->
+    <svg id="svgFolderOpen"><path d="M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z"/></svg>
+    <!-- ic_fluent_stop_24_filled.svg -->
+    <svg id="svgStop"><path d="M4.75 3C3.7835 3 3 3.7835 3 4.75V19.25C3 20.2165 3.7835 21 4.75 21H19.25C20.2165 21 21 20.2165 21 19.25V4.75C21 3.7835 20.2165 3 19.25 3H4.75Z"/></svg>
+    <!-- ic_fluent_rewind_24_filled.svg -->
+    <svg id="svgReplay"><path d="M21.0015268,4.75008179 L21,18.7500818 C20.9999319,19.374155 20.2821581,19.7251581 19.7895445,19.3420142 L12.5,13.6726109 L12.5,18.7500818 C12.4999319,19.374155 11.7821581,19.7251581 11.2895445,19.3420142 L2.28954454,12.3420142 C1.90346505,12.0417301 1.90348904,11.4582003 2.28959321,11.157948 L11.29112,4.15794799 C11.7838024,3.77481559 12.5015268,4.12596134 12.5015268,4.75008179 L12.5,9.82661094 L19.79112,4.15794799 C20.2838024,3.77481559 21.0015268,4.12596134 21.0015268,4.75008179 Z"/></svg>
+    <!-- ic_fluent_fast_forward_24_filled.svg -->
+    <svg id="svgSkip"><path d="M12.7104555,4.15798491 L21.7104555,11.1579849 C22.0965349,11.458269 22.096511,12.0417988 21.7104068,12.3420511 L12.70888,19.3420511 C12.2161976,19.7251835 11.4984732,19.3740377 11.4984732,18.7499173 L11.4984732,13.6726109 L4.20887999,19.3420511 C3.71619763,19.7251835 2.9984732,19.3740377 2.9984732,18.7499173 L3,4.74991728 C3.00006806,4.12584403 3.71784185,3.774841 4.21045546,4.15798491 L11.4984732,9.82661094 L11.5,4.74991728 C11.5000681,4.12584403 12.2178419,3.774841 12.7104555,4.15798491 Z"/></svg>
+    <!-- ic_fluent_arrow_up_24_filled.svg -->
+    <svg id="svgFolderArrow"><path d="M4.28401,10.2955 C3.89639,10.6889 3.90108,11.322 4.29449,11.7097 C4.68789,12.0973 5.32104,12.0926 5.70866,11.6992 L11,6.32889 L11,20 C11,20.5523 11.4477,21 12,21 C12.5523,21 13,20.5523 13,20 L13,6.33538 L18.2849,11.6992 C18.6726,12.0926 19.3057,12.0973 19.6991,11.7097 C20.0925,11.322 20.0972,10.6889 19.7096,10.2955 L12.8872,3.3713 C12.3976,2.87438 11.596,2.87438 11.1064,3.3713 L4.28401,10.2955 Z"/></svg>
+  </section>
   <script>
     (async function pwaIIFE() {
       const icon = document.querySelector('link[rel="shortcut icon"').href;
@@ -242,7 +265,7 @@
       const manifest = {
         short_name: document.title,
         name: document.title,
-        description: document.querySelector('meta[property="description"]').content,
+        description: document.querySelector('meta[name="description"]').content,
         background_color: '#FFFFFF',
         theme_color: getComputedStyle(document.body).getPropertyValue('--theme-color'),
         color: getComputedStyle(document.body).getPropertyValue('--theme-color'),
@@ -296,7 +319,7 @@
     (function socialMetadataIIFE(){
     const metadata = {
       title: document.querySelector('title').textContent,
-      description: document.querySelector('meta[property="description"]').content,
+      description: document.querySelector('meta[name="description"]').content,
       type: 'video.movie',
       icon: document.querySelector('link[rel="shortcut icon"').href,
       backgroundColor: '#FF0099'
@@ -653,11 +676,11 @@
       }
 
       function createFileTemplate(url, label, optionalClasses = '') {
-        return `<a href="${url}" class="file ${optionalClasses}" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
+        return `<a href="${url}" class="file ${optionalClasses}" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false"><svg><g><use xlink:href="#svgFile"></g></svg></div></a>`;
       }
 
       function createFolderTemplate(url, label, optionalClasses = '') {
-        return `<a href="${url}" class="folder ${optionalClasses}" draggable="false"><div class="title" draggable="false">${label}</div></div><div class="arrow" draggable="false"><svg><path></path></svg></div></a>`;
+        return `<a href="${url}" class="folder ${optionalClasses}" draggable="false"><div class="title" draggable="false"><svg viewBox="0 0 24 24"><g><use xlink:href="#svgFolderArrow"></g></svg>${label}</div></div><div class="arrow" draggable="false"><svg class="open"><g><use xlink:href="#svgFolderOpen"></g></svg><svg class="closed"><g><use xlink:href="#svgFolderClosed"></g></svg></div></a>`;
       }
 
       function clickLink(e) {
