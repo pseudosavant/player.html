@@ -1,8 +1,8 @@
 # player.html
 One file drop-in video player web app for using MP4 video files served using basic directory listing.
 
-![player.html in action](https://user-images.githubusercontent.com/455424/86303837-de3f6400-bbc1-11ea-8688-7eadc0f1c4d9.jpg)
-![player.html on all of your devices](https://user-images.githubusercontent.com/455424/86303229-1645a780-bbc0-11ea-80c9-bc6e099dccd6.jpg)
+![player.html in action](https://user-images.githubusercontent.com/455424/91237221-df3ad080-e6ee-11ea-83c7-f13be539c73e.jpg)
+![player.html on all of your devices](https://user-images.githubusercontent.com/455424/91237209-d649ff00-e6ee-11ea-9f8d-3a33cd535e81.png)
 
 ## Usage
 `player.html` is designed to be a drop-in video player that does not require any configuration or other files.
