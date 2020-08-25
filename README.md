@@ -16,6 +16,8 @@ To use it copy the [`./src/player.html`](src/player.html) file into a folder tha
 * May be installed as a PWA (Progressive Web App) app. Dynamically generated inline data URI manifest file.
 * Playback of MP4, M4V, MKV, WEBM, and OGG files using the browser video engine
 * Sharable URL that will load `player.html` in the same folder location, and video position
+* Custom video playback controls (fullscreen, play, pause, mute, etc)
+* Progress bar with timestamp preview thumbnail on hover
 * Jump forward/backward 15 seconds
 * Video thumbnail generation, with concurrency configuration (default 1)
 * Thumbnail caching using localStorage
