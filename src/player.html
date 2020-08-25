@@ -1,16 +1,16 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
   <title>player.html</title>
-  <meta charset="utf-8">
-  <meta name="description" content="Drop player.html in a folder of videos and play them on the web" />
-  <meta name="version" content="1.0.0">
-  <meta name="Copyright" content=" ©2020 Paul Ellis">
-  <meta name="license" content="https://opensource.org/licenses/MIT">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="shortcut icon"
-    href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQBAMAAAAVaP+LAAAAMFBMVEX////+8vn+4fP+zuz+tuL+n9r+l9f+gc7+bMb+XcD+Rbj+MK/+Hqj+D6P+BZ/+AJ2hzeniAAABZ0lEQVR42u3UO3HDQABF0QdhISgMdiYEBEEAMokgWBBEQRAiCBYE2xAsCJLzmdTWZ1/KtClu5dkL4JRXuVwul8vl/tmzoF5bMb3tNQR5LSHISwFBngME+UJBHijop4MgpwaCvFUQ5DVCkO8FBHkMEJTOEOTUQ5BTB0H+PkBQ+ioZyF4iBHkOEOQrBXmgIL9TkBsK2msISmsEoL+nEJCnAEE+U1A6QpDdUdDeQJC3EoK8RAjyLUCQRwpKJwiyewpKLQR5ryHIawlB/iggKE2BgewLBfkIQamFoF4MNIiBrmKgOTDQEoVAWykE2hsxUCcG6sVAZzHQFBjoXgiB1igE2iohUGrEQJ0YaBADXcVAc2CgJQqBtlIItB+EQKkVA/VioJMYaAwMdC+EQJ9RCLRVQqDUiIE6MdBRDHQRA02BgZZCCLSWQqC9FgKlVgzUi4FOYqBRDHQrGGiJQnqpxPSkXC6Xy+VyD9ovn971FIU9/uIAAAAASUVORK5CYII=" />
+  <meta charset='utf-8'>
+  <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
+  <meta name='version' content='1.0.0'>
+  <meta name='Copyright' content=' ©2020 Paul Ellis'>
+  <meta name='license' content='https://opensource.org/licenses/MIT'>
+  <meta name='apple-mobile-web-app-status-bar-style' content='black'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <link rel='shortcut icon'
+    href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQBAMAAAAVaP+LAAAAMFBMVEX////+8vn+4fP+zuz+tuL+n9r+l9f+gc7+bMb+XcD+Rbj+MK/+Hqj+D6P+BZ/+AJ2hzeniAAABZ0lEQVR42u3UO3HDQABF0QdhISgMdiYEBEEAMokgWBBEQRAiCBYE2xAsCJLzmdTWZ1/KtClu5dkL4JRXuVwul8vl/tmzoF5bMb3tNQR5LSHISwFBngME+UJBHijop4MgpwaCvFUQ5DVCkO8FBHkMEJTOEOTUQ5BTB0H+PkBQ+ioZyF4iBHkOEOQrBXmgIL9TkBsK2msISmsEoL+nEJCnAEE+U1A6QpDdUdDeQJC3EoK8RAjyLUCQRwpKJwiyewpKLQR5ryHIawlB/iggKE2BgewLBfkIQamFoF4MNIiBrmKgOTDQEoVAWykE2hsxUCcG6sVAZzHQFBjoXgiB1igE2iohUGrEQJ0YaBADXcVAc2CgJQqBtlIItB+EQKkVA/VioJMYaAwMdC+EQJ9RCLRVQqDUiIE6MdBRDHQRA02BgZZCCLSWQqC9FgKlVgzUi4FOYqBRDHQrGGiJQnqpxPSkXC6Xy+VyD9ovn971FIU9/uIAAAAASUVORK5CYII=' />
   <style>
     *,
     *::before,
@@ -29,9 +29,16 @@
       --tile-border-radius: 0.25rem;
       --inter-tile-margin: 0.5rem;
 
-      --theme-color: #FD009C;
-      --folder-color: #FED45A;
-      --playing-color: #8cff00;
+      --progress-bar-base-color: white;
+      --progress-bar-position-color: #AAA;
+      --trick-preview-width: 128px;
+
+      --theme-color-highlight: hsl(323, 100%, 75%);
+      --theme-color: hsl(323, 100%, 50%);
+      --folder-color: hsl(44,100%,68%);
+      --playing-color: hsl(87, 100%, 50%);
+
+      --transition-base: 250ms;
     }
 
     html {
@@ -50,8 +57,44 @@
       flex-wrap: wrap;
     }
 
-    video {
-      width: 100vw;
+    .playerContainer {
+      position: relative;
+      width: 100%;
+      min-height: 30vw;
+      max-height: min(90vh, calc(100vw * var(--aspect-ratio)));
+    }
+
+    .playerContainer:fullscreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    :fullscreen .controls {
+      position: absolute;
+      bottom: 0;
+      overflow: hidden;
+    }
+
+    .controls {
+      opacity: 100%;
+      transition: opacity var(--transition-base);
+    }
+    :fullscreen.fadeout .controls{
+      opacity: 0;
+    }
+
+    :fullscreen.fadeout {
+      cursor: none;
+    }
+
+    :fullscreen .player {
+      margin: 0;
+    }
+
+    .player {
+      width: 100%;
       min-height: 30vw;
       max-height: min(
         calc(100vh - var(--tile-height)),
@@ -61,33 +104,168 @@
       );
       margin: auto;
       background: #000;
+
+      transition: filter calc(0.5 * var(--transition-base));
     }
 
-    .buttons {
+    .paused .player {
+      filter: blur(0.25rem) contrast(0.5) brightness(0.5);      
+    }
+
+    .pauseOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    .paused .player + .pauseOverlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .controls {
+      display: block;
+      position: relative;
+      background: #222;
+      padding: 1rem;
       width: 100%;
       text-align: center;
       margin-top: 1rem;
+      overflow-x: hidden;
     }
 
-    .buttons button {
-      background: none;
+    .controls button {
+      display: inline-block;
       border: 0 none;
-      cursor: pointer;
-      padding: 0;
+      outline: none;
+      
       font-size: 2rem;
+      
+      padding: 0.5rem;
       margin: 1rem 0;
+
+      background: none;
+      cursor: pointer;
     }
 
-    .buttons svg {
+    .controls button:focus {
+      filter: drop-shadow(0 1px 3px var(--theme-color-highlight));
+    }
+
+    .controls svg {
       fill: var(--theme-color);
     }
 
-    .buttons svg:hover {
+    .controls svg:hover {
       filter: saturate(0.25) brightness(4);
     }
 
-    .buttons .stop svg {
+    .controls .stop svg {
       margin: 0 0.5rem;
+    }
+
+    .muted .btn-mute .on, .btn-mute .off {
+      display: none;
+    }
+
+    .muted .btn-mute .off, .btn-mute .on {
+      display: inline-block;
+    }
+
+    .paused .btn-play .paused, .btn-play .playing {
+      display: inline-block;
+    }
+
+    .paused .btn-play .playing, .btn-play .paused {
+      display: none;
+    }
+
+    .pauseOverlay svg {
+      width: 24px;
+      height: 24px;
+      transform: scale(2);
+      fill: var(--theme-color);
+      filter: drop-shadow(0 0 5px rgba(0,0,0,0.7));
+    }
+
+    .currentTimestamp {
+      display: block;
+      position: absolute;
+      right: 0;
+      top: 0;
+      margin-right: 1rem;
+      margin-top: 2rem;
+    }
+
+    .currentTimestamp .position::before {
+      content: var(--absolute-position);
+    }
+
+    .currentTimestamp .duration::before {
+      content: var(--duration);
+    }
+
+    .currentTimestamp .divider::before {
+      content: ' / ';
+    }
+
+    .progressBar {
+      /* Content box is used to make the bar click area larger than just the area --progress-bar-base-color covers */
+      box-sizing: content-box;
+      overflow: hidden;
+
+      position: relative;
+      top: 0;
+      left: 0;
+      height: 0.5rem;
+      width: 100%;
+      
+      border-radius: 0.5rem;
+      border: 0.5rem solid #222;
+      border-width: 0.25rem;
+      margin: -0.25rem;
+
+      background-color: var(--progress-bar-base-color);
+    }
+
+    .progressBar:after {
+      display: block;
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: var(--relative-position);
+      
+      height: 100%;
+
+      background-color: var(--progress-bar-position-color);
+    }
+
+    .trick {
+      position: absolute;
+      display: none;
+      
+      top: calc(var(--trick-preview-width) * var(--aspect-ratio) * -1);
+      left: var(--trick-position);
+      width: var(--trick-preview-width);
+      height: calc(var(--trick-preview-width) * var(--aspect-ratio));
+      margin: 0 calc(var(--trick-preview-width) * -0.5);
+      
+      object-fit: cover;
+      
+      border: 1px solid #000;
+      border-radius: 0.2rem;
+      filter: drop-shadow(2px 4px 4px #000);
+
+      z-index: 1000;
+    }
+
+    .progressBar:hover + .trick {
+      display: block;
     }
 
     .links {
@@ -182,7 +360,7 @@
       display: none;
     }
     
-    .buttons svg, .buttons svg g, .arrow svg, .arrow svg g {
+    .controls svg, .controls svg g, .arrow svg, .arrow svg g {
       width: 30px;
       height: 30px;
       transform: scale(1.25);
@@ -199,7 +377,7 @@
     .folder svg,
     .folder svg path {
       fill: #FFF;
-      transition: all 500ms ease;
+      transition: all calc(2 * var(--transition-base)) ease;
     }
 
     .file:hover svg {
@@ -212,7 +390,7 @@
 
     .folder svg {
       fill: var(--folder-color);
-      transition: all 250ms;
+      transition: all var(--transition-base);
     }
 
     .folder:hover svg {
@@ -231,33 +409,243 @@
 </head>
 
 <body>
-  <video controls></video>
-
-  <section class="buttons">
-    <button class="replay play" type="button" title="Replay"><svg><g><use xlink:href="#svgReplay"></g>
-    </svg></button><button class="stop" type="button" title="Stop"><svg><g><use xlink:href="#svgStop"></g>
-    </svg></button><button class="skip" type="button" title="Skip"><svg><g><use xlink:href="#svgSkip"></g>
-    </svg></button>
-  </section>
-  <section class="links"></section>
-  <section class="xlinks">
+  <div class='playerContainer no-transitions'>
+    <video class='player'></video>
+    <div class='pauseOverlay'><svg><use xlink:href='#svgPause'></svg></div>
+    <section class='controls'>
+      <div class='progressBar'></div>
+      <video class='trick'></video>
+      <button class='btn-play' type='button' title='Play'><svg class='playing'><g><use xlink:href='#svgPlay'></g></svg><svg class='paused'><g><use xlink:href='#svgPause'></g></svg></button>
+      <button class='btn-rewind' type='button' title='rewind'><svg><g><use xlink:href='#svgReplay'></g></svg></button>
+      <button class='btn-fast-forward' type='button' title='fast forward'><svg><g><use xlink:href='#svgSkip'></g></svg></button>
+      <button class='btn-stop' type='button' title='Stop'><svg><g><use xlink:href='#svgStop'></g></svg></button>
+      <button class='btn-mute' type='button' title='Mute'><svg class='on'><g><use xlink:href='#svgSpeakerOn'></g></svg><svg class='off'><g><use xlink:href='#svgSpeakerOff'></g></svg></button>
+      <button class='btn-fullscreen' type='button' title='Fullscreen'><svg><g><use xlink:href='#svgFullscreen'></g></svg></button>
+      <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"/><span class="divider"/><span class="duration"/></div>
+    </section>
+  </div>
+  <section class='links'></section>
+  <section class='xlinks'>
     <!-- https://github.com/microsoft/fluentui-system-icons -->
     <!-- ic_fluent_play_24_filled.svg -->
-    <svg id="svgFile"><path d="M6.33994976,2.27500912 C5.25284495,1.67304649 3.88358525,2.06633193 3.28162262,3.15343674 C3.09690734,3.48702035 3,3.86207592 3,4.2433865 L3,19.7591388 C3,21.0017795 4.00735931,22.0091388 5.25,22.0091388 C5.63140051,22.0091388 6.00654154,21.9121858 6.34018202,21.7273876 L20.3484443,13.9684314 C21.4354781,13.3663405 21.8286019,11.9970344 21.226511,10.9100006 C21.0219396,10.540661 20.7175758,10.2363331 20.348212,10.0318053 L6.33994976,2.27500912 Z"/></svg>
+    <svg id='svgPlay'><path d='M6.33994976,2.27500912 C5.25284495,1.67304649 3.88358525,2.06633193 3.28162262,3.15343674 C3.09690734,3.48702035 3,3.86207592 3,4.2433865 L3,19.7591388 C3,21.0017795 4.00735931,22.0091388 5.25,22.0091388 C5.63140051,22.0091388 6.00654154,21.9121858 6.34018202,21.7273876 L20.3484443,13.9684314 C21.4354781,13.3663405 21.8286019,11.9970344 21.226511,10.9100006 C21.0219396,10.540661 20.7175758,10.2363331 20.348212,10.0318053 L6.33994976,2.27500912 Z'/></svg>
+    <!-- ic_fluent_pause_24_filled.svg -->
+    <svg id='svgPause'><path d='M8.25,2 C9.21649831,2 10,2.78350169 10,3.75 L10,20.25 C10,21.2164983 9.21649831,22 8.25,22 L4.75,22 C3.78350169,22 3,21.2164983 3,20.25 L3,3.75 C3,2.78350169 3.78350169,2 4.75,2 L8.25,2 Z M19.25,2 C20.2164983,2 21,2.78350169 21,3.75 L21,20.25 C21,21.2164983 20.2164983,22 19.25,22 L15.75,22 C14.7835017,22 14,21.2164983 14,20.25 L14,3.75 C14,2.78350169 14.7835017,2 15.75,2 L19.25,2 Z'></path></svg>
     <!-- ic_fluent_folder_24_filled.svg -->
-    <svg id="svgFolderClosed"><path d="M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z"/></svg>
+    <svg id='svgFolderClosed'><path d='M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z'/></svg>
     <!-- ic_fluent_folder_open_24_filled.svg -->
-    <svg id="svgFolderOpen"><path d="M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z"/></svg>
+    <svg id='svgFolderOpen'><path d='M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z'/></svg>
     <!-- ic_fluent_stop_24_filled.svg -->
-    <svg id="svgStop"><path d="M4.75 3C3.7835 3 3 3.7835 3 4.75V19.25C3 20.2165 3.7835 21 4.75 21H19.25C20.2165 21 21 20.2165 21 19.25V4.75C21 3.7835 20.2165 3 19.25 3H4.75Z"/></svg>
+    <svg id='svgStop'><path d='M4.75 3C3.7835 3 3 3.7835 3 4.75V19.25C3 20.2165 3.7835 21 4.75 21H19.25C20.2165 21 21 20.2165 21 19.25V4.75C21 3.7835 20.2165 3 19.25 3H4.75Z'/></svg>
     <!-- ic_fluent_rewind_24_filled.svg -->
-    <svg id="svgReplay"><path d="M21.0015268,4.75008179 L21,18.7500818 C20.9999319,19.374155 20.2821581,19.7251581 19.7895445,19.3420142 L12.5,13.6726109 L12.5,18.7500818 C12.4999319,19.374155 11.7821581,19.7251581 11.2895445,19.3420142 L2.28954454,12.3420142 C1.90346505,12.0417301 1.90348904,11.4582003 2.28959321,11.157948 L11.29112,4.15794799 C11.7838024,3.77481559 12.5015268,4.12596134 12.5015268,4.75008179 L12.5,9.82661094 L19.79112,4.15794799 C20.2838024,3.77481559 21.0015268,4.12596134 21.0015268,4.75008179 Z"/></svg>
+    <svg id='svgReplay'><path d='M21.0015268,4.75008179 L21,18.7500818 C20.9999319,19.374155 20.2821581,19.7251581 19.7895445,19.3420142 L12.5,13.6726109 L12.5,18.7500818 C12.4999319,19.374155 11.7821581,19.7251581 11.2895445,19.3420142 L2.28954454,12.3420142 C1.90346505,12.0417301 1.90348904,11.4582003 2.28959321,11.157948 L11.29112,4.15794799 C11.7838024,3.77481559 12.5015268,4.12596134 12.5015268,4.75008179 L12.5,9.82661094 L19.79112,4.15794799 C20.2838024,3.77481559 21.0015268,4.12596134 21.0015268,4.75008179 Z'/></svg>
     <!-- ic_fluent_fast_forward_24_filled.svg -->
-    <svg id="svgSkip"><path d="M12.7104555,4.15798491 L21.7104555,11.1579849 C22.0965349,11.458269 22.096511,12.0417988 21.7104068,12.3420511 L12.70888,19.3420511 C12.2161976,19.7251835 11.4984732,19.3740377 11.4984732,18.7499173 L11.4984732,13.6726109 L4.20887999,19.3420511 C3.71619763,19.7251835 2.9984732,19.3740377 2.9984732,18.7499173 L3,4.74991728 C3.00006806,4.12584403 3.71784185,3.774841 4.21045546,4.15798491 L11.4984732,9.82661094 L11.5,4.74991728 C11.5000681,4.12584403 12.2178419,3.774841 12.7104555,4.15798491 Z"/></svg>
+    <svg id='svgSkip'><path d='M12.7104555,4.15798491 L21.7104555,11.1579849 C22.0965349,11.458269 22.096511,12.0417988 21.7104068,12.3420511 L12.70888,19.3420511 C12.2161976,19.7251835 11.4984732,19.3740377 11.4984732,18.7499173 L11.4984732,13.6726109 L4.20887999,19.3420511 C3.71619763,19.7251835 2.9984732,19.3740377 2.9984732,18.7499173 L3,4.74991728 C3.00006806,4.12584403 3.71784185,3.774841 4.21045546,4.15798491 L11.4984732,9.82661094 L11.5,4.74991728 C11.5000681,4.12584403 12.2178419,3.774841 12.7104555,4.15798491 Z'/></svg>
     <!-- ic_fluent_arrow_up_24_filled.svg -->
-    <svg id="svgFolderArrow"><path d="M4.28401,10.2955 C3.89639,10.6889 3.90108,11.322 4.29449,11.7097 C4.68789,12.0973 5.32104,12.0926 5.70866,11.6992 L11,6.32889 L11,20 C11,20.5523 11.4477,21 12,21 C12.5523,21 13,20.5523 13,20 L13,6.33538 L18.2849,11.6992 C18.6726,12.0926 19.3057,12.0973 19.6991,11.7097 C20.0925,11.322 20.0972,10.6889 19.7096,10.2955 L12.8872,3.3713 C12.3976,2.87438 11.596,2.87438 11.1064,3.3713 L4.28401,10.2955 Z"/></svg>
-  </section>
+    <svg id='svgFolderArrow'><path d='M4.28401,10.2955 C3.89639,10.6889 3.90108,11.322 4.29449,11.7097 C4.68789,12.0973 5.32104,12.0926 5.70866,11.6992 L11,6.32889 L11,20 C11,20.5523 11.4477,21 12,21 C12.5523,21 13,20.5523 13,20 L13,6.33538 L18.2849,11.6992 C18.6726,12.0926 19.3057,12.0973 19.6991,11.7097 C20.0925,11.322 20.0972,10.6889 19.7096,10.2955 L12.8872,3.3713 C12.3976,2.87438 11.596,2.87438 11.1064,3.3713 L4.28401,10.2955 Z'/></svg>
+    <!-- ic_fluent_speaker_24_filled.svg -->
+    <svg id='svgSpeakerOn'>
+      <path d='M15,4.25 C15,3.17138 13.7255,2.59915 12.9195,3.31583 L8.42794,7.30909 C8.29065,7.43116 8.11333,7.49859 7.92961,7.49859 L4.25,7.49859 C3.00736,7.49859 2,8.50595 2,9.74859 L2,14.2465 C2,15.4891 3.00736,16.4965 4.25,16.4965 L7.92956,16.4965 C8.11329,16.4965 8.29063,16.5639 8.42793,16.686 L12.9194,20.6797 C13.7255,21.3965 15,20.8243 15,19.7456 L15,4.25 Z M18.9916,5.89733 C19.3244,5.65079 19.7941,5.72077 20.0407,6.05362 C21.2717,7.7157 22,9.7739 22,12 C22,14.2261 21.2717,16.2843 20.0407,17.9464 C19.7941,18.2793 19.3244,18.3492 18.9916,18.1027 C18.6587,17.8562 18.5888,17.3865 18.8353,17.0536 C19.8815,15.6411 20.5,13.8939 20.5,12 C20.5,10.1062 19.8815,8.35896 18.8353,6.94641 C18.5888,6.61356 18.6587,6.14387 18.9916,5.89733 Z M17.143,8.36933 C17.5072,8.17214 17.9624,8.30757 18.1596,8.67184 C18.6958,9.66245 19,10.7968 19,12 C19,13.2032 18.6958,14.3376 18.1596,15.3282 C17.9624,15.6924 17.5072,15.8279 17.143,15.6307 C16.7787,15.4335 16.6432,14.9783 16.8404,14.6141 C17.2609,13.8373 17.5,12.9477 17.5,12 C17.5,11.0523 17.2609,10.1627 16.8404,9.38593 C16.6432,9.02167 16.7787,8.56652 17.143,8.36933 Z'></path>
+    </svg>
+    <!-- ic_fluent_speaker_off_24_filled.svg -->
+    <svg id='svgSpeakerOff'>
+        <path d='M3.28034 2.21968C2.98745 1.92678 2.51257 1.92677 2.21968 2.21966C1.92678 2.51255 1.92677 2.98743 2.21966 3.28032L6.43783 7.49858H4.25C3.00736 7.49858 2 8.50594 2 9.74858V14.2465C2 15.4891 3.00736 16.4965 4.25 16.4965H7.92956C8.11329 16.4965 8.29063 16.5639 8.42793 16.686L12.9194 20.6797C13.7255 21.3965 15 20.8243 15 19.7456V16.0609L20.7194 21.7805C21.0123 22.0734 21.4872 22.0734 21.7801 21.7805C22.073 21.4876 22.073 21.0127 21.7801 20.7198L3.28034 2.21968Z'/>
+        <path d='M17.141 13.9593L18.279 15.0973C18.7408 14.1628 19 13.1107 19 12C19 10.7968 18.6958 9.66244 18.1596 8.67183C17.9624 8.30757 17.5072 8.17213 17.143 8.36932C16.7787 8.56651 16.6432 9.02166 16.8404 9.38593C17.2609 10.1627 17.5 11.0523 17.5 12C17.5 12.691 17.3729 13.3512 17.141 13.9593Z'/>
+        <path d='M19.3881 16.2064L20.4815 17.2999C21.4437 15.7631 22 13.9457 22 12C22 9.77389 21.2717 7.71569 20.0407 6.05362C19.7941 5.72076 19.3244 5.65079 18.9916 5.89732C18.6587 6.14386 18.5888 6.61355 18.8353 6.9464C19.8815 8.35896 20.5 10.1062 20.5 12C20.5 13.5311 20.0958 14.9663 19.3881 16.2064Z'/>
+        <path d='M9.52004 6.33813L15 11.8182V4.25C15 3.17137 13.7255 2.59914 12.9195 3.31582L9.52004 6.33813Z'/>
+      </svg>
+      <!-- ic_fluent_full_screen_zoom_24_filled.svg -->
+      <svg id='svgFullscreen'>
+        <path d='M20,15 C20.5522847,15 21,15.4477153 21,16 C21,16.5522847 20.5522847,17 20,17 L17,17 L17,20 C17,20.5522847 16.5522847,21 16,21 C15.4477153,21 15,20.5522847 15,20 L15,16 C15,15.4477153 15.4477153,15 16,15 L20,15 Z M4,15 L8,15 C8.51283584,15 8.93550716,15.3860402 8.99327227,15.8833789 L9,16 L9,20 C9,20.5522847 8.55228475,21 8,21 C7.48716416,21 7.06449284,20.6139598 7.00672773,20.1166211 L7,20 L7,17 L4,17 C3.44771525,17 3,16.5522847 3,16 C3,15.4871642 3.38604019,15.0644928 3.88337887,15.0067277 L4,15 L8,15 L4,15 Z M16,3 C16.5128358,3 16.9355072,3.38604019 16.9932723,3.88337887 L17,4 L17,7 L20,7 C20.5522847,7 21,7.44771525 21,8 C21,8.51283584 20.6139598,8.93550716 20.1166211,8.99327227 L20,9 L16,9 C15.4871642,9 15.0644928,8.61395981 15.0067277,8.11662113 L15,8 L15,4 C15,3.44771525 15.4477153,3 16,3 Z M8,3 C8.55228475,3 9,3.44771525 9,4 L9,8 C9,8.55228475 8.55228475,9 8,9 L4,9 C3.44771525,9 3,8.55228475 3,8 C3,7.44771525 3.44771525,7 4,7 L7,7 L7,4 C7,3.44771525 7.44771525,3 8,3 Z' id='🎨-Color'></path>
+      </svg>
+    </section>
   <script>
+    (function utilitiesIIFE(global){
+      // jQuery-like syntactic sugar. Only queries for one element. Does not loop over multiple like jQuery
+      function $(query) {
+        if (typeof query === 'undefined') throw 'No query provided to $';
+
+        var el;
+        if (typeof query.nodeType === 'string') {
+          el = query;
+        } else if (query[0] === '<') {
+          const container = document.createElement('div');
+          container.innerHTML = query;
+          el = container.firstChild;
+        } else if (typeof query === 'string') {
+          el = document.querySelector(query);
+        } else {
+          el = query;
+        }
+
+        if (el) {
+          el.on = (e, fn, ...args) => {
+            if (args.length > 0) {
+              el.addEventListener(e, fn, ...args);
+            } else {
+              el.addEventListener(e, fn, false);
+            }
+
+            return el;
+          };
+
+          el.off = (eventType, callback) => { el.removeEventListener(eventType, callback); return el; }
+
+          el.trigger = (eventType, detail) => {
+            detail = detail ? { detail: detail } : undefined;
+            const e = new CustomEvent(eventType, detail);
+            el.dispatchEvent(e);
+
+            return el;
+          };
+
+          el.hasClass =    c => el.classList.contains(c);
+          el.addClass =    c => { el.classList.add(c); return el; }
+          el.removeClass = c => { el.classList.remove(c); return el; }
+          el.append = element => { el.appendChild($(element)); return el; }
+          el.remove = () => { el.parentNode.removeChild(el); return el; }
+          el.attr = (name, val) => {
+            if (isUndefined(val)) {
+              return el.getAttribute(name);
+            } else {
+              el.setAttribute(name, val);
+              return el;
+            }
+          };
+          el.removeAttr = name => { el.removeAttribute(name); return el; }
+          el.val = () => el.value;
+          el.find = q => $(q, el);
+          el.html = h => {
+            if (isUndefined(h)) {
+              return el.innerHTML;
+            } else {
+              el.innerHTML = h;
+              return el;
+            }
+          };
+          // el.text = s => {
+          //   if (isUndefined(s)) {
+          //     return el.textContent;
+          //   } else {
+          //     el.textContent = s;
+          //     return el;
+          //   }
+          // };
+        }
+
+        function isUndefined(v) {
+          return typeof v === 'undefined';
+        }
+
+        return el;
+      }
+      global.$ = $;
+
+
+      function delay(ms, fn) {
+        fn = fn || function(){};
+
+        const p = new Promise((resolve) => {
+          setTimeout(() => resolve(fn()), ms);
+        });
+
+        return p;
+      }
+      global.delay = delay;
+
+      function throttle(func, wait, options) {
+        var context, args, result;
+        var timeout = null;
+        var previous = 0;
+        
+        if (!options) options = {};
+        var later = function() {
+          previous = options.leading === false ? 0 : Date.now();
+          timeout = null;
+          result = func.apply(context, args);
+          if (!timeout) context = args = null;
+        };
+        
+        return function() {
+          var now = Date.now();
+          if (!previous && options.leading === false) previous = now;
+          var remaining = wait - (now - previous);
+          context = this;
+          args = arguments;
+          if (remaining <= 0 || remaining > wait) {
+            if (timeout) {
+              clearTimeout(timeout);
+              timeout = null;
+            }
+            previous = now;
+            result = func.apply(context, args);
+            if (!timeout) context = args = null;
+          } else if (!timeout && options.trailing !== false) {
+            timeout = setTimeout(later, remaining);
+          }
+          return result;
+        };
+      }
+      global.throttle = throttle;
+
+      function store(key, val) {
+        try {
+          return localStorage.setItem(key, val);
+        } catch (e) {
+          return null;
+        }
+      }
+      global.store = store;
+
+      function retrieve(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          return null;
+        }
+      }
+      global.retrieve = retrieve;
+
+      function getCSSVariable(v) {
+        const val = getComputedStyle(document.body).getPropertyValue(v);
+
+        if (val == +val) {
+          return +val; // Convert to number
+        }
+
+        return val;
+      }
+      global.getCSSVariable = getCSSVariable;
+
+      function secondsToHMS(totalSecs) {
+        if (Number.isNaN(totalSecs)) return { hours: 00, mins: 00, secs: 00 };
+        
+        const hours = Math.floor(totalSecs / 3600);
+        totalSecs   = totalSecs % 3600;
+        const mins  = Math.floor(totalSecs / 60);
+        const secs  = Math.floor(totalSecs % 60);
+
+        return {hours, mins, secs}
+      }
+      global.secondsToHMS = secondsToHMS;
+
+      function secondsToString(s) {
+        const t = secondsToHMS(s);
+        return `${pad(t.hours)}:${pad(t.mins)}:${pad(t.secs)}`;
+      }
+      global.secondsToString = secondsToString;
+
+      function pad(s) {
+        s = s.toString();
+        if (s.length < 2) {
+          return `0${s}`;
+        }
+
+        return s;
+      }
+      global.pad = pad;
+    })(this);
+
     (async function pwaIIFE() {
       const icon = document.querySelector('link[rel="shortcut icon"').href;
       const metadata = await imageMetadata(icon);
@@ -267,8 +655,8 @@
         name: document.title,
         description: document.querySelector('meta[name="description"]').content,
         background_color: '#FFFFFF',
-        theme_color: getComputedStyle(document.body).getPropertyValue('--theme-color'),
-        color: getComputedStyle(document.body).getPropertyValue('--theme-color'),
+        theme_color: getCSSVariable('--theme-color'),
+        color: getCSSVariable('--theme-color'),
         icons: [
           {
             src: icon,
@@ -277,8 +665,8 @@
           }
         ],
         display: 'standalone',
-        start_url: `${window.location.origin}${window.location.pathname}`
-
+        start_url: `${window.location.origin}${window.location.pathname}`,
+        scope: window.pathname
       }
 
       setPWAManifest(manifest);
@@ -449,7 +837,12 @@
 
     (function globalIIFE() {
       'use strict';
-      const $video = $('video');
+
+      const $playerContainer = $('.playerContainer');
+      const $progressBar = $('.progressBar');
+      const $player = $('.player');
+      const $trick = $('.trick');
+      const $currentTimestamp = $('.currentTimestamp');
 
       const options = {
         thumbnails: {
@@ -612,15 +1005,15 @@
       }
 
       function asyncLinkRequest(url) {
-        const $frame = $(document.createElement('iframe'));
-        $('body').appendChild($frame);
+        const $frame = $('<iframe/>');
+        $('body').append($frame);
         
         const promise = new Promise(function asyncLinkRequestPromise(resolve, reject){
           $frame.on('error', reject);
           
           $frame.on('load', function frameLoad() {
             const links = getLinksFromFrame($frame);
-            $('body').removeChild($frame);
+            $frame.remove();
 
             resolve(links);
           });
@@ -658,7 +1051,7 @@
           const rawUrl = file;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
-          const cssClasses = (rawUrl === $video.src ? 'current' : '');
+          const cssClasses = (rawUrl === $player.src ? 'current' : '');
 
           html += createFileTemplate(rawUrl, label, cssClasses);
         });
@@ -676,11 +1069,11 @@
       }
 
       function createFileTemplate(url, label, optionalClasses = '') {
-        return `<a href="${url}" class="file ${optionalClasses}" draggable="false" draggable="false"><div class="title" draggable="false">${label}</div><div class="arrow" draggable="false"><svg><g><use xlink:href="#svgFile"></g></svg></div></a>`;
+        return `<a href='${url}' class='file ${optionalClasses}' draggable='false' draggable='false'><div class='title' draggable='false'>${label}</div><div class='arrow' draggable='false'><svg><g><use xlink:href='#svgPlay'></g></svg></div></a>`;
       }
 
       function createFolderTemplate(url, label, optionalClasses = '') {
-        return `<a href="${url}" class="folder ${optionalClasses}" draggable="false"><div class="title" draggable="false"><svg viewBox="0 0 24 24"><g><use xlink:href="#svgFolderArrow"></g></svg>${label}</div></div><div class="arrow" draggable="false"><svg class="open"><g><use xlink:href="#svgFolderOpen"></g></svg><svg class="closed"><g><use xlink:href="#svgFolderClosed"></g></svg></div></a>`;
+        return `<a href='${url}' class='folder ${optionalClasses}' draggable='false'><div class='title' draggable='false'><svg viewBox='0 0 24 24'><g><use xlink:href='#svgFolderArrow'></g></svg>${label}</div></div><div class='arrow' draggable='false'><svg class='open'><g><use xlink:href='#svgFolderOpen'></g></svg><svg class='closed'><g><use xlink:href='#svgFolderClosed'></g></svg></div></a>`;
       }
 
       function clickLink(e) {
@@ -738,6 +1131,14 @@
         }
       }
 
+      function getPosition() {
+        return $player.currentTime / $player.duration;
+      }
+
+      function getProgressBarWidth() {
+        return $progressBar.offsetWidth;
+      }
+
       function getState() {
         const location = hashState.location;
         const video = getVideoUrl();
@@ -751,7 +1152,7 @@
       }
       
       function getVideoUrl(){
-        return $video.src;
+        return $player.src;
       }
 
       function getHash() {
@@ -779,18 +1180,24 @@
 
       function actionPlay(url) {
         // Don't restart playback if it is the currently playing video
-        if (url === $video.src) return;
+        if (url === $player.src) return;
 
-        $video.autoplay = !!url;
-        
+        $player.autoplay = !!url;
+        $playerContainer.removeClass('paused');
+
         if (!!url) {
-          $video.poster = '';
-          $video.src = url;
-          $video.play();
+          $player.poster = '';
+          $player.src = url;
+          $player.play();
+
+          $trick.src = url;
+
           hashState.video = url;
         } else {
-          $video.src = '';
-          $video.poster = options.poster;
+          $player.src = '';
+          $player.poster = options.poster;
+          
+          $trick.src = '';
         }
 
         setCurrentVideoTile();
@@ -800,8 +1207,23 @@
         const $former = $('.links .current')        
         if ($former && $former.classList) $former.classList.remove('current');
 
-        const $current = $(`.file[href="${$video.src}"]`);
+        const $current = $(`.file[href='${$player.src}']`);
         if ($current && $current.classList) $current.classList.add('current');
+      }
+
+      function actionPlayPause(){ $player.paused ? $player.play() : $player.pause() }
+
+      function actionMute() { 
+        $player.muted = !$player.muted;
+        updateMute();
+      }
+
+      function updateMute() { 
+        if (!$player.muted) {
+          $playerContainer.removeClass('muted');
+        } else {
+          $playerContainer.addClass('muted');
+        }
       }
 
       function actionStop() {
@@ -809,40 +1231,130 @@
       }
       
       function actionReplay() {
-        $video.currentTime = Math.max($video.currentTime - 10, 0);
+        $player.currentTime = Math.max($player.currentTime - 10, 0);
       }
       
       function actionSkip () {
-        $video.currentTime = Math.min($video.currentTime + 30, $video.duration);
-      }        
+        $player.currentTime = Math.min($player.currentTime + 30, $player.duration);
+      }
+
+      function actionFullscreenToggle() {
+        if (!document.fullscreenElement) {
+            $playerContainer.requestFullscreen();
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen(); 
+          }
+        }
+      }
+
+      var timeoutFadeout;
+
+      $playerContainer.on('mousemove', async () => {
+        const c = 'fadeout';
+        $playerContainer.removeClass(c);
+        
+        clearTimeout(timeoutFadeout);
+        timeoutFadeout = setTimeout(() => {
+          $playerContainer.addClass(c);
+        }, 3000);
+      });
+
+      function actionProgressBarSeek(e) {
+        const relative = e.offsetX / getProgressBarWidth();
+        $player.currentTime = $player.duration * relative;
+      }
+
+      function updateProgress() {
+        function update() {
+          updateRelativePosition(getPosition());
+
+          $currentTimestamp.style = `--absolute-position: '${secondsToString($player.currentTime)}'; --duration: '${secondsToString($player.duration)}';`;
+        }
+
+        // Chromium fires `timeupdate` 4 times per second
+        // Don't do the calculations if the video is long and extra updates would be <1 pixel
+        if ($player.duration > $player.offsetWidth / 4) return update();
+
+        // Update once a frame for 250ms (frequency of timeupdate events)
+        var done = false;
+        setTimeout(() => (done = true), 250);
+
+        function rafCb() {
+          update();
+
+          if (!done) requestAnimationFrame(rafCb);
+        }
+        rafCb();
+      }
+      
+      const updateRelativePosition = p =>      $playerContainer.style.setProperty('--relative-position',       `${p * 100}%`);
+      const updateTrickRelativePosition = p => $playerContainer.style.setProperty('--trick-position', `${p * 100}%`);
+
+      function progressBarTrickHover(e) {
+        const relative = e.offsetX / getProgressBarWidth();
+        const absolute = relative * $player.duration;
+        
+        updateTrickRelativePosition(relative);
+        trickSeek(absolute);
+      }
+
+      function trickSeek(time) {
+        if ($trick.readyState === 0) return;
+        
+        if (typeof $trick.fastSeek === 'function') {
+          return $trick.fastSeek(time);
+        }
+
+        return ($trick.currentTime = time);
+      }
+
+      function setupControls() {
+        $('.btn-rewind').on('click', actionReplay);
+        $('.btn-fast-forward').on('click', actionSkip);
+        $('.btn-stop').on('click', actionStop);
+        $('.btn-mute').on('click', actionMute);
+        $('.btn-play').on('click', actionPlayPause);
+        $('.btn-fullscreen').on('click', actionFullscreenToggle);
+
+        delay(10, updateMute);
+
+        $player.on('pause', () => $playerContainer.addClass('paused'));
+        $player.on('play',  () => $playerContainer.removeClass('paused'));
+        $player.on('ended', () => $playerContainer.removeClass('paused'));
+        $player.on('click', actionPlayPause);
+        $('.pauseOverlay').on('click', actionPlayPause);
+        
+        $player.on('loadeddata', syncTrickSrc);
+        $player.on('timeupdate', updateProgress);
+        $progressBar.on('mousemove', throttle(progressBarTrickHover, 17));
+        $progressBar.on('click', actionProgressBarSeek);
+      }
+
+      function syncTrickSrc() {
+        return $trick.src = $player.src;
+      }
+
       
       function setVideoPoster(r,g,b){
         if (options.poster) {
-          return $video.poster = options.poster;
+          return $player.poster = options.poster;
         }
 
-        return $video.poster = createColorDataURI(r,g,b);
+        return $player.poster = createColorDataURI(r,g,b);
       }
 
       function getSVGPoster() {
-        const svg = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-          <svg width="57" height="35" viewBox="0 0 55 36" version="1.1" xmlns="http://www.w3.org/2000/svg">
-            <g transform="translate(4,-6.952508)">
-              <path fill="${getThemeColor()}" d="M 13.750134,8.4121203 38.167189,21.116929 c 1.592276,0.828502 2.211438,2.790929 1.382936,4.383205 -0.308051,0.592037 -0.790899,1.074885 -1.382936,1.382937 L 13.750134,39.58788 C 12.157858,40.416381 10.195431,39.797219 9.3669293,38.204943 9.125863,37.741644 9,37.227072 9,36.704809 V 11.295191 c 0,-1.7949254 1.455075,-3.25 3.25,-3.25 0.447654,0 0.889658,0.092471 1.298566,0.2706995 z m -1.153949,2.2177467 -0.110487,-0.04668 c -0.07579,-0.02509 -0.15535,-0.038 -0.235698,-0.038 -0.414214,0 -0.75,0.335786 -0.75,0.75 v 25.409618 c 0,0.120522 0.02904,0.23927 0.08468,0.346185 0.191193,0.367448 0.644061,0.510332 1.011509,0.319139 L 37.01324,24.665324 c 0.136624,-0.07109 0.24805,-0.182515 0.319139,-0.319139 0.191192,-0.367449 0.04831,-0.820316 -0.319139,-1.011509 z"/>
+        const svg = `<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+          <svg width='57' height='35' viewBox='0 0 55 36' version='1.1' xmlns='http://www.w3.org/2000/svg'>
+            <g transform='translate(4,-6.952508)'>
+              <path fill='${getCSSVariable('--theme-color')}' d='M 13.750134,8.4121203 38.167189,21.116929 c 1.592276,0.828502 2.211438,2.790929 1.382936,4.383205 -0.308051,0.592037 -0.790899,1.074885 -1.382936,1.382937 L 13.750134,39.58788 C 12.157858,40.416381 10.195431,39.797219 9.3669293,38.204943 9.125863,37.741644 9,37.227072 9,36.704809 V 11.295191 c 0,-1.7949254 1.455075,-3.25 3.25,-3.25 0.447654,0 0.889658,0.092471 1.298566,0.2706995 z m -1.153949,2.2177467 -0.110487,-0.04668 c -0.07579,-0.02509 -0.15535,-0.038 -0.235698,-0.038 -0.414214,0 -0.75,0.335786 -0.75,0.75 v 25.409618 c 0,0.120522 0.02904,0.23927 0.08468,0.346185 0.191193,0.367448 0.644061,0.510332 1.011509,0.319139 L 37.01324,24.665324 c 0.136624,-0.07109 0.24805,-0.182515 0.319139,-0.319139 0.191192,-0.367449 0.04831,-0.820316 -0.319139,-1.011509 z'/>
             </g>
           </svg>`;
 
         const base64 = btoa(svg);
         return `data:image/svg+xml;base64,${base64}`;
-      }
-
-      function getThemeColor() {
-        return getComputedStyle(document.documentElement).getPropertyValue('--theme-color');
-      }
-
-      function getTileAspectRatio() {
-        return +getComputedStyle(document.documentElement).getPropertyValue('--tile-aspect-ratio');
-      }
+      }      
 
       function createColorDataURI(r, g, b, a) {
         const canvas = document.createElement('canvas');
@@ -865,46 +1377,46 @@
 
       // Thumbnail generation
       function getVideo(url) {
-        const $video = document.createElement('video');
-        $video.crossorigin = 'anonymous';
-        $video.muted = true;
-        $video.autoplay = false;
-        $video.preload = false;
-        $video.playbackRate = 0;
+        const $player = document.createElement('video');
+        $player.crossorigin = 'anonymous';
+        $player.muted = true;
+        $player.autoplay = false;
+        $player.preload = false;
+        $player.playbackRate = 0;
         
         const promise = new Promise(function(resolve, reject){
-          $video.addEventListener('loadedmetadata', function loadedmetadata(){
-            $video.pause();
-            resolve($video);
+          $player.addEventListener('loadedmetadata', function loadedmetadata(){
+            $player.pause();
+            resolve($player);
           }, false);
           
-          $video.addEventListener('error', reject);
+          $player.addEventListener('error', reject);
         });
-        $video.src = url;
+        $player.src = url;
 
         return promise;
       }
 
       function getBitmap(videoSrc, time) {
-        const $video = videoSrc;
+        const $player = videoSrc;
         
         const promise = new Promise(function(resolve, reject){
-          $video.addEventListener('seeked', function seeked(){
+          $player.addEventListener('seeked', function seeked(){
             const opts = {
               resizeWidth: options.thumbnails.size,
               resizeQuality: options.thumbnails.resizeQuality
             };
 
-            return createImageBitmap($video, opts).then(resolve).catch(reject);
+            return createImageBitmap($player, opts).then(resolve).catch(reject);
           }, false);
 
-          $video.addEventListener('error', reject);
+          $player.addEventListener('error', reject);
         });
 
         if (time > 1) {
-          $video.currentTime = time;
+          $player.currentTime = time;
         } else if (time > 0) {
-          $video.currentTime = $video.duration * time;
+          $player.currentTime = $player.duration * time;
         }
         
         return promise;
@@ -954,13 +1466,13 @@
           if (cached) {
             return cached;
           } else {
-            const $video = await getVideo(url);
+            const $player = await getVideo(url);
 
-            time = (time >= 1 ? time : $video.duration * time);
+            time = (time >= 1 ? time : $player.duration * time);
 
-            const bitmap = await getBitmap($video, time);
+            const bitmap = await getBitmap($player, time);
 
-            $video.src = ''; // Unset video
+            $player.src = ''; // Unset video
 
             const dataURI = bitmapToDataURI(bitmap);
             store(key, dataURI);
@@ -970,29 +1482,11 @@
         } catch (e) { }
       }
 
-      function store(key, val) {
-        try {
-          return localStorage.setItem(key, val);
-        } catch (e) {
-          return null;
-        }
-      }
-
-      function retrieve(key) {
-        try {
-          return localStorage.getItem(key);
-        } catch (e) {
-          return null;
-        }
-      }
-
 
       // main()
-      async function main() {       
-        $('.replay').on('click', actionReplay);
-        $('.skip').on('click', actionSkip);
-        $('.stop').on('click', actionStop);
-        $video.on('error', (e) => $video.poster = options.poster);
+      async function main() {
+        setupControls();
+        $player.on('error', (e) => $player.poster = options.poster);
 
         setVideoPoster(0,0,0);
 
@@ -1010,39 +1504,13 @@
         });
 
         if (hash && hash.video && hash.video.length > 1) {
-          $video.muted = true; /* Autoplay on load only works if it is muted */
+          $player.muted = true; /* Autoplay on load only works if it is muted */
           actionPlay(hash.video);
         }
       }
 
       main();
-
-
-      // jQuery-like syntactic sugar
-      function $(query) {
-        const el = (typeof query === 'string' ? document.querySelector.apply(document, arguments) : query);
-
-        if (el) {
-          el.on = function $on(e, fn, ...args) {
-            if (args.length > 0) {
-              return el.addEventListener(e, fn, ...args);
-            } else {
-              return el.addEventListener(e, fn, false);
-            }
-          }
-
-          el.trigger = (eventType, detail) => {
-            detail = (detail ? { detail: detail } : undefined);
-            const e = new CustomEvent(eventType, detail);
-            el.dispatchEvent(e);
-          };
-
-          el.hasClass = (c) => el.classList.contains(c);
-        }
-
-        return el;
-      }
-    })(this);
+    })();
   </script>
 </body>
 
