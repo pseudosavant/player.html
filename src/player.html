@@ -109,7 +109,7 @@
     }
 
     .paused .player {
-      filter: blur(0.25rem) contrast(0.5) brightness(0.5);      
+      filter: blur(0.25rem) contrast(0.5) brightness(0.5);
     }
 
     .pauseOverlay {
@@ -142,9 +142,9 @@
       display: inline-block;
       border: 0 none;
       outline: none;
-      
+
       font-size: 2rem;
-      
+
       padding: 0.5rem;
       margin: 1rem 0;
 
@@ -223,7 +223,7 @@
       left: 0;
       height: 0.5rem;
       width: 100%;
-      
+
       border-radius: 0.5rem;
       border: 0.5rem solid #222;
       border-width: 0.25rem;
@@ -239,7 +239,7 @@
       top: 0;
       left: 0;
       width: var(--relative-position);
-      
+
       height: 100%;
 
       background-color: var(--progress-bar-position-color);
@@ -248,15 +248,15 @@
     .trick {
       position: absolute;
       display: none;
-      
+
       top: calc(var(--trick-preview-width) * var(--aspect-ratio) * -1);
       left: var(--trick-position);
       width: var(--trick-preview-width);
       height: calc(var(--trick-preview-width) * var(--aspect-ratio));
       margin: 0 calc(var(--trick-preview-width) * -0.5);
-      
+
       object-fit: cover;
-      
+
       border: 1px solid #000;
       border-radius: 0.2rem;
       filter: drop-shadow(2px 4px 4px #000);
@@ -266,6 +266,10 @@
 
     .progressBar:hover + .trick {
       display: block;
+    }
+
+    button.btn-cloud {
+      display: none;
     }
 
     .links {
@@ -359,7 +363,7 @@
     .xlinks {
       display: none;
     }
-    
+
     .controls svg, .controls svg g, .arrow svg, .arrow svg g {
       width: 30px;
       height: 30px;
@@ -404,7 +408,7 @@
       display: none;
     }
 
-    
+
   </style>
 </head>
 
@@ -421,6 +425,8 @@
       <button class='btn-stop' type='button' title='Stop'><svg><g><use xlink:href='#svgStop'></g></svg></button>
       <button class='btn-mute' type='button' title='Mute'><svg class='on'><g><use xlink:href='#svgSpeakerOn'></g></svg><svg class='off'><g><use xlink:href='#svgSpeakerOff'></g></svg></button>
       <button class='btn-fullscreen' type='button' title='Fullscreen'><svg><g><use xlink:href='#svgFullscreen'></g></svg></button>
+      <button class='btn-cloud' type='button' title='Open from the cloud'><svg><g><use xlink:href='#svgCloud'></g></svg></button>
+      <button class='btn-local-file' type='button' title='Open local video file'><svg><g><use xlink:href='#svgFolderOpenVertical'></g></svg></button>
       <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"/><span class="divider"/><span class="duration"/></div>
     </section>
   </div>
@@ -435,6 +441,8 @@
     <svg id='svgFolderClosed'><path d='M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z'/></svg>
     <!-- ic_fluent_folder_open_24_filled.svg -->
     <svg id='svgFolderOpen'><path d='M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z'/></svg>
+    <!-- ic_fluent_folder_open_vertical_20_filled.svg -->
+    <svg id="svgFolderOpenVertical"><path d="M4.1369,2.87306 L10.0437,5.17014 C10.5758538,5.37711231 10.9404053,5.86607751 10.9933413,6.42663963 L11,6.56815 L11,18.1574 C10.7250286,18.2553714 10.4180245,18.2745837 10.1126094,18.1919254 L9.96019,18.142 L5.60032,16.4603 C4.69273412,16.1102765 4.07596069,15.2685381 4.00653955,14.3090021 L4,14.1278 L4,3.5 C4,3.3321425 4.02757375,3.17072562 4.078435,3.02002719 L4.1369,2.87306 Z M14.5,2 C15.2796706,2 15.9204457,2.59488554 15.9931332,3.35553954 L16,3.5 L16,7.37689 C16,7.45865667 15.9933333,7.54021444 15.9800593,7.62075444 L15.9552,7.7407 L15,11.5616 L15,14.5 C15,15.2796706 14.4050879,15.9204457 13.6444558,15.9931332 L13.5,16 L12,16 L12,6.56815 C12,5.59775941 11.4392803,4.72105242 10.5722047,4.30971206 L10.4061,4.23813 L4.93446,2.11027 C5.0653575,2.056945 5.20548,2.02158063 5.35176891,2.00723125 L5.5,2 L14.5,2 Z"></path></svg>
     <!-- ic_fluent_stop_24_filled.svg -->
     <svg id='svgStop'><path d='M4.75 3C3.7835 3 3 3.7835 3 4.75V19.25C3 20.2165 3.7835 21 4.75 21H19.25C20.2165 21 21 20.2165 21 19.25V4.75C21 3.7835 20.2165 3 19.25 3H4.75Z'/></svg>
     <!-- ic_fluent_rewind_24_filled.svg -->
@@ -449,17 +457,57 @@
     </svg>
     <!-- ic_fluent_speaker_off_24_filled.svg -->
     <svg id='svgSpeakerOff'>
-        <path d='M3.28034 2.21968C2.98745 1.92678 2.51257 1.92677 2.21968 2.21966C1.92678 2.51255 1.92677 2.98743 2.21966 3.28032L6.43783 7.49858H4.25C3.00736 7.49858 2 8.50594 2 9.74858V14.2465C2 15.4891 3.00736 16.4965 4.25 16.4965H7.92956C8.11329 16.4965 8.29063 16.5639 8.42793 16.686L12.9194 20.6797C13.7255 21.3965 15 20.8243 15 19.7456V16.0609L20.7194 21.7805C21.0123 22.0734 21.4872 22.0734 21.7801 21.7805C22.073 21.4876 22.073 21.0127 21.7801 20.7198L3.28034 2.21968Z'/>
-        <path d='M17.141 13.9593L18.279 15.0973C18.7408 14.1628 19 13.1107 19 12C19 10.7968 18.6958 9.66244 18.1596 8.67183C17.9624 8.30757 17.5072 8.17213 17.143 8.36932C16.7787 8.56651 16.6432 9.02166 16.8404 9.38593C17.2609 10.1627 17.5 11.0523 17.5 12C17.5 12.691 17.3729 13.3512 17.141 13.9593Z'/>
-        <path d='M19.3881 16.2064L20.4815 17.2999C21.4437 15.7631 22 13.9457 22 12C22 9.77389 21.2717 7.71569 20.0407 6.05362C19.7941 5.72076 19.3244 5.65079 18.9916 5.89732C18.6587 6.14386 18.5888 6.61355 18.8353 6.9464C19.8815 8.35896 20.5 10.1062 20.5 12C20.5 13.5311 20.0958 14.9663 19.3881 16.2064Z'/>
-        <path d='M9.52004 6.33813L15 11.8182V4.25C15 3.17137 13.7255 2.59914 12.9195 3.31582L9.52004 6.33813Z'/>
-      </svg>
-      <!-- ic_fluent_full_screen_zoom_24_filled.svg -->
-      <svg id='svgFullscreen'>
-        <path d='M20,15 C20.5522847,15 21,15.4477153 21,16 C21,16.5522847 20.5522847,17 20,17 L17,17 L17,20 C17,20.5522847 16.5522847,21 16,21 C15.4477153,21 15,20.5522847 15,20 L15,16 C15,15.4477153 15.4477153,15 16,15 L20,15 Z M4,15 L8,15 C8.51283584,15 8.93550716,15.3860402 8.99327227,15.8833789 L9,16 L9,20 C9,20.5522847 8.55228475,21 8,21 C7.48716416,21 7.06449284,20.6139598 7.00672773,20.1166211 L7,20 L7,17 L4,17 C3.44771525,17 3,16.5522847 3,16 C3,15.4871642 3.38604019,15.0644928 3.88337887,15.0067277 L4,15 L8,15 L4,15 Z M16,3 C16.5128358,3 16.9355072,3.38604019 16.9932723,3.88337887 L17,4 L17,7 L20,7 C20.5522847,7 21,7.44771525 21,8 C21,8.51283584 20.6139598,8.93550716 20.1166211,8.99327227 L20,9 L16,9 C15.4871642,9 15.0644928,8.61395981 15.0067277,8.11662113 L15,8 L15,4 C15,3.44771525 15.4477153,3 16,3 Z M8,3 C8.55228475,3 9,3.44771525 9,4 L9,8 C9,8.55228475 8.55228475,9 8,9 L4,9 C3.44771525,9 3,8.55228475 3,8 C3,7.44771525 3.44771525,7 4,7 L7,7 L7,4 C7,3.44771525 7.44771525,3 8,3 Z' id='🎨-Color'></path>
-      </svg>
-    </section>
-  <script>
+      <path d='M3.28034 2.21968C2.98745 1.92678 2.51257 1.92677 2.21968 2.21966C1.92678 2.51255 1.92677 2.98743 2.21966 3.28032L6.43783 7.49858H4.25C3.00736 7.49858 2 8.50594 2 9.74858V14.2465C2 15.4891 3.00736 16.4965 4.25 16.4965H7.92956C8.11329 16.4965 8.29063 16.5639 8.42793 16.686L12.9194 20.6797C13.7255 21.3965 15 20.8243 15 19.7456V16.0609L20.7194 21.7805C21.0123 22.0734 21.4872 22.0734 21.7801 21.7805C22.073 21.4876 22.073 21.0127 21.7801 20.7198L3.28034 2.21968Z'/>
+      <path d='M17.141 13.9593L18.279 15.0973C18.7408 14.1628 19 13.1107 19 12C19 10.7968 18.6958 9.66244 18.1596 8.67183C17.9624 8.30757 17.5072 8.17213 17.143 8.36932C16.7787 8.56651 16.6432 9.02166 16.8404 9.38593C17.2609 10.1627 17.5 11.0523 17.5 12C17.5 12.691 17.3729 13.3512 17.141 13.9593Z'/>
+      <path d='M19.3881 16.2064L20.4815 17.2999C21.4437 15.7631 22 13.9457 22 12C22 9.77389 21.2717 7.71569 20.0407 6.05362C19.7941 5.72076 19.3244 5.65079 18.9916 5.89732C18.6587 6.14386 18.5888 6.61355 18.8353 6.9464C19.8815 8.35896 20.5 10.1062 20.5 12C20.5 13.5311 20.0958 14.9663 19.3881 16.2064Z'/>
+      <path d='M9.52004 6.33813L15 11.8182V4.25C15 3.17137 13.7255 2.59914 12.9195 3.31582L9.52004 6.33813Z'/>
+    </svg>
+    <!-- ic_fluent_full_screen_zoom_24_filled.svg -->
+    <svg id='svgFullscreen'>
+      <path d='M20,15 C20.5522847,15 21,15.4477153 21,16 C21,16.5522847 20.5522847,17 20,17 L17,17 L17,20 C17,20.5522847 16.5522847,21 16,21 C15.4477153,21 15,20.5522847 15,20 L15,16 C15,15.4477153 15.4477153,15 16,15 L20,15 Z M4,15 L8,15 C8.51283584,15 8.93550716,15.3860402 8.99327227,15.8833789 L9,16 L9,20 C9,20.5522847 8.55228475,21 8,21 C7.48716416,21 7.06449284,20.6139598 7.00672773,20.1166211 L7,20 L7,17 L4,17 C3.44771525,17 3,16.5522847 3,16 C3,15.4871642 3.38604019,15.0644928 3.88337887,15.0067277 L4,15 L8,15 L4,15 Z M16,3 C16.5128358,3 16.9355072,3.38604019 16.9932723,3.88337887 L17,4 L17,7 L20,7 C20.5522847,7 21,7.44771525 21,8 C21,8.51283584 20.6139598,8.93550716 20.1166211,8.99327227 L20,9 L16,9 C15.4871642,9 15.0644928,8.61395981 15.0067277,8.11662113 L15,8 L15,4 C15,3.44771525 15.4477153,3 16,3 Z M8,3 C8.55228475,3 9,3.44771525 9,4 L9,8 C9,8.55228475 8.55228475,9 8,9 L4,9 C3.44771525,9 3,8.55228475 3,8 C3,7.44771525 3.44771525,7 4,7 L7,7 L7,4 C7,3.44771525 7.44771525,3 8,3 Z' id='🎨-Color'></path>
+    </svg>
+    <!-- ic_fluent_cloud_24_filled -->
+    <svg id="svgCloud">
+      <path d="M6.33663542,10.0000028 C6.81096059,7.29275763 9.17457638,5.25 12,5.25 C14.8254236,5.25 17.1890394,7.29275763 17.6633646,10.0000028 L17.75,10 C19.959139,10 21.75,11.790861 21.75,14 C21.75,16.209139 19.959139,18 17.75,18 L6.25,18 C4.040861,18 2.25,16.209139 2.25,14 C2.25,11.790861 4.040861,10 6.25002438,10 L6.33663542,10.0000028 Z"></path>
+    </svg>
+  </section>
+  <script type="text/javascript" src="https://apis.google.com/js/api.js" defer></script>
+  <script type="text/javascript" src="https://js.live.net/v7.2/OneDrive.js" defer></script>
+  <script defer>
+    /* IMPORTANT!!!
+
+      If you would like support for opening directly from the cloud, you must supply the appropriate keys
+      in the `app.options.cloud` below AND register your app with Google and/or Microsoft.
+
+      OneDrive Docs: https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration?view=odsp-graph-online
+      GDrive Docs: https://developers.google.com/drive/api/v3/picker
+
+    */
+
+    window.app = {
+      options: {
+        cloud: {
+          onedrive: {
+            clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
+          },
+          gdrive: {
+            developerKey: 'AIzaSyASwr9ZqtB_DGszfJ7E1nIq-SRO44rsXdc', // Browser API key obtained from the Google API Console.
+            clientId: '350482528905-uplflng9avfo3p5sghlgr0g059r04v0b.apps.googleusercontent.com', // Client ID obtained from the Google API Console. Replace with your own Client ID.
+            appId: '350482528905' // console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
+          }
+        },
+        thumbnails: {
+          enabled: true,
+          timestamp: 0.10,
+          size: 480,
+          opacity: '0.5',
+          color: '32,32,32',
+          resizeQuality: 'high',
+          concurrency: 1
+        }
+      }
+    };
+
     (function utilitiesIIFE(global){
       // jQuery-like syntactic sugar. Only queries for one element. Does not loop over multiple like jQuery
       function $(query) {
@@ -504,6 +552,7 @@
           el.removeClass = c => { el.classList.remove(c); return el; }
           el.append = element => { el.appendChild($(element)); return el; }
           el.remove = () => { el.parentNode.removeChild(el); return el; }
+          el.show = () => el.style.display = 'initial';
           el.attr = (name, val) => {
             if (isUndefined(val)) {
               return el.getAttribute(name);
@@ -523,14 +572,6 @@
               return el;
             }
           };
-          // el.text = s => {
-          //   if (isUndefined(s)) {
-          //     return el.textContent;
-          //   } else {
-          //     el.textContent = s;
-          //     return el;
-          //   }
-          // };
         }
 
         function isUndefined(v) {
@@ -540,6 +581,21 @@
         return el;
       }
       global.$ = $;
+
+      window.canThumbnail = function canThumbnail(){
+        // Must support `localStorage` and `createImageBitmap`
+        try {
+            const key = '__canThumbnailTest__';
+            const val = 'true';
+
+            localStorage.setItem(key, val);
+            const getItemSuccess = localStorage.getItem(key) === val;
+            localStorage.removeItem(key);
+          return (!!createImageBitmap && !!getItemSuccess);
+        } catch (e) {
+          return false;
+        }
+      }
 
 
       function delay(ms, fn) {
@@ -557,7 +613,7 @@
         var context, args, result;
         var timeout = null;
         var previous = 0;
-        
+
         if (!options) options = {};
         var later = function() {
           previous = options.leading === false ? 0 : Date.now();
@@ -565,7 +621,7 @@
           result = func.apply(context, args);
           if (!timeout) context = args = null;
         };
-        
+
         return function() {
           var now = Date.now();
           if (!previous && options.leading === false) previous = now;
@@ -619,7 +675,7 @@
 
       function secondsToHMS(totalSecs) {
         if (Number.isNaN(totalSecs)) return { hours: 00, mins: 00, secs: 00 };
-        
+
         const hours = Math.floor(totalSecs / 3600);
         totalSecs   = totalSecs % 3600;
         const mins  = Math.floor(totalSecs / 60);
@@ -689,7 +745,7 @@
 
         const mimeRe = /data:([\w\/]+);/i;
         const type = mimeRe.exec(dataURI)[1];
-        
+
         const promise = new Promise(function (resolve, reject) {
           img.onload = function imageSizeLoad() {
             const width = img.naturalWidth;
@@ -740,7 +796,7 @@
           'apple-touch-icon'
         ];
 
-        setLinks(links, iconDataURI);       
+        setLinks(links, iconDataURI);
       }
 
       function setMetas(metas, content) {
@@ -749,7 +805,7 @@
             prop: meta,
             content: content
           };
-          
+
           append(createMeta(metadata));
         });
       }
@@ -782,7 +838,7 @@
 
         append(createMeta(metadata));
       }
-      
+
       function createLink(linkMetadata) {
         const rel = linkMetadata.rel;
         const href = linkMetadata.href;
@@ -790,7 +846,7 @@
         const link = document.createElement('link');
         link.rel = rel;
         link.href = href;
-        
+
         return link;
       }
 
@@ -835,7 +891,197 @@
 
   })();
 
-    (function globalIIFE() {
+    (function filePickersIIFE(global) {
+      /*
+        You must supply the appropriate keys in the `app.options.cloud` at the top of this <script> block AND register your app with
+        Google and/or Microsoft.
+
+        player.html also *must be served over HTTPS* for the Google and MS auth flows to work
+      */
+      function main() {
+        // Show the cloud button if OneDrive or Gdrive are configured
+        if (
+            (onedriveCheck() || gdriveCheck()) &&
+            isHTTPS()
+          ) {
+          $('.btn-cloud').show();
+        }
+      }
+
+      function isHTTPS() {
+        return location.protocol === 'https:';
+      }
+
+      function onedriveCheck() {
+        return isSet(app.options.cloud.onedrive.clientId);
+      }
+
+      function gdriveCheck() {
+        const opts = app.options.cloud;
+        return isSet(opts.gdrive.developerKey) && isSet(opts.gdrive.clientId) && isSet(opts.gdrive.appId);
+      }
+
+      function isSet(v) {
+        return (typeof v !== 'undefined' && v.length > 0);
+      }
+
+      function picker(source) {
+        const pickers = {
+          onedrive,
+          gdrive
+        };
+
+        return async function () {
+          try {
+            console.info(`Opening ${source} Picker`);
+            const metadata = await pickers[source]()
+            console.dir(metadata);
+          } catch (e) {
+            console.warn(`Unable to load ${source} file`);
+            console.error(e);
+          }
+        };
+      }
+      global.cloudPicker = picker;
+
+      function onedrive() {
+        const p = new Promise((resolve, reject) => {
+          function complete(res) {
+            if (!res && !res.value && !res.value[0]) {
+              reject('no file returned from onedrive');
+              console.warn('no file returned from onedrive');
+              return;
+            }
+
+            const file = res.value[0];
+            const metadata = {
+              source: 'OneDrive',
+              id: file.id,
+              name: file.name,
+              url: file['@microsoft.graph.downloadUrl'],
+              size: file.size,
+              mimeType: file.file.mimeType,
+              duration:
+                file.video && file.video.duration ? file.video.duration : undefined,
+              video: file.video || {}
+            };
+            resolve(metadata);
+          }
+
+          var opts = {
+            clientId: app.options.cloud.onedrive.clientId,
+            action: 'download',
+            multiSelect: false,
+            advanced: {
+              queryParameters:
+                'select=id,name,size,file,video,@microsoft.graph.downloadUrl',
+              filter: 'mp4,webm,mkv',
+              navigation: {
+                sourceTypes: ['OneDrive', 'Sites', 'Recent']
+              },
+              viewType: 'files'
+            },
+            success: complete,
+            cancel: complete,
+            error: reject
+          };
+
+          global.OneDrive.open(opts);
+        });
+
+        return p;
+      }
+      global.onedrive = onedrive;
+      function gdrive() {
+        const p = new Promise((resolve, reject) => {
+          const developerKey = app.options.gdrive.developerKey; // The Browser API key obtained from the Google API Console.
+          const clientId = app.options.gdrive.clientId; // The Client ID obtained from the Google API Console. Replace with your own Client ID.
+          const appId = app.options.gdrive.appId; //  console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
+
+          const scope = ['https://www.googleapis.com/auth/drive.file'];
+
+          var gdrivePickerAPILoaded = false;
+          var oauthToken;
+
+          // Use the Google API Loader script to load the google.picker script.
+          function gdrivePickerLoad() {
+            global.gapi.load('auth', {
+              callback: function () {
+                global.gapi.auth.authorize(
+                  {
+                    client_id: clientId,
+                    scope: scope,
+                    immediate: false
+                  },
+                  function (authResult) {
+                    if (authResult && !authResult.error) {
+                      oauthToken = authResult.access_token;
+                      gdrivePickerCreate();
+                    }
+                  }
+                );
+              }
+            });
+            global.gapi.load('picker', {
+              callback: function () {
+                gdrivePickerAPILoaded = true;
+                gdrivePickerCreate();
+              }
+            });
+          }
+
+          function gdrivePickerCreate() {
+            if (gdrivePickerAPILoaded && oauthToken) {
+              const view = new global.google.picker.View(
+                global.google.picker.ViewId.DOCS_VIDEOS
+              );
+              const gdrivePicker = new global.google.picker.PickerBuilder()
+                .setAppId(appId)
+                .setOAuthToken(oauthToken)
+                .setDeveloperKey(developerKey)
+                .addView(view)
+                .setCallback(gdriveCallback)
+                .build();
+              gdrivePicker.setVisible(true);
+
+              global.gdrivePicker = gdrivePicker;
+            }
+          }
+
+          function gdriveCallback(response) {
+            if (
+              global.google.picker.Action.PICKED &&
+              response.docs &&
+              response.docs[0]
+            ) {
+              const file = response.docs[0];
+              console.info(file);
+
+              const metadata = {
+                source: 'Google Drive',
+                url: `https://drive.google.com/u/0/uc?id=${file.id}&export=download`,
+                id: file.id,
+                name: file.name,
+                size: file.sizeBytes,
+                duration: file.duration,
+                mimeType: file.mimeType
+              };
+
+              resolve(metadata);
+            }
+          }
+
+          gdrivePickerLoad();
+        });
+
+        return p;
+      }
+      global.gdrive = gdrive;
+
+      main();
+    })(this);
+
+    (function appIIFE(global) {
       'use strict';
 
       const $playerContainer = $('.playerContainer');
@@ -844,24 +1090,15 @@
       const $trick = $('.trick');
       const $currentTimestamp = $('.currentTimestamp');
 
-      const options = {
-        thumbnails: {
-          enabled: true && canThumbnail(),
-          timestamp: 0.10,
-          size: 480,
-          opacity: '0.5',
-          color: '32,32,32',
-          resizeQuality: 'high',
-          concurrency: 1,
-          mimeType: getIdealMimeType()
-        },
+      const opts = {
+        thumbnails: app.options.thumbnails,
         supportedFileExtensions: getSupportedVideoTypes(),
-        poster: getSVGPoster()
-      }
+        poster: getSVGPoster(),
+      };
 
       function getSupportedVideoTypes() {
         const supported = [];
-        
+
         const types = [
           { mime: 'video/mp4', extensions: ['mp4', 'm4v'] },
           { mime: 'video/webm', extensions: ['webm', 'mkv'] },
@@ -877,35 +1114,35 @@
       }
 
       function getIdealMimeType(){
-        const webp = {
-          type: 'image/webp',
-          quality: 0.2
+        function supports(format) {
+          const mime = format.type;
+          return document.createElement('canvas').toDataURL(mime).indexOf(`data:${mime}`) === 0;
         }
 
-        const jpeg = {
-          type: 'image/jpeg',
-          quality: 0.4
+        const formats = {
+          avif: {
+            type: 'image/avif',
+            quality: 0.2
+          },
+          webp: {
+            type: 'image/webp',
+            quality: 0.2
+          },
+          jpeg: {
+            type: 'image/jpeg',
+            quality: 0.4
+          }
         }
 
-        const webpSupport = document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0;
-
-        return (webpSupport ? webp : jpeg);
+        if (supports(formats['avif'])) {
+          return formats['avif'];
+        } else if (supports(formats['webp'])) {
+          return formats['webp'];
+        } else {
+          return formats['jpeg'];
+        }
       }
-
-      function canThumbnail(){
-      // Must support `localStorage` and `createImageBitmap`
-        try {
-            const key = '__canThumbnailTest__';
-            const val = 'true';
-
-            localStorage.setItem(key, val);
-            const getItemSuccess = localStorage.getItem(key) === val;
-            localStorage.removeItem(key);
-          return (!!createImageBitmap && !!getItemSuccess);
-        } catch (e) {
-          return false;
-        }
-      }
+      console.log(getIdealMimeType());
 
       const hashState = { location: '', video: '' };
 
@@ -945,20 +1182,20 @@
       }
 
       function removeFileExtension(s) {
-        const re = new RegExp(`\\.+(${options.supportedFileExtensions.join('|')})+$`, 'i');
+        const re = new RegExp(`\\.+(${opts.supportedFileExtensions.join('|')})+$`, 'i');
         return s.replace(re, '');
       }
 
       function sortFiles(a, b) {
         const labelA = urlToLabel(a);
         const labelB = urlToLabel(b);
-        
+
         return labelA < labelB ? -1 : 1;
       }
 
       function urlType(url) {
         function isVideo(haystack, fileExtensions) {
-          const re = new RegExp(`\.+(${ options.supportedFileExtensions.join('|')})+$`, 'i');
+          const re = new RegExp(`\.+(${ opts.supportedFileExtensions.join('|')})+$`, 'i');
           return re.test(haystack);
         };
 
@@ -1007,10 +1244,10 @@
       function asyncLinkRequest(url) {
         const $frame = $('<iframe/>');
         $('body').append($frame);
-        
+
         const promise = new Promise(function asyncLinkRequestPromise(resolve, reject){
           $frame.on('error', reject);
-          
+
           $frame.on('load', function frameLoad() {
             const links = getLinksFromFrame($frame);
             $frame.remove();
@@ -1020,7 +1257,7 @@
 
           hideElement($frame);
         });
-        
+
         $frame.src = url; // Setting src starts loading
 
         return promise;
@@ -1061,7 +1298,7 @@
         const $links = [...document.querySelectorAll('.file, .folder')];
         $links.forEach((link) => $(link).on('click', clickLink));
 
-        if (options.thumbnails.enabled) {
+        if (opts.thumbnails.enabled && canThumbnail()) {
           try {
             populateThumbnails();
           } catch (e) { }
@@ -1114,10 +1351,10 @@
           promises.push({$file, url});
         });
 
-        const concurrency = options.thumbnails.concurrency;
+        const concurrency = opts.thumbnails.concurrency;
 
-        for (let j = 0; j < promises.length; j + concurrency) {            
-          // If there are promises left shift the first one into the queue            
+        for (let j = 0; j < promises.length; j + concurrency) {
+          // If there are promises left shift the first one into the queue
           if (promises.length > 0) {
             let work = promises.shift();
             queue.push(setThumbnail(work.$file, work.url));
@@ -1150,7 +1387,7 @@
       function getBaseLocation(l) {
         return l.protocol + '//' + l.host;
       }
-      
+
       function getVideoUrl(){
         return $player.src;
       }
@@ -1162,7 +1399,7 @@
         try {
           hash = decodeHash(urlHash);
         } catch (e) { }
-        
+
         return hash;
       }
 
@@ -1176,6 +1413,11 @@
 
       function decodeHash(hash) {
         return JSON.parse(atob(decodeURIComponent(hash)));
+      }
+
+      async function openFromCloud() {
+        const metadata = await onedrive();
+        actionPlay(metadata.url);
       }
 
       function actionPlay(url) {
@@ -1195,8 +1437,8 @@
           hashState.video = url;
         } else {
           $player.src = '';
-          $player.poster = options.poster;
-          
+          $player.poster = opts.poster;
+
           $trick.src = '';
         }
 
@@ -1204,7 +1446,7 @@
       }
 
       function setCurrentVideoTile() {
-        const $former = $('.links .current')        
+        const $former = $('.links .current')
         if ($former && $former.classList) $former.classList.remove('current');
 
         const $current = $(`.file[href='${$player.src}']`);
@@ -1213,12 +1455,12 @@
 
       function actionPlayPause(){ $player.paused ? $player.play() : $player.pause() }
 
-      function actionMute() { 
+      function actionMute() {
         $player.muted = !$player.muted;
         updateMute();
       }
 
-      function updateMute() { 
+      function updateMute() {
         if (!$player.muted) {
           $playerContainer.removeClass('muted');
         } else {
@@ -1229,11 +1471,11 @@
       function actionStop() {
         actionPlay();
       }
-      
+
       function actionReplay() {
         $player.currentTime = Math.max($player.currentTime - 10, 0);
       }
-      
+
       function actionSkip () {
         $player.currentTime = Math.min($player.currentTime + 30, $player.duration);
       }
@@ -1243,7 +1485,7 @@
             $playerContainer.requestFullscreen();
         } else {
           if (document.exitFullscreen) {
-            document.exitFullscreen(); 
+            document.exitFullscreen();
           }
         }
       }
@@ -1253,7 +1495,7 @@
       $playerContainer.on('mousemove', async () => {
         const c = 'fadeout';
         $playerContainer.removeClass(c);
-        
+
         clearTimeout(timeoutFadeout);
         timeoutFadeout = setTimeout(() => {
           $playerContainer.addClass(c);
@@ -1287,26 +1529,62 @@
         }
         rafCb();
       }
-      
+
       const updateRelativePosition = p =>      $playerContainer.style.setProperty('--relative-position',       `${p * 100}%`);
       const updateTrickRelativePosition = p => $playerContainer.style.setProperty('--trick-position', `${p * 100}%`);
 
       function progressBarTrickHover(e) {
         const relative = e.offsetX / getProgressBarWidth();
         const absolute = relative * $player.duration;
-        
+
         updateTrickRelativePosition(relative);
         trickSeek(absolute);
       }
 
       function trickSeek(time) {
         if ($trick.readyState === 0) return;
-        
+
         if (typeof $trick.fastSeek === 'function') {
           return $trick.fastSeek(time);
         }
 
         return ($trick.currentTime = time);
+      }
+
+      function playLocal() {
+        const $input = $('.input-local-file');
+      }
+
+      function actionOpenLocalFile() {
+        const reader = new FileReader();
+        reader.addEventListener(
+          "load",
+          () => console.log(reader.result, file.type),
+          false
+        );
+
+        const $input = $('<input type="file" accept="video/*"/>');
+        $input.on('change', () => {
+          const file = $input.files[0];
+
+          if (file) {
+            const metadata = {
+              source: 'Local',
+              id: undefined,
+              name: file.name,
+              url: URL.createObjectURL(file),
+              size: file.size,
+              mimeType: file.type,
+              duration: 0,
+              video: {}
+            }
+
+            actionPlay(metadata.url);
+          }
+        });
+
+        $input.click();
+
       }
 
       function setupControls() {
@@ -1316,6 +1594,8 @@
         $('.btn-mute').on('click', actionMute);
         $('.btn-play').on('click', actionPlayPause);
         $('.btn-fullscreen').on('click', actionFullscreenToggle);
+        $('.btn-cloud').on('click', openFromCloud);
+        $('.btn-local-file').on('click', actionOpenLocalFile);
 
         delay(10, updateMute);
 
@@ -1324,7 +1604,7 @@
         $player.on('ended', () => $playerContainer.removeClass('paused'));
         $player.on('click', actionPlayPause);
         $('.pauseOverlay').on('click', actionPlayPause);
-        
+
         $player.on('loadeddata', syncTrickSrc);
         $player.on('timeupdate', updateProgress);
         $progressBar.on('mousemove', throttle(progressBarTrickHover, 17));
@@ -1335,10 +1615,10 @@
         return $trick.src = $player.src;
       }
 
-      
+
       function setVideoPoster(r,g,b){
-        if (options.poster) {
-          return $player.poster = options.poster;
+        if (opts.poster) {
+          return $player.poster = opts.poster;
         }
 
         return $player.poster = createColorDataURI(r,g,b);
@@ -1354,7 +1634,7 @@
 
         const base64 = btoa(svg);
         return `data:image/svg+xml;base64,${base64}`;
-      }      
+      }
 
       function createColorDataURI(r, g, b, a) {
         const canvas = document.createElement('canvas');
@@ -1383,13 +1663,13 @@
         $player.autoplay = false;
         $player.preload = false;
         $player.playbackRate = 0;
-        
+
         const promise = new Promise(function(resolve, reject){
           $player.addEventListener('loadedmetadata', function loadedmetadata(){
             $player.pause();
             resolve($player);
           }, false);
-          
+
           $player.addEventListener('error', reject);
         });
         $player.src = url;
@@ -1399,12 +1679,12 @@
 
       function getBitmap(videoSrc, time) {
         const $player = videoSrc;
-        
+
         const promise = new Promise(function(resolve, reject){
           $player.addEventListener('seeked', function seeked(){
             const opts = {
-              resizeWidth: options.thumbnails.size,
-              resizeQuality: options.thumbnails.resizeQuality
+              resizeWidth: app.options.thumbnails.size,
+              resizeQuality: app.options.thumbnails.resizeQuality
             };
 
             return createImageBitmap($player, opts).then(resolve).catch(reject);
@@ -1418,33 +1698,34 @@
         } else if (time > 0) {
           $player.currentTime = $player.duration * time;
         }
-        
+
         return promise;
       }
-        
+
       function bitmapToCanvas(bitmap) {
         const canvas = document.createElement('canvas');
         canvas.height = bitmap.height;
         canvas.width = bitmap.width;
-        
+
         const ctx = canvas.getContext('2d');
         ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
-        
+
         return canvas;
       }
-        
+
       function bitmapToDataURI(bitmap) {
-        const mimeType = options.thumbnails.mimeType.type;
-        const quality = options.thumbnails.mimeType.quality;
+        const mimeType = getIdealMimeType(); //opts.thumbnails.mimeType.type;
+        const quality = app.options.thumbnails.mimeType.quality;
 
         const canvas = bitmapToCanvas(bitmap);
         return canvas.toDataURL(mimeType, quality);
       }
 
       async function setThumbnail(node, url) {
-        const time = options.thumbnails.timestamp;
-        const color = options.thumbnails.color;
-        const opacity = options.thumbnails.opacity;
+        const opts = app.options.thumbnails;
+        const time = opts.timestamp;
+        const color = opts.color;
+        const opacity = opts.opacity;
 
         const thumbnail = await getThumbnailDataURI(url, time);
 
@@ -1457,8 +1738,8 @@
       }
 
       async function getThumbnailDataURI(url, time) {
-        const size = options.thumbnails.size;
-        
+        const size = opts.thumbnails.size;
+
         const key = `${size}|${time}|${url};`;
         try {
           const cached = retrieve(key);
@@ -1486,12 +1767,12 @@
       // main()
       async function main() {
         setupControls();
-        $player.on('error', (e) => $player.poster = options.poster);
+        $player.on('error', (e) => $player.poster = opts.poster);
 
         setVideoPoster(0,0,0);
 
         const hash = getHash();
-        
+
         if (hash && hash.location && hash.location.length > 1) {
           createLinks(hash.location);
         } else {
@@ -1510,7 +1791,7 @@
       }
 
       main();
-    })();
+    })(this);
   </script>
 </body>
 
