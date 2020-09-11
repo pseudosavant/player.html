@@ -59,9 +59,13 @@
 
     .playerContainer {
       position: relative;
+      overflow: hidden;
       width: 100%;
       min-height: 30vw;
-      max-height: min(90vh, calc(100vw * var(--aspect-ratio)));
+      max-height: min(
+        90vh,
+        calc(100vw * var(--aspect-ratio))
+      );
     }
 
     .playerContainer:fullscreen {
@@ -75,6 +79,32 @@
       position: absolute;
       bottom: 0;
       overflow: hidden;
+    }
+
+    .playerContainer.drop::before {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      content: "Drop Here";
+      font-size: 5rem;
+      text-shadow: 0px 0px 1.5rem #000;
+      background-color: rgba(64,64,64,0.5);
+      background-image: url('data:image/svg+xml;utf8,<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path fill="hsl(323, 100%, 50%)" d="M12,2 C17.5228,2 22,6.47715 22,12 C22,17.5228 17.5228,22 12,22 C6.47715,22 2,17.5228 2,12 C2,6.47715 6.47715,2 12,2 Z M12,4 C7.58172,4 4,7.58172 4,12 C4,16.4183 7.58172,20 12,20 C16.4183,20 20,16.4183 20,12 C20,7.58172 16.4183,4 12,4 Z M12,6 C15.3137,6 18,8.68629 18,12 C18,15.3137 15.3137,18 12,18 C8.68629,18 6,15.3137 6,12 C6,8.68629 8.68629,6 12,6 Z M12,8 C9.79086,8 8,9.79086 8,12 C8,14.2091 9.79086,16 12,16 C14.2091,16 16,14.2091 16,12 C16,9.79086 14.2091,8 12,8 Z M12,10 C13.1046,10 14,10.8954 14,12 C14,13.1046 13.1046,14 12,14 C10.8954,14 10,13.1046 10,12 C10,10.8954 10.8954,10 12,10 Z"></path></svg>');
+      background-size: 25%;
+      background-position: center;
+      background-repeat: no-repeat;
+      animation: pulse calc(2 * var(--transition-base)) ease-in-out alternate infinite;
+      z-index: 2000;
+    }
+
+    @keyframes pulse {
+      0%   { opacity: 100%; }
+      100% { opacity: 50% }
     }
 
     .controls {
@@ -224,7 +254,7 @@
       height: 0.5rem;
       width: 100%;
 
-      border-radius: 0.5rem;
+      border-radius: calc(2 * var(--tile-border-radius));
       border: 0.5rem solid #222;
       border-width: 0.25rem;
       margin: -0.25rem;
@@ -258,13 +288,13 @@
       object-fit: cover;
 
       border: 1px solid #000;
-      border-radius: 0.2rem;
+      border-radius: var(--tile-border-radius);
       filter: drop-shadow(2px 4px 4px #000);
 
       z-index: 1000;
     }
 
-    .progressBar:hover + .trick {
+    .playerContainer[data-loaded="true"] .progressBar:hover + .trick {
       display: block;
     }
 
@@ -425,9 +455,9 @@
       <button class='btn-stop' type='button' title='Stop'><svg><g><use xlink:href='#svgStop'></g></svg></button>
       <button class='btn-mute' type='button' title='Mute'><svg class='on'><g><use xlink:href='#svgSpeakerOn'></g></svg><svg class='off'><g><use xlink:href='#svgSpeakerOff'></g></svg></button>
       <button class='btn-fullscreen' type='button' title='Fullscreen'><svg><g><use xlink:href='#svgFullscreen'></g></svg></button>
-      <button class='btn-cloud' type='button' title='Open from the cloud'><svg><g><use xlink:href='#svgCloud'></g></svg></button>
+      <button class='btn-cloud' type='button' title='Open from OneDrive'><svg><g><use xlink:href='#svgCloud'></g></svg></button>
       <button class='btn-local-file' type='button' title='Open local video file'><svg><g><use xlink:href='#svgFolderOpenVertical'></g></svg></button>
-      <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"/><span class="divider"/><span class="duration"/></div>
+      <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"></span><span class="divider"></span><span class="duration"></span></div>
     </section>
   </div>
   <section class='links'></section>
@@ -730,8 +760,8 @@
       function setPWAManifest(manifest) {
         const json = JSON.stringify(manifest);
         const base64 = btoa(json);
-        const mimetype = 'application/json';
-        const dataURI = `data:${mimetype};base64,${base64}`;
+        const mimeType = 'application/json';
+        const dataURI = `data:${mimeType};base64,${base64}`;
 
         const link = document.createElement('link');
         link.setAttribute('rel', 'manifest');
@@ -935,7 +965,6 @@
           try {
             console.info(`Opening ${source} Picker`);
             const metadata = await pickers[source]()
-            console.dir(metadata);
           } catch (e) {
             console.warn(`Unable to load ${source} file`);
             console.error(e);
@@ -1092,25 +1121,37 @@
 
       const opts = {
         thumbnails: app.options.thumbnails,
-        supportedFileExtensions: getSupportedVideoTypes(),
+        supportedVideoTypes: getSupportedVideoTypes(),
         poster: getSVGPoster(),
       };
+      console.info(`Supported video mime-types: ${opts.supportedVideoTypes.mime.join(', ')}`);
 
       function getSupportedVideoTypes() {
-        const supported = [];
+        const supported = {
+          extensions: [],
+          mime: []
+        };
 
         const types = [
           { mime: 'video/mp4', extensions: ['mp4', 'm4v'] },
-          { mime: 'video/webm', extensions: ['webm', 'mkv'] },
+          { mime: 'video/webm', extensions: ['webm'] },
+          { mime: 'video/x-matroska', extensions: ['mkv'] },
           { mime: 'video/ogg', extensions: ['ogg'] }
         ];
 
         const v = document.createElement('video');
         types.forEach(type => {
-          if (v.canPlayType(type.mime) !== '') supported.push(...type.extensions);
+          if (v.canPlayType(type.mime) !== '') {
+            supported.extensions.push(...type.extensions);
+            supported.mime.push(type.mime);
+          }
         });
 
         return supported;
+      }
+
+      function isSupportedMimeType(mime) {
+        return opts.supportedVideoTypes.mime.includes(mime);
       }
 
       function getIdealMimeType(){
@@ -1142,7 +1183,6 @@
           return formats['jpeg'];
         }
       }
-      console.log(getIdealMimeType());
 
       const hashState = { location: '', video: '' };
 
@@ -1182,7 +1222,7 @@
       }
 
       function removeFileExtension(s) {
-        const re = new RegExp(`\\.+(${opts.supportedFileExtensions.join('|')})+$`, 'i');
+        const re = new RegExp(`\\.+(${opts.supportedVideoTypes.extensions.join('|')})+$`, 'i');
         return s.replace(re, '');
       }
 
@@ -1195,7 +1235,7 @@
 
       function urlType(url) {
         function isVideo(haystack, fileExtensions) {
-          const re = new RegExp(`\.+(${ opts.supportedFileExtensions.join('|')})+$`, 'i');
+          const re = new RegExp(`\.+(${ opts.supportedVideoTypes.extensions.join('|')})+$`, 'i');
           return re.test(haystack);
         };
 
@@ -1420,29 +1460,42 @@
         actionPlay(metadata.url);
       }
 
-      function actionPlay(url) {
+      function actionPlay(urlOrMetadata) {
         // Don't restart playback if it is the currently playing video
-        if (url === $player.src) return;
+        if (urlOrMetadata === $player.src) return;
 
-        $player.autoplay = !!url;
+        // Only play supported video types
+        if (urlOrMetadata && urlOrMetadata.mimeType && !isSupportedMimeType(urlOrMetadata.mimeType)) {
+          console.warn(`${urlOrMetadata.name} (${urlOrMetadata.url}) is not a supported video type`);
+          return;
+        }
+
+        const url = (urlOrMetadata && typeof urlOrMetadata.url === 'string' ? urlOrMetadata.url : urlOrMetadata);
+
         $playerContainer.removeClass('paused');
 
         if (!!url) {
-          $player.poster = '';
+          $player.autoplay = true;
+          $player.removeAttribute('poster');
           $player.src = url;
-          $player.play();
-
           $trick.src = url;
+
+          $playerContainer.dataset.loaded = true;
+          console.info(`Playback started: ${url}`);
 
           hashState.video = url;
         } else {
-          $player.src = '';
           $player.poster = opts.poster;
+          $player.removeAttribute('src');
+          $trick.removeAttribute('src');
+          console.info(`Playback stopped`);
 
-          $trick.src = '';
+          delete $playerContainer.dataset.loaded;
         }
 
+        $player.load();
         setCurrentVideoTile();
+        updateHash();
       }
 
       function setCurrentVideoTile() {
@@ -1530,15 +1583,16 @@
         rafCb();
       }
 
-      const updateRelativePosition = p =>      $playerContainer.style.setProperty('--relative-position',       `${p * 100}%`);
-      const updateTrickRelativePosition = p => $playerContainer.style.setProperty('--trick-position', `${p * 100}%`);
+      const updateRelativePosition      = p => $playerContainer.style.setProperty('--relative-position', `${p * 100}%`);
+      const updateTrickRelativePosition = p => $playerContainer.style.setProperty('--trick-position'   , `${p * 100}%`);
 
       function progressBarTrickHover(e) {
         const relative = e.offsetX / getProgressBarWidth();
         const absolute = relative * $player.duration;
 
         updateTrickRelativePosition(relative);
-        trickSeek(absolute);
+
+        if (absolute >= 0) trickSeek(absolute);
       }
 
       function trickSeek(time) {
@@ -1555,36 +1609,35 @@
         const $input = $('.input-local-file');
       }
 
+      function actionDropLocalFile(e) {
+        $playerContainer.removeClass('drop');
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) openFile(files[0]);
+      }
+
       function actionOpenLocalFile() {
         const reader = new FileReader();
-        reader.addEventListener(
-          "load",
-          () => console.log(reader.result, file.type),
-          false
-        );
-
-        const $input = $('<input type="file" accept="video/*"/>');
-        $input.on('change', () => {
-          const file = $input.files[0];
-
-          if (file) {
-            const metadata = {
-              source: 'Local',
-              id: undefined,
-              name: file.name,
-              url: URL.createObjectURL(file),
-              size: file.size,
-              mimeType: file.type,
-              duration: 0,
-              video: {}
-            }
-
-            actionPlay(metadata.url);
-          }
-        });
-
+        const $input = $(`<input type="file" accept="${opts.supportedVideoTypes.mime.join(',')}"/>`);
+        $input.on('change', () => openFile($input.files[0]));
         $input.click();
+      }
 
+      function openFile(file) {
+        if (file) {
+          const metadata = {
+            source: 'Local',
+            id: undefined,
+            name: file.name,
+            url: URL.createObjectURL(file),
+            size: file.size,
+            mimeType: file.type,
+            duration: 0,
+            video: {}
+          }
+
+          return actionPlay(metadata);
+        }
       }
 
       function setupControls() {
@@ -1596,6 +1649,17 @@
         $('.btn-fullscreen').on('click', actionFullscreenToggle);
         $('.btn-cloud').on('click', openFromCloud);
         $('.btn-local-file').on('click', actionOpenLocalFile);
+
+        $playerContainer.on('dragenter', () => $playerContainer.addClass('drop'));
+        $playerContainer.on('dragleave', (e) => {
+          // Only remove `drop` class if the target is .playerContainer
+          if (e.target === $playerContainer) $playerContainer.removeClass('drop');
+        });
+        $playerContainer.on('drop', actionDropLocalFile);
+        $playerContainer.on('dragover', (e) => {
+          e.dataTransfer.dropEffect = 'link';
+          e.preventDefault();
+        });
 
         delay(10, updateMute);
 
@@ -1714,7 +1778,7 @@
       }
 
       function bitmapToDataURI(bitmap) {
-        const mimeType = getIdealMimeType(); //opts.thumbnails.mimeType.type;
+        const mimeType = getIdealMimeType();
         const quality = app.options.thumbnails.mimeType.quality;
 
         const canvas = bitmapToCanvas(bitmap);
@@ -1784,7 +1848,7 @@
           if (hash && hash.location && hash.location.length > 1) createLinks(hash.location)
         });
 
-        if (hash && hash.video && hash.video.length > 1) {
+        if (hash && hash.video && hash.video.length > 1 && !hash.video.startsWith('blob:')) {
           $player.muted = true; /* Autoplay on load only works if it is muted */
           actionPlay(hash.video);
         }
