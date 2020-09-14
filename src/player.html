@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='1.0.0'>
+  <meta name='version' content='1.1.0'>
   <meta name='Copyright' content=' ©2020 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='apple-mobile-web-app-status-bar-style' content='black'>
@@ -121,13 +121,14 @@
     :fullscreen .player {
       margin: 0;
       min-height: 100vh;
+      max-height: 100vh;
     }
 
     .player {
       width: 100%;
-      min-height: 30vw;
+      min-height: 20vw;
       max-height: min(
-        calc(100vh - var(--tile-height)),
+        calc(100vh - calc(2 * var(--tile-height))),
         /* Full height minus some space to see the first row of tiles */
         calc(100vw * var(--tile-aspect-ratio))
         /* Height for the current width at the specified aspect ratio */
@@ -139,7 +140,7 @@
     }
 
     .paused .player {
-      filter: blur(0.25rem) contrast(0.5) brightness(0.5);
+      filter: blur(0.2rem) contrast(0.8) brightness(0.5);
     }
 
     .pauseOverlay {
