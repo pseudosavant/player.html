@@ -33,7 +33,6 @@
       --progress-bar-position-color: #AAA;
       --trick-preview-width: 128px;
 
-      --theme-color-highlight: hsl(323, 100%, 75%);
       --theme-color: hsl(323, 100%, 50%);
       --folder-color: hsl(44,100%,68%);
       --playing-color: hsl(87, 100%, 50%);
@@ -121,6 +120,7 @@
 
     :fullscreen .player {
       margin: 0;
+      min-height: 100vh;
     }
 
     .player {
@@ -299,7 +299,28 @@
     }
 
     button.btn-cloud {
+      /* Only show this button if cloud streaming is enabled/possible */
       display: none;
+    }
+
+    .primary-buttons {
+      position: relative;
+      margin-top: 1rem;
+    }
+
+    .sources {
+      position: absolute;
+      right: -1rem; /* Offset padding of parent container */
+      bottom: 0;
+    }
+
+    /* Make the `.sources` group together into it's own line if it gets too skinny */
+    @media screen and (max-width: 450px) {
+      .sources {
+        position: relative;
+        display: inline-block;
+        bottom: unset;
+      }
     }
 
     .links {
@@ -449,15 +470,19 @@
     <section class='controls'>
       <div class='progressBar'></div>
       <video class='trick'></video>
-      <button class='btn-play' type='button' title='Play'><svg class='playing'><g><use xlink:href='#svgPlay'></g></svg><svg class='paused'><g><use xlink:href='#svgPause'></g></svg></button>
-      <button class='btn-rewind' type='button' title='rewind'><svg><g><use xlink:href='#svgReplay'></g></svg></button>
-      <button class='btn-fast-forward' type='button' title='fast forward'><svg><g><use xlink:href='#svgSkip'></g></svg></button>
-      <button class='btn-stop' type='button' title='Stop'><svg><g><use xlink:href='#svgStop'></g></svg></button>
-      <button class='btn-mute' type='button' title='Mute'><svg class='on'><g><use xlink:href='#svgSpeakerOn'></g></svg><svg class='off'><g><use xlink:href='#svgSpeakerOff'></g></svg></button>
-      <button class='btn-fullscreen' type='button' title='Fullscreen'><svg><g><use xlink:href='#svgFullscreen'></g></svg></button>
-      <button class='btn-cloud' type='button' title='Open from OneDrive'><svg><g><use xlink:href='#svgCloud'></g></svg></button>
-      <button class='btn-local-file' type='button' title='Open local video file'><svg><g><use xlink:href='#svgFolderOpenVertical'></g></svg></button>
-      <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"></span><span class="divider"></span><span class="duration"></span></div>
+      <section class="primary-buttons">
+        <button class='btn-play' type='button' title='Play'><svg class='playing'><g><use xlink:href='#svgPlay'></g></svg><svg class='paused'><g><use xlink:href='#svgPause'></g></svg></button>
+        <button class='btn-rewind' type='button' title='rewind'><svg><g><use xlink:href='#svgReplay'></g></svg></button>
+        <button class='btn-fast-forward' type='button' title='fast forward'><svg><g><use xlink:href='#svgSkip'></g></svg></button>
+        <button class='btn-stop' type='button' title='Stop'><svg><g><use xlink:href='#svgStop'></g></svg></button>
+        <button class='btn-mute' type='button' title='Mute'><svg class='on'><g><use xlink:href='#svgSpeakerOn'></g></svg><svg class='off'><g><use xlink:href='#svgSpeakerOff'></g></svg></button>
+        <button class='btn-fullscreen' type='button' title='Fullscreen'><svg><g><use xlink:href='#svgFullscreen'></g></svg></button>
+        <section class='sources'>
+          <button class='btn-cloud' type='button' title='Open from OneDrive'><svg><g><use xlink:href='#svgCloud'></g></svg></button>
+          <button class='btn-local-file' type='button' title='Open local video file'><svg><g><use xlink:href='#svgFolderOpenVertical'></g></svg></button>
+        </section>
+      </section>
+    <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"></span><span class="divider"></span><span class="duration"></span></div>
     </section>
   </div>
   <section class='links'></section>
@@ -678,6 +703,7 @@
         try {
           return localStorage.setItem(key, val);
         } catch (e) {
+          console.warn(`Failed to store: ${key}`, e);
           return null;
         }
       }
@@ -687,6 +713,7 @@
         try {
           return localStorage.getItem(key);
         } catch (e) {
+          console.warn(`Failed to retrieve: ${key}`, e);
           return null;
         }
       }
@@ -1675,6 +1702,49 @@
         $progressBar.on('click', actionProgressBarSeek);
       }
 
+      $(document).on('keydown', keyboardBroker);
+      function keyboardBroker(e) {
+        switch (e.key) {
+          case '0':
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+          case '5':
+          case '6':
+          case '7':
+          case '8':
+          case '9':
+            e.preventDefault();
+            const position = e.key / 10;
+            $player.currentTime = $player.duration * position;
+            break;
+          case 'Backspace':
+            $('.links a').click();
+            break;
+          case 'ArrowLeft':
+            e.preventDefault();
+            $player.currentTime = (
+              ($player.currentTime - 15) < 0 ?
+                0 :
+                $player.currentTime - 15
+            );
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            $player.currentTime = (
+              ($player.currentTime + 15) > $player.duration ?
+                $player.duration :
+                $player.currentTime + 15
+            );
+            break;
+          case ' ':
+            e.preventDefault();
+            actionPlayPause();
+            break;
+        }
+      }
+
       function syncTrickSrc() {
         return $trick.src = $player.src;
       }
@@ -1778,11 +1848,10 @@
       }
 
       function bitmapToDataURI(bitmap) {
-        const mimeType = getIdealMimeType();
-        const quality = app.options.thumbnails.mimeType.quality;
+        const mime = getIdealMimeType();
 
         const canvas = bitmapToCanvas(bitmap);
-        return canvas.toDataURL(mimeType, quality);
+        return canvas.toDataURL(mime.type, mime.quality);
       }
 
       async function setThumbnail(node, url) {
@@ -1804,7 +1873,7 @@
       async function getThumbnailDataURI(url, time) {
         const size = opts.thumbnails.size;
 
-        const key = `${size}|${time}|${url};`;
+        const key = `${size}|${time}|${url}`;
         try {
           const cached = retrieve(key);
 
