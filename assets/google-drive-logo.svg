@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
+   height="20.761595"
+   width="24.000002"
+   sodipodi:docname="google-drive-logo.svg"
+   id="svg857"
+   viewBox="0 0 24.000002 20.761595"
+   version="1.1">
+  <metadata
+     id="metadata863">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs861" />
+  <sodipodi:namedview
+     fit-margin-bottom="0"
+     fit-margin-right="0"
+     fit-margin-left="0"
+     fit-margin-top="0"
+     inkscape:current-layer="svg857"
+     inkscape:window-maximized="1"
+     inkscape:window-y="399"
+     inkscape:window-x="2247"
+     inkscape:cy="10.3805"
+     inkscape:cx="11.999924"
+     inkscape:zoom="48.552575"
+     showgrid="false"
+     id="namedview859"
+     inkscape:window-height="1521"
+     inkscape:window-width="3840"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10"
+     gridtolerance="10"
+     objecttolerance="10"
+     borderopacity="1"
+     bordercolor="#666666"
+     pagecolor="#ffffff" />
+  <g
+     id="g855"
+     transform="matrix(0.04695571,0,0,0.046956,-0.04132102,-1.6481556)">
+    <path
+       id="path843"
+       style="fill:#fccd48"
+       d="M 167.11,35.1 345.66,35.17 512,323.37 333.74,323.4 Z" />
+    <path
+       id="path845"
+       style="fill:#0ba25e"
+       d="M 89.92,477.16 0.88,323.15 167.11,35.1 256.38,189.21 Z" />
+    <path
+       id="path847"
+       style="fill:#2a71e9"
+       d="M 89.92,477.16 178.85,323.21 512,323.37 423.11,477.25 Z" />
+    <path
+       id="path849"
+       style="fill:#e3b73a"
+       d="M 294.87,256.19 512,323.292 333.74,323.402 Z" />
+    <path
+       id="path851"
+       style="fill:#089156"
+       d="M 256.38,189.21 217.71,256.22 167.11,35.1 Z" />
+    <path
+       id="path853"
+       style="fill:#296ad9"
+       d="m 89.92,477.16 88.93,-153.95 76.885,0.009 z" />
+  </g>
+</svg>

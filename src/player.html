@@ -56,6 +56,10 @@
       flex-wrap: wrap;
     }
 
+    svg {
+      transform: scale(1.25);
+    }
+
     .playerContainer {
       position: relative;
       overflow: hidden;
@@ -124,6 +128,10 @@
       max-height: 100vh;
     }
 
+    .videoContainer {
+      position: relative;
+    }
+
     .player {
       width: 100%;
       min-height: 20vw;
@@ -166,7 +174,7 @@
       width: 100%;
       text-align: center;
       margin-top: 1rem;
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
     .controls button {
@@ -191,8 +199,8 @@
       fill: var(--theme-color);
     }
 
-    .controls svg:hover {
-      filter: saturate(0.25) brightness(4);
+    .controls button:hover {
+      filter: saturate(0.4) brightness(5);
     }
 
     .controls .stop svg {
@@ -299,9 +307,13 @@
       display: block;
     }
 
-    button.btn-cloud {
+    .controls .btn-cloud {
       /* Only show this button if cloud streaming is enabled/possible */
       display: none;
+    }
+
+    .controls .btn-cloud:hover {
+      filter: brightness(1.5);
     }
 
     .primary-buttons {
@@ -416,12 +428,6 @@
       display: none;
     }
 
-    .controls svg, .controls svg g, .arrow svg, .arrow svg g {
-      width: 30px;
-      height: 30px;
-      transform: scale(1.25);
-    }
-
     .file:hover .arrow svg,
     .folder:hover .arrow svg,
     .file.current .arrow svg {
@@ -459,28 +465,29 @@
     .folder .arrow .open, .folder:first-of-type .arrow .closed {
       display: none;
     }
-
-
   </style>
 </head>
 
 <body>
   <div class='playerContainer no-transitions'>
-    <video class='player'></video>
-    <div class='pauseOverlay'><svg><use xlink:href='#svgPause'></svg></div>
+    <div class="videoContainer">
+      <video class='player'></video>
+      <div class='pauseOverlay'><svg><use xlink:href='#svgPause'></svg></div>
+    </div>
     <section class='controls'>
       <div class='progressBar'></div>
       <video class='trick'></video>
       <section class="primary-buttons">
-        <button class='btn-play' type='button' title='Play'><svg class='playing'><g><use xlink:href='#svgPlay'></g></svg><svg class='paused'><g><use xlink:href='#svgPause'></g></svg></button>
-        <button class='btn-rewind' type='button' title='rewind'><svg><g><use xlink:href='#svgReplay'></g></svg></button>
-        <button class='btn-fast-forward' type='button' title='fast forward'><svg><g><use xlink:href='#svgSkip'></g></svg></button>
-        <button class='btn-stop' type='button' title='Stop'><svg><g><use xlink:href='#svgStop'></g></svg></button>
-        <button class='btn-mute' type='button' title='Mute'><svg class='on'><g><use xlink:href='#svgSpeakerOn'></g></svg><svg class='off'><g><use xlink:href='#svgSpeakerOff'></g></svg></button>
-        <button class='btn-fullscreen' type='button' title='Fullscreen'><svg><g><use xlink:href='#svgFullscreen'></g></svg></button>
+        <button class='btn-play' type='button' title='Play'><svg class='playing' width="24" height="24"><use xlink:href='#svgPlay'></svg><svg class='paused' width="24" height="24"><use xlink:href='#svgPause'></svg></button>
+        <button class='btn-rewind' type='button' title='rewind'><svg width="24" height="24"><use xlink:href='#svgReplay'></svg></button>
+        <button class='btn-fast-forward' type='button' title='fast forward'><svg width="24" height="24"><use xlink:href='#svgSkip'></svg></button>
+        <button class='btn-stop' type='button' title='Stop'><svg width="24" height="24"><use xlink:href='#svgStop'></svg></button>
+        <button class='btn-mute' type='button' title='Mute'><svg class='on' width="24" height="24"><use xlink:href='#svgSpeakerOn'></svg><svg class='off' width="24" height="24"><use xlink:href='#svgSpeakerOff'></svg></button>
+        <button class='btn-fullscreen' type='button' title='Fullscreen'><svg width="24" height="24"><use xlink:href='#svgFullscreen'></svg></button>
         <section class='sources'>
-          <button class='btn-cloud' type='button' title='Open from OneDrive'><svg><g><use xlink:href='#svgCloud'></g></svg></button>
-          <button class='btn-local-file' type='button' title='Open local video file'><svg><g><use xlink:href='#svgFolderOpenVertical'></g></svg></button>
+          <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width="24" height="24"><use xlink:href='#svgOneDrive'></svg></button>
+          <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width="18" height="24"><use xlink:href='#svgGoogleDrive'></svg></button>
+          <button class='btn-local-file' type='button' title='Open local video file'><svg width="24" height="24"><use xlink:href='#svgFolderOpenVertical'></svg></button>
         </section>
       </section>
     <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"></span><span class="divider"></span><span class="duration"></span></div>
@@ -526,6 +533,21 @@
     <svg id="svgCloud">
       <path d="M6.33663542,10.0000028 C6.81096059,7.29275763 9.17457638,5.25 12,5.25 C14.8254236,5.25 17.1890394,7.29275763 17.6633646,10.0000028 L17.75,10 C19.959139,10 21.75,11.790861 21.75,14 C21.75,16.209139 19.959139,18 17.75,18 L6.25,18 C4.040861,18 2.25,16.209139 2.25,14 C2.25,11.790861 4.040861,10 6.25002438,10 L6.33663542,10.0000028 Z"></path>
     </svg>
+    <!-- Based on SVG from https://upload.wikimedia.org/wikipedia/commons/d/d3/Microsoft_Office_OneDrive_%282018%E2%80%93present%29.svg -->
+    <svg id='svgOneDrive'> 
+      <path d="m14.4993603046,12.68824475238037 l4.953813,-4.737589000000001 c-1.0290212,-4.012493 -5.1159810000000006,-6.431033 -9.128474,-5.401872 c-1.806915,0.46339040000000015 -3.3764030000000003,1.5835146000000002 -4.401836,3.1417720000000005 c0.0766803,-0.0019339000000000012 8.576264,6.997689 8.576264,6.997689 z" fill="#0364b8" stroke-width="0" id="svg_2"/>
+      <path d="m9.1517773046,6.582246752380371 l-0.0002330000000000001,0.0008155000000000004 c-0.9465858,-0.5862746000000001 -2.0382607,-0.8961646000000002 -3.1517910000000002,-0.8946501000000001 c-0.025723200000000005,0 -0.05100370000000002,0.0016310000000000005 -0.0766803,0.0019339000000000012 c-3.311862,0.04103130000000002 -5.963635,2.759186 -5.922627,6.071048 c0.014865400000000004,1.2013946 0.39025170000000003,2.370542 1.0774852000000001,3.356132 l7.421749,-0.9295302 l5.690093,-4.588236 z" fill="#0078d4" stroke-width="0" id="svg_3"/>
+      <path d="m19.4531733046,7.950655752380371 c-0.10890420000000003,-0.007269600000000004 -0.21834430000000007,-0.012302400000000003 -0.3290659000000001,-0.012302400000000003 c-0.6645859000000002,-0.0006524000000000004 -1.3222517,0.13509340000000003 -1.9322690000000002,0.3988261000000001 l-0.00013980000000000004,-0.0005126000000000004 l-3.0019720000000003,1.2633260000000002 l3.309532,4.088218 l5.916569000000001,1.4382624000000002 c1.2768167000000001,-2.370309 0.3903216000000001,-5.3268460000000015 -1.9800340000000003,-6.6036860000000015 c-0.6124871000000001,-0.3299280000000001 -1.2885133000000002,-0.5249257 -1.9826203,-0.5719218000000001 v-0.00002330000000000001 z" fill="#1490df" stroke-width="0" id="svg_4"/>
+      <path d="m1.0779545046000003,15.11773575238037 c1.1206135,1.6111717 2.9593330000000004,2.5713880000000002 4.9218920000000015,2.570456 h13.124424 c1.7928418000000004,0.0005126000000000004 3.441177,-0.9833065999999999 4.29186,-2.561602 l-9.226334000000001,-5.526527000000001 z" fill="#28a8ea" stroke-width="0" id="svg_5"/>
+    </svg>
+    <!-- Based on SVG from https://upload.wikimedia.org/wikipedia/commons/a/ad/Logo_of_Google_Drive.svg -->
+    <svg id='svgGoogleDrive'>
+      <path style="fill:#fccd48" d="M6.112017465007343,2.85274083196329 L11.884426325760373,2.85500390178011 L17.2620935892589,12.172385633327938 L11.499060245557772,12.173355520392281 z"/>
+      <path style="fill:#0ba25e" d="M3.616513460742275,17.144350020887746 L0.7379064321147182,12.165273128189341 L6.112017465007343,2.85274083196329 L8.998060248538135,7.835050681542867 z"/>
+      <path style="fill:#2a71e9" d="M3.616513460742275,17.144350020887746 L6.491564258763939,12.167212902318052 L17.2620935892589,12.172385633327938 L14.388335966003016,17.147259682080808 z"/>
+      <path style="fill:#e3b73a" d="M10.242417666910494,10.000485200554223 L17.2620935892589,12.169863926960613 L11.499060245557772,12.173420179529906 z"/>
+      <path style="fill:#089156" d="M8.998060248538135,7.835050681542867 L7.7478835437197695,10.001455087618574 L6.112017465007343,2.85274083196329 z"/>
+      <path style="fill:#296ad9" d="m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z"/>    </svg>
   </section>
   <script type="text/javascript" src="https://apis.google.com/js/api.js" defer></script>
   <script type="text/javascript" src="https://js.live.net/v7.2/OneDrive.js" defer></script>
@@ -553,13 +575,13 @@
           }
         },
         thumbnails: {
-          enabled: true,
-          timestamp: 0.10,
-          size: 480,
-          opacity: '0.5',
-          color: '32,32,32',
-          resizeQuality: 'high',
-          concurrency: 1
+          enabled: true, // Should it generate thumbnails
+          timestamp: 0.10, // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
+          size: 480, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
+          opacity: '0.5', // How opaque should the image from the video be
+          color: '32,32,32', // What overlay color should be blended with the image
+          resizeQuality: 'high', // `<canvas>` resize quality
+          concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
         }
       }
     };
@@ -957,12 +979,10 @@
         player.html also *must be served over HTTPS* for the Google and MS auth flows to work
       */
       function main() {
-        // Show the cloud button if OneDrive or Gdrive are configured
-        if (
-            (onedriveCheck() || gdriveCheck()) &&
-            isHTTPS()
-          ) {
-          $('.btn-cloud').show();
+        // Show the cloud buttons if OneDrive and/or Gdrive are configured
+        if (isHTTPS()) {
+          if (onedriveCheck()) $('.btn-onedrive').show();
+          if (gdriveCheck())   $('.btn-gdrive').show();
         }
       }
 
@@ -1051,9 +1071,10 @@
       global.onedrive = onedrive;
       function gdrive() {
         const p = new Promise((resolve, reject) => {
-          const developerKey = app.options.gdrive.developerKey; // The Browser API key obtained from the Google API Console.
-          const clientId = app.options.gdrive.clientId; // The Client ID obtained from the Google API Console. Replace with your own Client ID.
-          const appId = app.options.gdrive.appId; //  console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
+          const opts = app.options.cloud.gdrive;
+          const developerKey = opts.developerKey; // The Browser API key obtained from the Google API Console.
+          const clientId = opts.clientId; // The Client ID obtained from the Google API Console. Replace with your own Client ID.
+          const appId = opts.appId; //  console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
 
           const scope = ['https://www.googleapis.com/auth/drive.file'];
 
@@ -1374,11 +1395,11 @@
       }
 
       function createFileTemplate(url, label, optionalClasses = '') {
-        return `<a href='${url}' class='file ${optionalClasses}' draggable='false' draggable='false'><div class='title' draggable='false'>${label}</div><div class='arrow' draggable='false'><svg><g><use xlink:href='#svgPlay'></g></svg></div></a>`;
+        return `<a href='${url}' class='file ${optionalClasses}' draggable='false' draggable='false'><div class='title' draggable='false'>${label}</div><div class='arrow' draggable='false'><svg width="24" height="24"><use xlink:href='#svgPlay'></svg></div></a>`;
       }
 
       function createFolderTemplate(url, label, optionalClasses = '') {
-        return `<a href='${url}' class='folder ${optionalClasses}' draggable='false'><div class='title' draggable='false'><svg viewBox='0 0 24 24'><g><use xlink:href='#svgFolderArrow'></g></svg>${label}</div></div><div class='arrow' draggable='false'><svg class='open'><g><use xlink:href='#svgFolderOpen'></g></svg><svg class='closed'><g><use xlink:href='#svgFolderClosed'></g></svg></div></a>`;
+        return `<a href='${url}' class='folder ${optionalClasses}' draggable='false'><div class='title' draggable='false'><svg viewBox='0 0 24 24' width="24" height="24"><use xlink:href='#svgFolderArrow'></svg>${label}</div></div><div class='arrow' draggable='false'><svg class='open' width="24" height="24"><use xlink:href='#svgFolderOpen'></svg><svg class='closed' width="24" height="24"><use xlink:href='#svgFolderClosed'></svg></div></a>`;
       }
 
       function clickLink(e) {
@@ -1483,9 +1504,21 @@
         return JSON.parse(atob(decodeURIComponent(hash)));
       }
 
-      async function openFromCloud() {
-        const metadata = await onedrive();
-        actionPlay(metadata.url);
+      function openFromCloud(cloud) {
+        return async function() {
+          var metadata;
+
+          switch (cloud) {
+            case 'onedrive':
+              metadata = await onedrive();
+              break;
+            case 'gdrive':
+              metadata = await gdrive();
+              break;
+          }
+
+          return actionPlay(metadata.url);
+        }
       }
 
       function actionPlay(urlOrMetadata) {
@@ -1675,7 +1708,8 @@
         $('.btn-mute').on('click', actionMute);
         $('.btn-play').on('click', actionPlayPause);
         $('.btn-fullscreen').on('click', actionFullscreenToggle);
-        $('.btn-cloud').on('click', openFromCloud);
+        $('.btn-onedrive').on('click', openFromCloud('onedrive'));
+        $('.btn-gdrive').on('click', openFromCloud('gdrive'));
         $('.btn-local-file').on('click', actionOpenLocalFile);
 
         $playerContainer.on('dragenter', () => $playerContainer.addClass('drop'));
