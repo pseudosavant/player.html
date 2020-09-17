@@ -1708,7 +1708,9 @@
         $player.on('pause', () => $playerContainer.addClass('paused'));
         $player.on('play',  () => $playerContainer.removeClass('paused'));
         $player.on('ended', () => $playerContainer.removeClass('paused'));
-        $player.on('click', actionPlayPause);
+        $player.on('click', () => {
+          if ($player.src.length > 0) actionPlayPause();
+        });
         $('.pauseOverlay').on('click', actionPlayPause);
 
         $player.on('loadeddata', syncTrickSrc);
