@@ -671,6 +671,7 @@
             localStorage.removeItem(key);
           return (!!createImageBitmap && !!getItemSuccess);
         } catch (e) {
+          console.info('Thumbnail support: false');
           return false;
         }
       }
@@ -825,7 +826,7 @@
         const mimeRe = /data:([\w\/]+);/i;
         const type = mimeRe.exec(dataURI)[1];
 
-        const promise = new Promise(function (resolve, reject) {
+        const promise = new Promise((resolve, reject) => {
           img.onload = function imageSizeLoad() {
             const width = img.naturalWidth;
             const height = img.naturalHeight;
@@ -1002,30 +1003,11 @@
         return (typeof v !== 'undefined' && v.length > 0);
       }
 
-      function picker(source) {
-        const pickers = {
-          onedrive,
-          gdrive
-        };
-
-        return async function () {
-          try {
-            console.info(`Opening ${source} Picker`);
-            const metadata = await pickers[source]()
-          } catch (e) {
-            console.warn(`Unable to load ${source} file`);
-            console.error(e);
-          }
-        };
-      }
-      global.cloudPicker = picker;
-
       function onedrive() {
         const p = new Promise((resolve, reject) => {
           function complete(res) {
-            if (!res && !res.value && !res.value[0]) {
-              reject('no file returned from onedrive');
-              console.warn('no file returned from onedrive');
+            if (!res || !res.value || !res.value[0]) {
+              console.warn('No file returned from OneDrive');
               return;
             }
 
@@ -1132,7 +1114,6 @@
               response.docs[0]
             ) {
               const file = response.docs[0];
-              console.info(file);
 
               const metadata = {
                 source: 'Google Drive',
@@ -1310,7 +1291,7 @@
         const folders = [];
         const files = [];
 
-        links.forEach(function(link){
+        links.forEach((link) => {
           const url = link.toString();
           const type = urlType(url);
 
@@ -1333,7 +1314,7 @@
         const $frame = $('<iframe/>');
         $('body').append($frame);
 
-        const promise = new Promise(function asyncLinkRequestPromise(resolve, reject){
+        const promise = new Promise((resolve, reject) => {
           $frame.on('error', reject);
 
           $frame.on('load', function frameLoad() {
@@ -1364,7 +1345,7 @@
 
         files.sort(sortFiles);
 
-        folders.forEach(function(folder){
+        folders.forEach((folder) => {
           const rawUrl = folder;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = url;
@@ -1372,7 +1353,7 @@
           html += createFolderTemplate(rawUrl, label);
         });
 
-        files.forEach(function(file){
+        files.forEach((file) => {
           const rawUrl = file;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
@@ -1389,7 +1370,7 @@
         if (opts.thumbnails.enabled && canThumbnail()) {
           try {
             populateThumbnails();
-          } catch (e) { }
+          } catch (e) { console.warn(e); }
         }
       }
 
@@ -1434,7 +1415,7 @@
         const promises = [];
         const queue = [];
 
-        $files.forEach(function ($file){
+        $files.forEach(($file) => {
           const url = $file.href;
           promises.push({$file, url});
         });
@@ -1832,7 +1813,7 @@
         $player.preload = false;
         $player.playbackRate = 0;
 
-        const promise = new Promise(function(resolve, reject){
+        const promise = new Promise((resolve, reject) => {
           $player.addEventListener('loadedmetadata', function loadedmetadata(){
             $player.pause();
             resolve($player);
@@ -1861,21 +1842,20 @@
       function getBitmap(videoSrc, time) {
         const $player = videoSrc;
 
-        const promise = new Promise(function(resolve, reject){
+        const promise = new Promise((resolve, reject) => {
           $player.addEventListener('seeked', async function seeked(){
-
             var bitmap;
             // Check for `createImageBitmap` options support
             if (await cibOptsSupport()) {
-              const opts = {
-                resizeWidth: app.options.thumbnails.size,
-                resizeQuality: app.options.thumbnails.resizeQuality
+              const cibOpts = {
+                resizeWidth: opts.thumbnails.size,
+                resizeQuality: opts.thumbnails.resizeQuality
               };
-              bitmap = createImageBitmap($player, opts);
+              bitmap = createImageBitmap($player, cibOpts);
             } else {
               // Fall back to `canvas.drawImage` for scaling
               const aspectRatio = $player.videoHeight / $player.videoWidth;
-              const w = app.options.thumbnails.size;
+              const w = opts.thumbnails.size;
               const h = w * aspectRatio;
 
               const c = document.createElement('canvas');
@@ -1923,16 +1903,12 @@
       }
 
       async function setThumbnail(node, url) {
-        const opts = app.options.thumbnails;
-        const time = opts.timestamp;
-        const color = opts.color;
-        const opacity = opts.opacity;
-
-        const thumbnail = await getThumbnailDataURI(url, time);
+        const thumbnails = opts.thumbnails;
+        const thumbnail = await getThumbnailDataURI(url, thumbnails.timestamp);
 
         if (thumbnail && thumbnail.length > 30) {
           node.style.setProperty('--image-url',`url(${thumbnail})`);
-          node.style.setProperty('--rgba-color', `${color}, ${opacity}`);
+          node.style.setProperty('--rgba-color', `${thumbnails.color}, ${thumbnails.opacity}`);
         }
 
         return thumbnail;
@@ -1958,7 +1934,9 @@
 
             return dataURI;
           }
-        } catch (e) { }
+        } catch (e) {
+          console.warn(`Unable to create thumbnail for: ${e.target.src}`);
+        }
       }
 
 
