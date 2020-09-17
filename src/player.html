@@ -675,7 +675,6 @@
         }
       }
 
-
       function delay(ms, fn) {
         fn = fn || function(){};
 
@@ -1846,17 +1845,49 @@
         return promise;
       }
 
+      async function cibOptsSupport() {
+        const c = document.createElement('canvas');
+        c.width = 10;
+        c.height = 10;
+
+        try {
+          const bitmap = await createImageBitmap(c, 0, 0, 10, 10, { resizeWidth: 1 })
+          return bitmap.width === 1;
+        } catch (e) {
+          return false;
+        }
+      }
+
       function getBitmap(videoSrc, time) {
         const $player = videoSrc;
 
         const promise = new Promise(function(resolve, reject){
-          $player.addEventListener('seeked', function seeked(){
-            const opts = {
-              resizeWidth: app.options.thumbnails.size,
-              resizeQuality: app.options.thumbnails.resizeQuality
-            };
+          $player.addEventListener('seeked', async function seeked(){
 
-            return createImageBitmap($player, opts).then(resolve).catch(reject);
+            var bitmap;
+            // Check for `createImageBitmap` options support
+            if (await cibOptsSupport()) {
+              const opts = {
+                resizeWidth: app.options.thumbnails.size,
+                resizeQuality: app.options.thumbnails.resizeQuality
+              };
+              bitmap = createImageBitmap($player, opts);
+            } else {
+              // Fall back to `canvas.drawImage` for scaling
+              const aspectRatio = $player.videoHeight / $player.videoWidth;
+              const w = app.options.thumbnails.size;
+              const h = w * aspectRatio;
+
+              const c = document.createElement('canvas');
+              c.width = w;
+              c.height = h;
+
+              const ctx = c.getContext('2d');
+              ctx.drawImage($player, 0, 0, w, h);
+              bitmap = createImageBitmap(c);
+            }
+            
+            return bitmap.then(resolve).catch(reject);
           }, false);
 
           $player.addEventListener('error', reject);
