@@ -1893,31 +1893,33 @@
           $player.addEventListener('error', reject);
         });
 
-        if (time > 1) {
-          $player.currentTime = time;
-        } else if (time > 0) {
-          $player.currentTime = $player.duration * time;
-        }
+        // Relative seek if `0 < time < 1`, absolute otherwise
+        $player.currentTime = (time > 0 && time < 1 ? $player.duration * time : time); 
 
         return promise;
       }
 
-      function bitmapToCanvas(bitmap) {
-        const canvas = document.createElement('canvas');
-        canvas.height = bitmap.height;
-        canvas.width = bitmap.width;
+      function bitmapToOffscreenCanvas(bitmap) {
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
 
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
+        const ctx = canvas.getContext('bitmaprenderer');
+        ctx.transferFromImageBitmap(bitmap);
 
         return canvas;
       }
 
       function bitmapToDataURI(bitmap) {
-        const mime = getIdealMimeType();
+        const p = new Promise(async (resolve, reject) => {
+          const mime = getIdealMimeType();
+          const canvas = bitmapToOffscreenCanvas(bitmap);
+          const blob = await canvas.convertToBlob(mime);
 
-        const canvas = bitmapToCanvas(bitmap);
-        return canvas.toDataURL(mime.type, mime.quality);
+          var reader = new FileReader();
+          reader.readAsDataURL(blob);
+          reader.onloadend = () => resolve(reader.result);
+        });
+
+        return p;
       }
 
       async function setThumbnail(node, url) {
@@ -1947,14 +1949,11 @@
             return cached;
           } else {
             const $player = await getVideo(url);
-
-            time = (time >= 1 ? time : $player.duration * time);
-
             const bitmap = await getBitmap($player, time);
 
             $player.src = ''; // Unset video
 
-            const dataURI = bitmapToDataURI(bitmap);
+            const dataURI = await bitmapToDataURI(bitmap);
             store(key, dataURI);
 
             return dataURI;
