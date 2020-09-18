@@ -1501,6 +1501,18 @@
         }
       }
 
+      function actionPasteAndPlay(e) {
+        e.preventDefault();
+
+        const re = /^https?:\/\//i;
+        const clipboard = e.clipboardData.getData('text');
+
+        if (clipboard && re.test(clipboard)) {
+          console.info(`Playing video from clipboard: ${clipboard}`);
+          actionPlay(clipboard);
+        }
+      }
+
       function actionPlay(urlOrMetadata) {
         // Don't restart playback if it is the currently playing video
         if (urlOrMetadata === $player.src) return;
@@ -1717,6 +1729,8 @@
         $player.on('timeupdate', updateProgress);
         $progressBar.on('mousemove', throttle(progressBarTrickHover, 17));
         $progressBar.on('click', actionProgressBarSeek);
+        
+        $('body').on('paste', actionPasteAndPlay);
       }
 
       $(document).on('keydown', keyboardBroker);
@@ -1937,7 +1951,7 @@
             return dataURI;
           }
         } catch (e) {
-          console.warn(`Unable to create thumbnail for: ${e.target.src}`);
+          console.info(`Unable to create thumbnail for: ${e.target.src}`);
         }
       }
 
