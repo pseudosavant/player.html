@@ -57,7 +57,7 @@
     }
 
     svg {
-      transform: scale(1.25);
+      transform: scale(1.1);
     }
 
     .playerContainer {
@@ -166,6 +166,55 @@
       justify-content: center;
     }
 
+    .fileinfo {
+      position: absolute;
+      display: flex;
+      justify-content: flex-start;
+      flex-direction: column;
+      top: 0;
+      left: 0;
+      min-width: 320px;
+      width: 100%;
+      height: 100%;
+      gap: 0.1rem;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      background-color: rgba(32,32,32,0.5);
+      backdrop-filter: blur(1rem);
+
+      overflow-x: hidden;
+
+      transition: margin-left var(--transition-base) ease;
+      margin-left: -100%;
+    }
+
+    .fileinfo.show {
+      margin-left: 0;
+    }
+
+    .fileinfo-item {
+      display: block;
+      padding: 1rem;
+      width: 100%;
+      position: relative;
+      margin: 0;
+      background-color: rgba(0,0,0,0.25);
+    }
+
+    .fileinfo-item .key {
+      display: inline-block;
+      width: 10rem;
+      margin-right: 1rem;
+      font-weight: bold;
+    }
+
+    .fileinfo-item .value {
+      display: inline-block;
+      width: calc(100% - 11rem);
+      user-select: text;
+    }
+
     .controls {
       display: block;
       position: relative;
@@ -184,7 +233,7 @@
 
       font-size: 2rem;
 
-      padding: 0.5rem;
+      padding: 0.2rem;
       margin: 1rem 0;
 
       background: none;
@@ -473,6 +522,7 @@
     <div class="videoContainer">
       <video class='player'></video>
       <div class='pauseOverlay'><svg><use xlink:href='#svgPause'></svg></div>
+      <ul class='fileinfo loading'><li class="fileinfo-item">Metadata not yet loaded</li></ul>
     </div>
     <section class='controls'>
       <div class='progressBar'></div>
@@ -484,6 +534,7 @@
         <button class='btn-stop' type='button' title='Stop'><svg width="24" height="24"><use xlink:href='#svgStop'></svg></button>
         <button class='btn-mute' type='button' title='Mute'><svg class='on' width="24" height="24"><use xlink:href='#svgSpeakerOn'></svg><svg class='off' width="24" height="24"><use xlink:href='#svgSpeakerOff'></svg></button>
         <button class='btn-fullscreen' type='button' title='Fullscreen'><svg width="24" height="24"><use xlink:href='#svgFullscreen'></svg></button>
+        <button class='btn-fileinfo' type='button' title='Video file information'><svg width="24" height="24"><use xlink:href='#svgInfo'></svg></button>
         <section class='sources'>
           <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width="24" height="24"><use xlink:href='#svgOneDrive'></svg></button>
           <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width="18" height="24"><use xlink:href='#svgGoogleDrive'></svg></button>
@@ -527,7 +578,7 @@
     </svg>
     <!-- ic_fluent_full_screen_zoom_24_filled.svg -->
     <svg id='svgFullscreen'>
-      <path d='M20,15 C20.5522847,15 21,15.4477153 21,16 C21,16.5522847 20.5522847,17 20,17 L17,17 L17,20 C17,20.5522847 16.5522847,21 16,21 C15.4477153,21 15,20.5522847 15,20 L15,16 C15,15.4477153 15.4477153,15 16,15 L20,15 Z M4,15 L8,15 C8.51283584,15 8.93550716,15.3860402 8.99327227,15.8833789 L9,16 L9,20 C9,20.5522847 8.55228475,21 8,21 C7.48716416,21 7.06449284,20.6139598 7.00672773,20.1166211 L7,20 L7,17 L4,17 C3.44771525,17 3,16.5522847 3,16 C3,15.4871642 3.38604019,15.0644928 3.88337887,15.0067277 L4,15 L8,15 L4,15 Z M16,3 C16.5128358,3 16.9355072,3.38604019 16.9932723,3.88337887 L17,4 L17,7 L20,7 C20.5522847,7 21,7.44771525 21,8 C21,8.51283584 20.6139598,8.93550716 20.1166211,8.99327227 L20,9 L16,9 C15.4871642,9 15.0644928,8.61395981 15.0067277,8.11662113 L15,8 L15,4 C15,3.44771525 15.4477153,3 16,3 Z M8,3 C8.55228475,3 9,3.44771525 9,4 L9,8 C9,8.55228475 8.55228475,9 8,9 L4,9 C3.44771525,9 3,8.55228475 3,8 C3,7.44771525 3.44771525,7 4,7 L7,7 L7,4 C7,3.44771525 7.44771525,3 8,3 Z' id='🎨-Color'></path>
+      <path d='M20,15 C20.5522847,15 21,15.4477153 21,16 C21,16.5522847 20.5522847,17 20,17 L17,17 L17,20 C17,20.5522847 16.5522847,21 16,21 C15.4477153,21 15,20.5522847 15,20 L15,16 C15,15.4477153 15.4477153,15 16,15 L20,15 Z M4,15 L8,15 C8.51283584,15 8.93550716,15.3860402 8.99327227,15.8833789 L9,16 L9,20 C9,20.5522847 8.55228475,21 8,21 C7.48716416,21 7.06449284,20.6139598 7.00672773,20.1166211 L7,20 L7,17 L4,17 C3.44771525,17 3,16.5522847 3,16 C3,15.4871642 3.38604019,15.0644928 3.88337887,15.0067277 L4,15 L8,15 L4,15 Z M16,3 C16.5128358,3 16.9355072,3.38604019 16.9932723,3.88337887 L17,4 L17,7 L20,7 C20.5522847,7 21,7.44771525 21,8 C21,8.51283584 20.6139598,8.93550716 20.1166211,8.99327227 L20,9 L16,9 C15.4871642,9 15.0644928,8.61395981 15.0067277,8.11662113 L15,8 L15,4 C15,3.44771525 15.4477153,3 16,3 Z M8,3 C8.55228475,3 9,3.44771525 9,4 L9,8 C9,8.55228475 8.55228475,9 8,9 L4,9 C3.44771525,9 3,8.55228475 3,8 C3,7.44771525 3.44771525,7 4,7 L7,7 L7,4 C7,3.44771525 7.44771525,3 8,3 Z'></path>
     </svg>
     <!-- ic_fluent_cloud_24_filled -->
     <svg id="svgCloud">
@@ -547,7 +598,14 @@
       <path style="fill:#2a71e9" d="M3.616513460742275,17.144350020887746 L6.491564258763939,12.167212902318052 L17.2620935892589,12.172385633327938 L14.388335966003016,17.147259682080808 z"/>
       <path style="fill:#e3b73a" d="M10.242417666910494,10.000485200554223 L17.2620935892589,12.169863926960613 L11.499060245557772,12.173420179529906 z"/>
       <path style="fill:#089156" d="M8.998060248538135,7.835050681542867 L7.7478835437197695,10.001455087618574 L6.112017465007343,2.85274083196329 z"/>
-      <path style="fill:#296ad9" d="m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z"/>    </svg>
+      <path style="fill:#296ad9" d="m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z"/>
+    </svg>
+    <!-- https://raw.githubusercontent.com/microsoft/fluentui-system-icons/master/assets/Info/SVG/ic_fluent_info_24_regular.svg -->
+    <!-- https://raw.githubusercontent.com/microsoft/fluentui-system-icons/master/assets/Info/SVG/ic_fluent_info_24_filled.svg -->
+    <svg id="svgInfo">
+      <!-- <path d="M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M11.996193,10.2495494 C11.4833573,10.2498854 11.0609387,10.6362021 11.0034989,11.1335785 L10.9968474,11.250204 L11.000448,16.751798 L11.0072521,16.8684147 C11.0653426,17.3657155 11.4882665,17.751479 12.0011022,17.7511438 C12.5139379,17.7508078 12.9363565,17.3644911 12.9937963,16.8671147 L13.0004478,16.7504892 L12.9968474,11.2488952 L12.9900433,11.1322785 C12.9319526,10.6349777 12.5090287,10.2492142 11.996193,10.2495494 Z M12.0004478,6.5 C11.3092523,6.5 10.7489277,7.06032464 10.7489277,7.75152012 C10.7489277,8.44271559 11.3092523,9.00304023 12.0004478,9.00304023 C12.6916433,9.00304023 13.2519679,8.44271559 13.2519679,7.75152012 C13.2519679,7.06032464 12.6916433,6.5 12.0004478,6.5 Z"></path> -->
+      <path d="M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M12.0000002,3.49896738 C7.30472352,3.49896738 3.49844971,7.30524119 3.49844971,12.0005179 C3.49844971,16.6957946 7.30472352,20.5020684 12.0000002,20.5020684 C16.6952769,20.5020684 20.5015507,16.6957946 20.5015507,12.0005179 C20.5015507,7.30524119 16.6952769,3.49896738 12.0000002,3.49896738 Z M11.9963566,10.4995494 C12.3760523,10.4993013 12.6900321,10.7812497 12.7399342,11.1472927 L12.7468472,11.2490588 L12.750448,16.7506528 C12.7507187,17.1648663 12.4151521,17.5008724 12.0009386,17.5011438 C11.6212429,17.5013919 11.3072631,17.2194435 11.2573612,16.8534005 L11.2504479,16.7516344 L11.2468472,11.2500404 C11.2465765,10.8358269 11.5821431,10.4998208 11.9963566,10.4995494 Z M12.0004478,7.00178515 C12.5519939,7.00178515 12.9991104,7.44890164 12.9991104,8.00044779 C12.9991104,8.55199393 12.5519939,8.99911042 12.0004478,8.99911042 C11.4489016,8.99911042 11.0017852,8.55199393 11.0017852,8.00044779 C11.0017852,7.44890164 11.4489016,7.00178515 12.0004478,7.00178515 Z"></path>
+    </svg>
   </section>
   <script type="text/javascript" src="https://apis.google.com/js/api.js" defer></script>
   <script type="text/javascript" src="https://js.live.net/v7.2/OneDrive.js" defer></script>
@@ -780,6 +838,12 @@
         return s;
       }
       global.pad = pad;
+
+      function limitPrecision(v, places) {
+        const factor = Math.pow(10, places);
+        return Math.round(v * factor) / factor;
+      }
+      global.limitPrecision = limitPrecision;
     })(this);
 
     (async function pwaIIFE() {
@@ -1508,39 +1572,31 @@
         const clipboard = e.clipboardData.getData('text');
 
         if (clipboard && re.test(clipboard)) {
+          const url = clipboard;
           console.info(`Playing video from clipboard: ${clipboard}`);
-          actionPlay(clipboard);
+          actionPlay(url);
         }
       }
 
-      function actionPlay(urlOrMetadata) {
+      function actionPlay(url) {
         // Don't restart playback if it is the currently playing video
-        if (urlOrMetadata === $player.src) return;
+        if (url === $player.currentSrc) return;
 
-        // Only play supported video types
-        if (urlOrMetadata && urlOrMetadata.mimeType && !isSupportedMimeType(urlOrMetadata.mimeType)) {
-          console.warn(`${urlOrMetadata.name} (${urlOrMetadata.url}) is not a supported video type`);
-          return;
-        }
-
-        const url = (urlOrMetadata && typeof urlOrMetadata.url === 'string' ? urlOrMetadata.url : urlOrMetadata);
-
+        resetFileinfo();
         $playerContainer.removeClass('paused');
 
         if (!!url) {
           $player.autoplay = true;
           $player.removeAttribute('poster');
-          $player.src = url;
-          $trick.src = url;
+          $player.src = $trick.src = hashState.video = url;
 
           $playerContainer.dataset.loaded = true;
           console.info(`Playback started: ${url}`);
-
-          hashState.video = url;
         } else {
           $player.poster = opts.poster;
           $player.removeAttribute('src');
           $trick.removeAttribute('src');
+          hashState.video = undefined;
           console.info(`Playback stopped`);
 
           delete $playerContainer.dataset.loaded;
@@ -1549,6 +1605,143 @@
         $player.load();
         setCurrentVideoTile();
         updateHash();
+      }
+
+      async function getHeaderData(url) {
+        const opts = {
+          method: 'HEAD',
+          mode: 'cors',
+        }
+
+        const f = await fetch(url, opts);
+        const h = f.headers;
+        const size = h.get('Content-Length');
+        const mimeType = h.get('Content-Type');
+        const lastModified = h.get('Last-Modified');
+
+        return { size, mimeType, lastModified };
+      }
+
+      function urlToFilename(url) {
+        const parts = url.split('/');
+        return (parts.length === 1 ? parts[0] : parts[parts.length - 1]);
+      }
+
+      async function getFramerate() {
+        const frame1 = await requestVideoFrame();
+        
+        // Wait a few extra frames to make estimate more accurate
+        for (var i = 0; i < 10; i++) {
+          const waitFrame = await requestVideoFrame();
+        }
+
+        const frame2 = await requestVideoFrame();
+
+        const frames = frame2.metadata.presentedFrames - frame1.metadata.presentedFrames;
+        const duration = (frame2.metadata.mediaTime - frame1.metadata.mediaTime);
+        const fps = frames / duration;
+
+        return fps;
+      }
+
+      function requestVideoFrame() {
+        if (!supportsVideoFrameCallback()) return;
+
+        const p = new Promise((resolve, reject) => {
+          $player.requestVideoFrameCallback((now, metadata) => {
+            resolve({now, metadata});
+          });
+        });
+
+        return p;
+      }
+
+      function supportsVideoFrameCallback() {
+        return 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+      }
+
+      async function updateFileinfo() {
+        if (supportsVideoFrameCallback()) await requestVideoFrame();
+
+        const url = $player.currentSrc;
+        const subtitles = ($player.textTracks && $player.textTracks.length ? $player.textTracks.length : 0);
+        const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
+        const headerData = await getHeaderData(url);
+
+        const metadata = {
+          name: urlToFilename(url),
+          url: url,
+          size: headerData.size,
+          mimeType: headerData.mimeType,
+          duration: $player.duration,
+          bitrate: headerData.size / $player.duration,
+          date: headerData.lastModified,
+          width: $player.videoWidth,
+          height: $player.videoHeight,
+          subtitles: subtitles,
+          audioTracks: audioTracks
+        };
+
+        if (supportsVideoFrameCallback()) {
+          metadata.framerate = await getFramerate($player);
+        }
+
+        function dateFormat(d) {
+          const formattedDate = Intl.DateTimeFormat(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric'
+          }).format(d);
+          return formattedDate;
+        }
+
+        const mapping = {
+          name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
+          url: 'URL',
+          size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
+          mimeType: 'Type',
+          duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
+          bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
+          date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
+          framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
+          width: 'Width',
+          height: 'Height',
+          subtitles: 'Subtitle Tracks',
+          audioTracks: 'Audio Tracks'
+        }
+        
+        // Generate HTML for each fileinfo metadata item
+        var html = '';
+        const keys = Object.keys(metadata);
+        keys.forEach((key) => {
+          const map = mapping[key];
+          const label = (typeof map === 'object' ? map.name : map);
+          const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
+          html += `<li class='fileinfo-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
+        });
+
+        const $fileinfo = $('.fileinfo');
+        $fileinfo.removeClass('loading');
+        $fileinfo.html(html);
+      }
+
+      $player.on('loadstart', resetFileinfo);
+      function resetFileinfo() {
+        const $fileinfo = $('.fileinfo');
+        $fileinfo.addClass('loading');
+        $fileinfo.html('<li class="fileinfo-item">Metadata not yet loaded</li>');
+      }
+
+      function toggleFileinfo() {
+        const $fileinfo = $('.fileinfo');
+        if ($fileinfo.hasClass('show')) {
+          $fileinfo.removeClass('show');
+        } else {
+          $fileinfo.addClass('show');
+        }
       }
 
       function setCurrentVideoTile() {
@@ -1677,20 +1870,7 @@
       }
 
       function openFile(file) {
-        if (file) {
-          const metadata = {
-            source: 'Local',
-            id: undefined,
-            name: file.name,
-            url: URL.createObjectURL(file),
-            size: file.size,
-            mimeType: file.type,
-            duration: 0,
-            video: {}
-          }
-
-          return actionPlay(metadata);
-        }
+        if (file) return actionPlay(URL.createObjectURL(file));
       }
 
       function setupControls() {
@@ -1703,6 +1883,13 @@
         $('.btn-onedrive').on('click', openFromCloud('onedrive'));
         $('.btn-gdrive').on('click', openFromCloud('gdrive'));
         $('.btn-local-file').on('click', actionOpenLocalFile);
+
+        $('.btn-fileinfo').on('click', toggleFileinfo);
+        $('.fileinfo').on('click', (e) => {
+          // Only triggle `toggleFileInfo` if the target element isn't `<span class="value"/>` so that you can copy value text
+          const isValue = $(e.target).hasClass('value');
+          if (!isValue) toggleFileinfo();
+        });
 
         $playerContainer.on('dragenter', () => $playerContainer.addClass('drop'));
         $playerContainer.on('dragleave', (e) => {
@@ -1717,6 +1904,7 @@
 
         delay(10, updateMute);
 
+        $player.on('loadedmetadata', updateFileinfo);
         $player.on('pause', () => $playerContainer.addClass('paused'));
         $player.on('play',  () => $playerContainer.removeClass('paused'));
         $player.on('ended', () => $playerContainer.removeClass('paused'));
@@ -1772,6 +1960,9 @@
           case ' ':
             e.preventDefault();
             actionPlayPause();
+            break;
+          case 'i':
+            toggleFileinfo();
             break;
         }
       }
