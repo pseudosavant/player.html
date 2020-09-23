@@ -18,10 +18,11 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 * Sharable URL that will load `player.html` in the same folder location, and video position
 * Custom video playback controls (fullscreen, play, pause, mute, etc)
 * Progress bar with timestamp preview thumbnail on hover
-* Jump forward/backward 15 seconds
 * Video thumbnail generation, with concurrency configuration (default 1)*
 * Thumbnail caching using `localStorage`
 * Social media metadata (`og:\*`, `twitter:\*`)
+* Video file metadata (bitrate, resolution, etc)
+* Keyboard shortcuts (press `?` to see the list)
 * Paste and Play: just do `CTRL+V` to play the video URL that you currently have in the clipboard
 * Support for playing videos directly from ![onedrive](https://user-images.githubusercontent.com/455424/93652838-4cc6dd80-f9cb-11ea-8d8c-062705d5500e.png) **OneDrive** and ![gdrive](https://user-images.githubusercontent.com/455424/93652836-4c2e4700-f9cb-11ea-9a71-7325f745baf9.png) **Google Drive**. You **must supply the appropriate keys** in the `app.options.cloud` AND register your app with Microsoft and/or Google. Instructions are in the code. `player.html` also **must be served over HTTPS** for the Microsoft and Google auth flows to work. [Remix this Glitch](https://glitch.com/edit/#!/player-html-remix?path=src%2Fplayer.html%3A487%3A10) to easily check it out over HTTPS with your own API keys.
 

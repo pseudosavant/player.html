@@ -38,7 +38,7 @@
       --playing-color: hsl(87, 100%, 50%);
       --modal-background-color: rgba(32,32,32,0.5);
 
-      --transition-base: 250ms;
+      --transition-base: 300ms;
       --blur-base: 1rem;
     }
 
@@ -59,7 +59,7 @@
     }
 
     svg {
-      transform: scale(1.1);
+      transform: scale(1.25);
     }
 
     .playerContainer {
@@ -80,7 +80,7 @@
       justify-content: center;
     }
 
-    :fullscreen .controls {
+    .playerContainer:fullscreen .controls {
       position: absolute;
       bottom: 0;
       overflow: hidden;
@@ -172,46 +172,53 @@
       justify-content: center;
     }
 
-    .fileinfo {
-      display: flex;
-      justify-content: flex-start;
-      flex-direction: column;
-      gap: 0.1rem;
-      padding: 0;
-      margin: 0;
-      list-style: none;
-    }
-
     .fileinfo, .help {
       z-index: 100;
+      display: flex;
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
-      width: 100%;
-      min-width: 320px;
-      padding: 1rem;
-      background-color: var(--modal-background-color);
-      backdrop-filter: blur(var(--blur-base));
+      max-width: 100vw;
       overflow-x: hidden;
+    
+      margin: 0;
       margin-left: -100vw;
       transition: margin-left var(--transition-base) ease;
+      padding: 1rem;
+    
+      justify-content: flex-start;
+      flex-direction: column;
+      gap: 0.1rem;
+
+      list-style: none;
+    
+      background-color: var(--modal-background-color);
+      backdrop-filter: blur(var(--blur-base));
+
+    }
+    .help {
+      align-items: center;
     }
 
     .fileinfo.show, .help.show {
       margin-left: 0;
     }
 
-    .fileinfo-item {
+    .fileinfo-item, .help-item {
       display: block;
       padding: 1rem;
       width: 100%;
       position: relative;
       margin: 0;
       background-color: rgba(0,0,0,0.25);
+
+    }
+    .help-item {
+      max-width: 320px;
     }
 
-    .fileinfo-item .key {
+    .fileinfo-item .key, .help-item .key {
       display: inline-block;
       width: 10rem;
       margin-right: 1rem;
@@ -224,24 +231,14 @@
       user-select: text;
     }
 
-
-    .help-item {
-      display: block;
-      margin-bottom: 0.75rem;
-    }
-
-    .help-item:last-child {
-      margin-bottom: 0;
-    }
-
     .help-item .key {
-      display: inline-block;
       width: 15ch;
       padding: 0.75em;
       border-radius: var(--tile-border-radius);
       background-color: #333;
-      margin-right: 1rem;
       text-align: center;
+      gap: 1rem;
+      font-weight: normal;
     }
 
     .help-item .desc {
@@ -264,9 +261,8 @@
       border: 0 none;
       outline: none;
 
-      font-size: 2rem;
+      width: 2.5rem;
 
-      padding: 0.2rem;
       margin: 1rem 0;
 
       background: none;
@@ -279,6 +275,8 @@
 
     .controls svg {
       fill: var(--theme-color);
+      width: 24px;
+      height: 24px;
     }
 
     .controls button:hover {
@@ -305,11 +303,21 @@
       display: none;
     }
 
-    .btn-fullscreen .collapse, :fullscreen .btn-fullscreen .expand {
+    button.btn-fullscreen {
       display: none;
     }
 
-    .btn-fullscreen .expand, :fullscreen .btn-fullscreen .collapse {
+    button.btn-fullscreen.enabled {
+      display: inline-block;
+    }
+
+    .btn-fullscreen .collapse,
+    :fullscreen .btn-fullscreen .expand {
+      display: none;
+    }
+
+    .btn-fullscreen .expand,
+    :fullscreen .btn-fullscreen .collapse {
       display: block;
     }
 
@@ -350,18 +358,20 @@
       position: relative;
       top: 0;
       left: 0;
-      height: 0.5rem;
+      height: 0.6rem;
       width: 100%;
 
+      cursor: pointer;
+
       border-radius: calc(2 * var(--tile-border-radius));
-      border: 0.5rem solid #222;
-      border-width: 0.25rem;
-      margin: -0.25rem;
+      /* border: 0.5rem solid #222;
+      border-width: 0.25rem; */
+      /* margin: -0.25rem; */
 
       background-color: var(--progress-bar-base-color);
     }
 
-    .progressBar:after {
+    .progressBar::after {
       display: block;
       content: '';
       position: absolute;
@@ -406,6 +416,14 @@
       filter: brightness(1.5);
     }
 
+    button.btn-onedrive {
+      width: 37px;
+    }
+
+    button.btn-gdrive {
+      width: 24px;
+    }
+
     .primary-buttons {
       position: relative;
       margin-top: 1rem;
@@ -413,7 +431,7 @@
 
     .sources {
       position: absolute;
-      right: -1rem; /* Offset padding of parent container */
+      right: 0; /* Offset padding of parent container */
       bottom: 0;
     }
 
@@ -555,45 +573,48 @@
     .folder .arrow .open, .folder:first-of-type .arrow .closed {
       display: none;
     }
+
+    .no-transitions * {
+      transition: none !important;
+    }
   </style>
 </head>
-
-<body>
-  <div class='playerContainer no-transitions'>
-    <div class="videoContainer">
+<body class="">
+  <div class='playerContainer'>
+    <div class='videoContainer'>
       <video class='player'></video>
       <div class='pauseOverlay'><svg><use xlink:href='#svgPause'></svg></div>
-      <ul class='fileinfo loading'><li class="fileinfo-item">Metadata not yet loaded</li></ul>
-      <div class='help'>
-        <h3>Keyboard Shortcuts</h3>
-        <div class='help-item'><span class="key">0-9</span><span class="desc">Seek to 0%-90% of video</span></div>
-        <div class='help-item'><span class="key">Backspace</span><span class="desc">Go to previous folder</span></div>
-        <div class='help-item'><span class="key">Left Arrow</span><span class="desc">Go back 15 seconds</span></div>
-        <div class='help-item'><span class="key">Right Arrow</span><span class="desc">Go forward 15 seconds</span></div>
-        <div class='help-item'><span class="key">Space</span><span class="desc">Toggle Play/Pause</span></div>
-        <div class='help-item'><span class="key">i</span><span class="desc">Video file information</span></div>
-        <div class='help-item'><span class="key">f</span><span class="desc">Toggle Fullscreen</span></div>
-        <div class='help-item'><span class="key">?</span><span class="desc">This help information</span></div>
-      </div>
+      <ul class='fileinfo loading'><li class='fileinfo-item'>Metadata not yet loaded</li></ul>
+      <ul class='help'>
+        <li class='help-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of video</span></li>
+        <li class='help-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
+        <li class='help-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 15 seconds</span></li>
+        <li class='help-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 15 seconds</span></li>
+        <li class='help-item'><span class='key'>Space</span><span class='desc'>Toggle Play/Pause</span></li>
+        <li class='help-item'><span class='key'>i</span><span class='desc'>Video file information</span></li>
+        <li class='help-item'><span class='key'>f</span><span class='desc'>Toggle Fullscreen</span></li>
+        <li class='help-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
+        <li class='help-item'><span class='key'>?</span><span class='desc'>This help information</span></li>
+      </ul>
     </div>
     <section class='controls'>
       <div class='progressBar'></div>
       <video class='trick'></video>
-      <section class="primary-buttons">
-        <button class='btn-play' type='button' title='Play/Pause [Spacebar]'><svg class='playing' width="24" height="24"><use xlink:href='#svgPlay'></svg><svg class='paused' width="24" height="24"><use xlink:href='#svgPause'></svg></button>
-        <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]'><svg width="24" height="24"><use xlink:href='#svgReplay'></svg></button>
-        <button class='btn-fast-forward' type='button' title='Go forward 15 seconds [Right Arrow]'><svg width="24" height="24"><use xlink:href='#svgSkip'></svg></button>
-        <button class='btn-stop' type='button' title='Stop'><svg width="24" height="24"><use xlink:href='#svgStop'></svg></button>
-        <button class='btn-mute' type='button' title='Mute'><svg class='on' width="24" height="24"><use xlink:href='#svgSpeakerOn'></svg><svg class='off' width="24" height="24"><use xlink:href='#svgSpeakerOff'></svg></button>
-        <button class='btn-fullscreen' type='button' title='Fullscreen'><svg class="collapse" width="24" height="24"><use xlink:href='#svgCollapse'></svg><svg class="expand" width="24" height="24"><use xlink:href='#svgExpand'></svg></button>
-        <button class='btn-fileinfo' type='button' title='Video file information'><svg width="24" height="24"><use xlink:href='#svgInfo'></svg></button>
+      <section class='primary-buttons'>
+        <button class='btn-play' type='button' title='Play/Pause [Spacebar]'><svg class='playing'><use xlink:href='#svgPlay'></svg><svg class='paused'><use xlink:href='#svgPause'></svg></button>
+        <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]'><svg><use xlink:href='#svgReplay'></svg></button>
+        <button class='btn-fast-forward' type='button' title='Go forward 15 seconds [Right Arrow]'><svg><use xlink:href='#svgSkip'></svg></button>
+        <button class='btn-stop' type='button' title='Stop'><svg><use xlink:href='#svgStop'></svg></button>
+        <button class='btn-mute' type='button' title='Mute'><svg class='on'><use xlink:href='#svgSpeakerOn'></svg><svg class='off'><use xlink:href='#svgSpeakerOff'></svg></button>
+        <button class='btn-fullscreen' type='button' title='Fullscreen'><svg class='collapse'><use xlink:href='#svgCollapse'></svg><svg class='expand'><use xlink:href='#svgExpand'></svg></button>
+        <button class='btn-fileinfo' type='button' title='Video file information'><svg><use xlink:href='#svgInfo'></svg></button>
         <section class='sources'>
-          <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width="24" height="24"><use xlink:href='#svgOneDrive'></svg></button>
-          <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width="18" height="24"><use xlink:href='#svgGoogleDrive'></svg></button>
-          <button class='btn-local-file' type='button' title='Open local video file'><svg width="24" height="24"><use xlink:href='#svgFolderOpenVertical'></svg></button>
+          <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width='30' height='24'><use xlink:href='#svgOneDrive'></svg></button>
+          <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width='18' height='24'><use xlink:href='#svgGoogleDrive'></svg></button>
+          <button class='btn-local-file' type='button' title='Open local video file'><svg><use xlink:href='#svgFolderOpenVertical'></svg></button>
         </section>
       </section>
-    <div class="currentTimestamp" style="--absolute-position: '0:00'; --duration: '0:00';"><span class="position"></span><span class="divider"></span><span class="duration"></span></div>
+    <div class='currentTimestamp' style='--absolute-position: "0:00"; --duration: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
   </div>
   <section class='links'></section>
@@ -608,7 +629,7 @@
     <!-- ic_fluent_folder_open_24_filled.svg -->
     <svg id='svgFolderOpen'><path d='M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z'/></svg>
     <!-- ic_fluent_folder_open_vertical_20_filled.svg -->
-    <svg id="svgFolderOpenVertical"><path d="M4.1369,2.87306 L10.0437,5.17014 C10.5758538,5.37711231 10.9404053,5.86607751 10.9933413,6.42663963 L11,6.56815 L11,18.1574 C10.7250286,18.2553714 10.4180245,18.2745837 10.1126094,18.1919254 L9.96019,18.142 L5.60032,16.4603 C4.69273412,16.1102765 4.07596069,15.2685381 4.00653955,14.3090021 L4,14.1278 L4,3.5 C4,3.3321425 4.02757375,3.17072562 4.078435,3.02002719 L4.1369,2.87306 Z M14.5,2 C15.2796706,2 15.9204457,2.59488554 15.9931332,3.35553954 L16,3.5 L16,7.37689 C16,7.45865667 15.9933333,7.54021444 15.9800593,7.62075444 L15.9552,7.7407 L15,11.5616 L15,14.5 C15,15.2796706 14.4050879,15.9204457 13.6444558,15.9931332 L13.5,16 L12,16 L12,6.56815 C12,5.59775941 11.4392803,4.72105242 10.5722047,4.30971206 L10.4061,4.23813 L4.93446,2.11027 C5.0653575,2.056945 5.20548,2.02158063 5.35176891,2.00723125 L5.5,2 L14.5,2 Z"></path></svg>
+    <svg id='svgFolderOpenVertical'><path d='M4.1369,2.87306 L10.0437,5.17014 C10.5758538,5.37711231 10.9404053,5.86607751 10.9933413,6.42663963 L11,6.56815 L11,18.1574 C10.7250286,18.2553714 10.4180245,18.2745837 10.1126094,18.1919254 L9.96019,18.142 L5.60032,16.4603 C4.69273412,16.1102765 4.07596069,15.2685381 4.00653955,14.3090021 L4,14.1278 L4,3.5 C4,3.3321425 4.02757375,3.17072562 4.078435,3.02002719 L4.1369,2.87306 Z M14.5,2 C15.2796706,2 15.9204457,2.59488554 15.9931332,3.35553954 L16,3.5 L16,7.37689 C16,7.45865667 15.9933333,7.54021444 15.9800593,7.62075444 L15.9552,7.7407 L15,11.5616 L15,14.5 C15,15.2796706 14.4050879,15.9204457 13.6444558,15.9931332 L13.5,16 L12,16 L12,6.56815 C12,5.59775941 11.4392803,4.72105242 10.5722047,4.30971206 L10.4061,4.23813 L4.93446,2.11027 C5.0653575,2.056945 5.20548,2.02158063 5.35176891,2.00723125 L5.5,2 L14.5,2 Z'></path></svg>
     <!-- ic_fluent_stop_24_filled.svg -->
     <svg id='svgStop'><path d='M4.75 3C3.7835 3 3 3.7835 3 4.75V19.25C3 20.2165 3.7835 21 4.75 21H19.25C20.2165 21 21 20.2165 21 19.25V4.75C21 3.7835 20.2165 3 19.25 3H4.75Z'/></svg>
     <!-- ic_fluent_rewind_24_filled.svg -->
@@ -618,11 +639,11 @@
     <!-- ic_fluent_arrow_up_24_filled.svg -->
     <svg id='svgFolderArrow'><path d='M4.28401,10.2955 C3.89639,10.6889 3.90108,11.322 4.29449,11.7097 C4.68789,12.0973 5.32104,12.0926 5.70866,11.6992 L11,6.32889 L11,20 C11,20.5523 11.4477,21 12,21 C12.5523,21 13,20.5523 13,20 L13,6.33538 L18.2849,11.6992 C18.6726,12.0926 19.3057,12.0973 19.6991,11.7097 C20.0925,11.322 20.0972,10.6889 19.7096,10.2955 L12.8872,3.3713 C12.3976,2.87438 11.596,2.87438 11.1064,3.3713 L4.28401,10.2955 Z'/></svg>
     <!-- ic_fluent_info_24_filled.svg -->
-    <svg id="svgInfo"><path d="M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M12.0000002,3.49896738 C7.30472352,3.49896738 3.49844971,7.30524119 3.49844971,12.0005179 C3.49844971,16.6957946 7.30472352,20.5020684 12.0000002,20.5020684 C16.6952769,20.5020684 20.5015507,16.6957946 20.5015507,12.0005179 C20.5015507,7.30524119 16.6952769,3.49896738 12.0000002,3.49896738 Z M11.9963566,10.4995494 C12.3760523,10.4993013 12.6900321,10.7812497 12.7399342,11.1472927 L12.7468472,11.2490588 L12.750448,16.7506528 C12.7507187,17.1648663 12.4151521,17.5008724 12.0009386,17.5011438 C11.6212429,17.5013919 11.3072631,17.2194435 11.2573612,16.8534005 L11.2504479,16.7516344 L11.2468472,11.2500404 C11.2465765,10.8358269 11.5821431,10.4998208 11.9963566,10.4995494 Z M12.0004478,7.00178515 C12.5519939,7.00178515 12.9991104,7.44890164 12.9991104,8.00044779 C12.9991104,8.55199393 12.5519939,8.99911042 12.0004478,8.99911042 C11.4489016,8.99911042 11.0017852,8.55199393 11.0017852,8.00044779 C11.0017852,7.44890164 11.4489016,7.00178515 12.0004478,7.00178515 Z"></path></svg>
+    <svg id='svgInfo'><path d='M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M12.0000002,3.49896738 C7.30472352,3.49896738 3.49844971,7.30524119 3.49844971,12.0005179 C3.49844971,16.6957946 7.30472352,20.5020684 12.0000002,20.5020684 C16.6952769,20.5020684 20.5015507,16.6957946 20.5015507,12.0005179 C20.5015507,7.30524119 16.6952769,3.49896738 12.0000002,3.49896738 Z M11.9963566,10.4995494 C12.3760523,10.4993013 12.6900321,10.7812497 12.7399342,11.1472927 L12.7468472,11.2490588 L12.750448,16.7506528 C12.7507187,17.1648663 12.4151521,17.5008724 12.0009386,17.5011438 C11.6212429,17.5013919 11.3072631,17.2194435 11.2573612,16.8534005 L11.2504479,16.7516344 L11.2468472,11.2500404 C11.2465765,10.8358269 11.5821431,10.4998208 11.9963566,10.4995494 Z M12.0004478,7.00178515 C12.5519939,7.00178515 12.9991104,7.44890164 12.9991104,8.00044779 C12.9991104,8.55199393 12.5519939,8.99911042 12.0004478,8.99911042 C11.4489016,8.99911042 11.0017852,8.55199393 11.0017852,8.00044779 C11.0017852,7.44890164 11.4489016,7.00178515 12.0004478,7.00178515 Z'></path></svg>
     <!-- ic_fluent_arrow_expand_24_filled.svg -->
-    <svg id='svgExpand'><path d="M7.6687288,14.9228932 C8.05925309,14.5323689 8.69241807,14.5323689 9.08294236,14.9228932 C9.47346666,15.3134175 9.47346666,15.9465825 9.08294236,16.3371068 L9.08294236,16.3371068 L6.415,19.0042145 L8,19.0042145 C8.51283584,19.0042145 8.93550716,19.3902547 8.99327227,19.8875934 L9,20.0042145 C9,20.5564992 8.55228475,21.0042145 8,21.0042145 L8,21.0042145 L4,21.0042145 C3.44771525,21.0042145 3,20.5564992 3,20.0042145 L3,20.0042145 L3,16.0042145 C3,15.4519298 3.44771525,15.0042145 4,15.0042145 C4.55228475,15.0042145 5,15.4519298 5,16.0042145 L5,16.0042145 L5,17.5912145 L7.6687288,14.9228932 Z M16.0050107,21.0042145 C15.452726,21.0042145 15.0050107,20.5564992 15.0050107,20.0042145 C15.0050107,19.4519298 15.452726,19.0042145 16.0050107,19.0042145 L16.0050107,19.0042145 L17.5880107,19.0042145 L14.9226154,16.3368288 C14.5622731,15.9762031 14.5347666,15.4089612 14.8399456,15.0167899 L14.9231713,14.9226153 C15.313849,14.5322446 15.947014,14.5324935 16.3373847,14.9231712 L16.3373847,14.9231712 L19.0050107,17.5932145 L19.0050107,16.0042145 C19.0050107,15.4913787 19.3910509,15.0687073 19.8883896,15.0109422 L20.0050107,15.0042145 C20.5572954,15.0042145 21.0050107,15.4519298 21.0050107,16.0042145 L21.0050107,16.0042145 L21.0050107,20.0042145 C21.0050107,20.5564992 20.5572954,21.0042145 20.0050107,21.0042145 L20.0050107,21.0042145 L16.0050107,21.0042145 Z M8,3 C8.55228475,3 9,3.44771525 9,4 C9,4.55228475 8.55228475,5 8,5 L8,5 L6.417,5 L9.08238468,7.66817123 C9.44272691,8.02879686 9.47023348,8.59603878 9.1650544,8.98821005 L9.08182877,9.08238468 C8.691151,9.47275543 8.05798607,9.47250654 7.66761532,9.08182877 L7.66761532,9.08182877 L5,6.412 L5,8 C5,8.51283584 4.61395981,8.93550716 4.11662113,8.99327227 L4,9 C3.44771525,9 3,8.55228475 3,8 L3,8 L3,4 C3,3.44771525 3.44771525,3 4,3 L4,3 L8,3 Z M20.0049977,3 C20.5572824,3 21.0049977,3.44771525 21.0049977,4 L21.0049977,4 L21.0049977,8 C21.0049977,8.55228475 20.5572824,9 20.0049977,9 C19.452713,9 19.0049977,8.55228475 19.0049977,8 L19.0049977,8 L19.0049977,6.412 L16.3372498,9.08196378 C15.9768387,9.44252063 15.4096133,9.47036487 15.0172604,9.16541931 L14.9230362,9.08224975 C14.532433,8.69180444 14.532305,8.05863947 14.9227503,7.66803622 L14.9227503,7.66803622 L17.5889977,5 L16.0049977,5 C15.4921619,5 15.0694905,4.61395981 15.0117254,4.11662113 L15.0049977,4 C15.0049977,3.44771525 15.452713,3 16.0049977,3 L16.0049977,3 L20.0049977,3 Z"></path></svg>
+    <svg id='svgExpand'><path d='M7.6687288,14.9228932 C8.05925309,14.5323689 8.69241807,14.5323689 9.08294236,14.9228932 C9.47346666,15.3134175 9.47346666,15.9465825 9.08294236,16.3371068 L9.08294236,16.3371068 L6.415,19.0042145 L8,19.0042145 C8.51283584,19.0042145 8.93550716,19.3902547 8.99327227,19.8875934 L9,20.0042145 C9,20.5564992 8.55228475,21.0042145 8,21.0042145 L8,21.0042145 L4,21.0042145 C3.44771525,21.0042145 3,20.5564992 3,20.0042145 L3,20.0042145 L3,16.0042145 C3,15.4519298 3.44771525,15.0042145 4,15.0042145 C4.55228475,15.0042145 5,15.4519298 5,16.0042145 L5,16.0042145 L5,17.5912145 L7.6687288,14.9228932 Z M16.0050107,21.0042145 C15.452726,21.0042145 15.0050107,20.5564992 15.0050107,20.0042145 C15.0050107,19.4519298 15.452726,19.0042145 16.0050107,19.0042145 L16.0050107,19.0042145 L17.5880107,19.0042145 L14.9226154,16.3368288 C14.5622731,15.9762031 14.5347666,15.4089612 14.8399456,15.0167899 L14.9231713,14.9226153 C15.313849,14.5322446 15.947014,14.5324935 16.3373847,14.9231712 L16.3373847,14.9231712 L19.0050107,17.5932145 L19.0050107,16.0042145 C19.0050107,15.4913787 19.3910509,15.0687073 19.8883896,15.0109422 L20.0050107,15.0042145 C20.5572954,15.0042145 21.0050107,15.4519298 21.0050107,16.0042145 L21.0050107,16.0042145 L21.0050107,20.0042145 C21.0050107,20.5564992 20.5572954,21.0042145 20.0050107,21.0042145 L20.0050107,21.0042145 L16.0050107,21.0042145 Z M8,3 C8.55228475,3 9,3.44771525 9,4 C9,4.55228475 8.55228475,5 8,5 L8,5 L6.417,5 L9.08238468,7.66817123 C9.44272691,8.02879686 9.47023348,8.59603878 9.1650544,8.98821005 L9.08182877,9.08238468 C8.691151,9.47275543 8.05798607,9.47250654 7.66761532,9.08182877 L7.66761532,9.08182877 L5,6.412 L5,8 C5,8.51283584 4.61395981,8.93550716 4.11662113,8.99327227 L4,9 C3.44771525,9 3,8.55228475 3,8 L3,8 L3,4 C3,3.44771525 3.44771525,3 4,3 L4,3 L8,3 Z M20.0049977,3 C20.5572824,3 21.0049977,3.44771525 21.0049977,4 L21.0049977,4 L21.0049977,8 C21.0049977,8.55228475 20.5572824,9 20.0049977,9 C19.452713,9 19.0049977,8.55228475 19.0049977,8 L19.0049977,8 L19.0049977,6.412 L16.3372498,9.08196378 C15.9768387,9.44252063 15.4096133,9.47036487 15.0172604,9.16541931 L14.9230362,9.08224975 C14.532433,8.69180444 14.532305,8.05863947 14.9227503,7.66803622 L14.9227503,7.66803622 L17.5889977,5 L16.0049977,5 C15.4921619,5 15.0694905,4.61395981 15.0117254,4.11662113 L15.0049977,4 C15.0049977,3.44771525 15.452713,3 16.0049977,3 L16.0049977,3 L20.0049977,3 Z'></path></svg>
     <!-- ic_fluent_arrow_minimize_24_filled.svg -->
-    <svg id='svgCollapse'><path d="M10.498103,12.5046266 C11.0109388,12.5046266 11.4336102,12.8906668 11.4913753,13.3880055 L11.498103,13.5046266 L11.498103,21.0085171 C11.498103,21.5608018 11.0503877,22.0085171 10.498103,22.0085171 C9.98526715,22.0085171 9.56259583,21.6224769 9.50483072,21.1251382 L9.49810299,21.0085171 L9.49757619,15.9154145 L3.70710678,21.7071068 C3.34662282,22.0675907 2.77939176,22.0953203 2.38710056,21.7902954 L2.29289322,21.7071068 C1.93240926,21.3466228 1.90467972,20.7793918 2.20970461,20.3871006 L2.29289322,20.2928932 L8.08057619,14.5044145 L2.99657619,14.5046266 C2.44429144,14.5046266 1.99657619,14.0569114 1.99657619,13.5046266 C1.99657619,12.9917908 2.38261638,12.5691195 2.87995507,12.5113544 L2.99657619,12.5046266 L10.498103,12.5046266 Z M13.4990964,1.99941454 C14.0119323,1.99941454 14.4346036,2.38545473 14.4923687,2.88279341 L14.4990964,2.99941454 L14.4985762,8.08641454 L20.2928932,2.29289322 C20.6533772,1.93240926 21.2206082,1.90467972 21.6128994,2.20970461 L21.7071068,2.29289322 C22.0675907,2.65337718 22.0953203,3.22060824 21.7902954,3.61289944 L21.7071068,3.70710678 L15.9105762,9.50241454 L21.0006232,9.50330499 C21.552908,9.50330499 22.0006232,9.95102024 22.0006232,10.503305 C22.0006232,11.0161408 21.614583,11.4388122 21.1172444,11.4965773 L21.0006232,11.503305 L13.4990964,11.503305 C12.9862606,11.503305 12.5635893,11.1172648 12.5058242,10.6199261 L12.4990964,10.503305 L12.4990964,2.99941454 C12.4990964,2.44712979 12.9468117,1.99941454 13.4990964,1.99941454 Z"></path></svg>
+    <svg id='svgCollapse'><path d='M10.498103,12.5046266 C11.0109388,12.5046266 11.4336102,12.8906668 11.4913753,13.3880055 L11.498103,13.5046266 L11.498103,21.0085171 C11.498103,21.5608018 11.0503877,22.0085171 10.498103,22.0085171 C9.98526715,22.0085171 9.56259583,21.6224769 9.50483072,21.1251382 L9.49810299,21.0085171 L9.49757619,15.9154145 L3.70710678,21.7071068 C3.34662282,22.0675907 2.77939176,22.0953203 2.38710056,21.7902954 L2.29289322,21.7071068 C1.93240926,21.3466228 1.90467972,20.7793918 2.20970461,20.3871006 L2.29289322,20.2928932 L8.08057619,14.5044145 L2.99657619,14.5046266 C2.44429144,14.5046266 1.99657619,14.0569114 1.99657619,13.5046266 C1.99657619,12.9917908 2.38261638,12.5691195 2.87995507,12.5113544 L2.99657619,12.5046266 L10.498103,12.5046266 Z M13.4990964,1.99941454 C14.0119323,1.99941454 14.4346036,2.38545473 14.4923687,2.88279341 L14.4990964,2.99941454 L14.4985762,8.08641454 L20.2928932,2.29289322 C20.6533772,1.93240926 21.2206082,1.90467972 21.6128994,2.20970461 L21.7071068,2.29289322 C22.0675907,2.65337718 22.0953203,3.22060824 21.7902954,3.61289944 L21.7071068,3.70710678 L15.9105762,9.50241454 L21.0006232,9.50330499 C21.552908,9.50330499 22.0006232,9.95102024 22.0006232,10.503305 C22.0006232,11.0161408 21.614583,11.4388122 21.1172444,11.4965773 L21.0006232,11.503305 L13.4990964,11.503305 C12.9862606,11.503305 12.5635893,11.1172648 12.5058242,10.6199261 L12.4990964,10.503305 L12.4990964,2.99941454 C12.4990964,2.44712979 12.9468117,1.99941454 13.4990964,1.99941454 Z'></path></svg>
     <!-- ic_fluent_speaker_24_filled.svg -->
     <svg id='svgSpeakerOn'><path d='M15,4.25 C15,3.17138 13.7255,2.59915 12.9195,3.31583 L8.42794,7.30909 C8.29065,7.43116 8.11333,7.49859 7.92961,7.49859 L4.25,7.49859 C3.00736,7.49859 2,8.50595 2,9.74859 L2,14.2465 C2,15.4891 3.00736,16.4965 4.25,16.4965 L7.92956,16.4965 C8.11329,16.4965 8.29063,16.5639 8.42793,16.686 L12.9194,20.6797 C13.7255,21.3965 15,20.8243 15,19.7456 L15,4.25 Z M18.9916,5.89733 C19.3244,5.65079 19.7941,5.72077 20.0407,6.05362 C21.2717,7.7157 22,9.7739 22,12 C22,14.2261 21.2717,16.2843 20.0407,17.9464 C19.7941,18.2793 19.3244,18.3492 18.9916,18.1027 C18.6587,17.8562 18.5888,17.3865 18.8353,17.0536 C19.8815,15.6411 20.5,13.8939 20.5,12 C20.5,10.1062 19.8815,8.35896 18.8353,6.94641 C18.5888,6.61356 18.6587,6.14387 18.9916,5.89733 Z M17.143,8.36933 C17.5072,8.17214 17.9624,8.30757 18.1596,8.67184 C18.6958,9.66245 19,10.7968 19,12 C19,13.2032 18.6958,14.3376 18.1596,15.3282 C17.9624,15.6924 17.5072,15.8279 17.143,15.6307 C16.7787,15.4335 16.6432,14.9783 16.8404,14.6141 C17.2609,13.8373 17.5,12.9477 17.5,12 C17.5,11.0523 17.2609,10.1627 16.8404,9.38593 C16.6432,9.02167 16.7787,8.56652 17.143,8.36933 Z'></path></svg>
     <!-- ic_fluent_speaker_off_24_filled.svg -->
@@ -633,25 +654,25 @@
       <path d='M9.52004 6.33813L15 11.8182V4.25C15 3.17137 13.7255 2.59914 12.9195 3.31582L9.52004 6.33813Z'/>
     </svg>
     <!-- Based on SVG from https://upload.wikimedia.org/wikipedia/commons/d/d3/Microsoft_Office_OneDrive_%282018%E2%80%93present%29.svg -->
-    <svg id="svgCloud"><path d="M6.33663542,10.0000028 C6.81096059,7.29275763 9.17457638,5.25 12,5.25 C14.8254236,5.25 17.1890394,7.29275763 17.6633646,10.0000028 L17.75,10 C19.959139,10 21.75,11.790861 21.75,14 C21.75,16.209139 19.959139,18 17.75,18 L6.25,18 C4.040861,18 2.25,16.209139 2.25,14 C2.25,11.790861 4.040861,10 6.25002438,10 L6.33663542,10.0000028 Z"></path></svg>
-    <svg id='svgOneDrive'> 
-      <path d="m14.4993603046,12.68824475238037 l4.953813,-4.737589000000001 c-1.0290212,-4.012493 -5.1159810000000006,-6.431033 -9.128474,-5.401872 c-1.806915,0.46339040000000015 -3.3764030000000003,1.5835146000000002 -4.401836,3.1417720000000005 c0.0766803,-0.0019339000000000012 8.576264,6.997689 8.576264,6.997689 z" fill="#0364b8" stroke-width="0" id="svg_2"/>
-      <path d="m9.1517773046,6.582246752380371 l-0.0002330000000000001,0.0008155000000000004 c-0.9465858,-0.5862746000000001 -2.0382607,-0.8961646000000002 -3.1517910000000002,-0.8946501000000001 c-0.025723200000000005,0 -0.05100370000000002,0.0016310000000000005 -0.0766803,0.0019339000000000012 c-3.311862,0.04103130000000002 -5.963635,2.759186 -5.922627,6.071048 c0.014865400000000004,1.2013946 0.39025170000000003,2.370542 1.0774852000000001,3.356132 l7.421749,-0.9295302 l5.690093,-4.588236 z" fill="#0078d4" stroke-width="0" id="svg_3"/>
-      <path d="m19.4531733046,7.950655752380371 c-0.10890420000000003,-0.007269600000000004 -0.21834430000000007,-0.012302400000000003 -0.3290659000000001,-0.012302400000000003 c-0.6645859000000002,-0.0006524000000000004 -1.3222517,0.13509340000000003 -1.9322690000000002,0.3988261000000001 l-0.00013980000000000004,-0.0005126000000000004 l-3.0019720000000003,1.2633260000000002 l3.309532,4.088218 l5.916569000000001,1.4382624000000002 c1.2768167000000001,-2.370309 0.3903216000000001,-5.3268460000000015 -1.9800340000000003,-6.6036860000000015 c-0.6124871000000001,-0.3299280000000001 -1.2885133000000002,-0.5249257 -1.9826203,-0.5719218000000001 v-0.00002330000000000001 z" fill="#1490df" stroke-width="0" id="svg_4"/>
-      <path d="m1.0779545046000003,15.11773575238037 c1.1206135,1.6111717 2.9593330000000004,2.5713880000000002 4.9218920000000015,2.570456 h13.124424 c1.7928418000000004,0.0005126000000000004 3.441177,-0.9833065999999999 4.29186,-2.561602 l-9.226334000000001,-5.526527000000001 z" fill="#28a8ea" stroke-width="0" id="svg_5"/>
+    <svg id='svgCloud'><path d='M6.33663542,10.0000028 C6.81096059,7.29275763 9.17457638,5.25 12,5.25 C14.8254236,5.25 17.1890394,7.29275763 17.6633646,10.0000028 L17.75,10 C19.959139,10 21.75,11.790861 21.75,14 C21.75,16.209139 19.959139,18 17.75,18 L6.25,18 C4.040861,18 2.25,16.209139 2.25,14 C2.25,11.790861 4.040861,10 6.25002438,10 L6.33663542,10.0000028 Z'></path></svg>
+    <svg id='svgOneDrive'>
+      <path d='m14.4993603046,12.68824475238037 l4.953813,-4.737589000000001 c-1.0290212,-4.012493 -5.1159810000000006,-6.431033 -9.128474,-5.401872 c-1.806915,0.46339040000000015 -3.3764030000000003,1.5835146000000002 -4.401836,3.1417720000000005 c0.0766803,-0.0019339000000000012 8.576264,6.997689 8.576264,6.997689 z' fill='#0364b8' stroke-width='0' id='svg_2'/>
+      <path d='m9.1517773046,6.582246752380371 l-0.0002330000000000001,0.0008155000000000004 c-0.9465858,-0.5862746000000001 -2.0382607,-0.8961646000000002 -3.1517910000000002,-0.8946501000000001 c-0.025723200000000005,0 -0.05100370000000002,0.0016310000000000005 -0.0766803,0.0019339000000000012 c-3.311862,0.04103130000000002 -5.963635,2.759186 -5.922627,6.071048 c0.014865400000000004,1.2013946 0.39025170000000003,2.370542 1.0774852000000001,3.356132 l7.421749,-0.9295302 l5.690093,-4.588236 z' fill='#0078d4' stroke-width='0' id='svg_3'/>
+      <path d='m19.4531733046,7.950655752380371 c-0.10890420000000003,-0.007269600000000004 -0.21834430000000007,-0.012302400000000003 -0.3290659000000001,-0.012302400000000003 c-0.6645859000000002,-0.0006524000000000004 -1.3222517,0.13509340000000003 -1.9322690000000002,0.3988261000000001 l-0.00013980000000000004,-0.0005126000000000004 l-3.0019720000000003,1.2633260000000002 l3.309532,4.088218 l5.916569000000001,1.4382624000000002 c1.2768167000000001,-2.370309 0.3903216000000001,-5.3268460000000015 -1.9800340000000003,-6.6036860000000015 c-0.6124871000000001,-0.3299280000000001 -1.2885133000000002,-0.5249257 -1.9826203,-0.5719218000000001 v-0.00002330000000000001 z' fill='#1490df' stroke-width='0' id='svg_4'/>
+      <path d='m1.0779545046000003,15.11773575238037 c1.1206135,1.6111717 2.9593330000000004,2.5713880000000002 4.9218920000000015,2.570456 h13.124424 c1.7928418000000004,0.0005126000000000004 3.441177,-0.9833065999999999 4.29186,-2.561602 l-9.226334000000001,-5.526527000000001 z' fill='#28a8ea' stroke-width='0' id='svg_5'/>
     </svg>
     <!-- Based on SVG from https://upload.wikimedia.org/wikipedia/commons/a/ad/Logo_of_Google_Drive.svg -->
     <svg id='svgGoogleDrive'>
-      <path style="fill:#fccd48" d="M6.112017465007343,2.85274083196329 L11.884426325760373,2.85500390178011 L17.2620935892589,12.172385633327938 L11.499060245557772,12.173355520392281 z"/>
-      <path style="fill:#0ba25e" d="M3.616513460742275,17.144350020887746 L0.7379064321147182,12.165273128189341 L6.112017465007343,2.85274083196329 L8.998060248538135,7.835050681542867 z"/>
-      <path style="fill:#2a71e9" d="M3.616513460742275,17.144350020887746 L6.491564258763939,12.167212902318052 L17.2620935892589,12.172385633327938 L14.388335966003016,17.147259682080808 z"/>
-      <path style="fill:#e3b73a" d="M10.242417666910494,10.000485200554223 L17.2620935892589,12.169863926960613 L11.499060245557772,12.173420179529906 z"/>
-      <path style="fill:#089156" d="M8.998060248538135,7.835050681542867 L7.7478835437197695,10.001455087618574 L6.112017465007343,2.85274083196329 z"/>
-      <path style="fill:#296ad9" d="m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z"/>
+      <path style='fill:#fccd48' d='M6.112017465007343,2.85274083196329 L11.884426325760373,2.85500390178011 L17.2620935892589,12.172385633327938 L11.499060245557772,12.173355520392281 z'/>
+      <path style='fill:#0ba25e' d='M3.616513460742275,17.144350020887746 L0.7379064321147182,12.165273128189341 L6.112017465007343,2.85274083196329 L8.998060248538135,7.835050681542867 z'/>
+      <path style='fill:#2a71e9' d='M3.616513460742275,17.144350020887746 L6.491564258763939,12.167212902318052 L17.2620935892589,12.172385633327938 L14.388335966003016,17.147259682080808 z'/>
+      <path style='fill:#e3b73a' d='M10.242417666910494,10.000485200554223 L17.2620935892589,12.169863926960613 L11.499060245557772,12.173420179529906 z'/>
+      <path style='fill:#089156' d='M8.998060248538135,7.835050681542867 L7.7478835437197695,10.001455087618574 L6.112017465007343,2.85274083196329 z'/>
+      <path style='fill:#296ad9' d='m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z'/>
     </svg>
   </section>
-  <script type="text/javascript" src="https://apis.google.com/js/api.js" defer></script>
-  <script type="text/javascript" src="https://js.live.net/v7.2/OneDrive.js" defer></script>
+  <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>
+  <script type='text/javascript' src='https://js.live.net/v7.2/OneDrive.js' defer></script>
   <script defer>
     /* IMPORTANT!!!
 
@@ -1657,13 +1678,26 @@
           mode: 'cors',
         }
 
-        const f = await fetch(url, opts);
-        const h = f.headers;
-        const size = h.get('Content-Length');
-        const mimeType = h.get('Content-Type');
-        const lastModified = h.get('Last-Modified');
+        if (url.startsWith('blob')) opts.method = 'GET';
 
-        return { size, mimeType, lastModified };
+        try {
+          const f = await fetch(url, opts);
+          const h = f.headers;
+          
+          if (url.startsWith('http')) {
+            const size = h.get('Content-Length');
+            const mimeType = h.get('Content-Type');
+            const date = h.get('Last-Modified');
+            return { size, mimeType, date };
+          } else if (url.startsWith('blob')) {
+            const size = h.get('Content-Length');
+            const mimeType = h.get('Content-Type');
+            return { size, mimeType };
+          }
+        } catch (e) {
+          console.warn(e);
+          return {};
+        }
       }
 
       function urlToFilename(url) {
@@ -1710,36 +1744,27 @@
         const url = $player.currentSrc;
         const subtitles = ($player.textTracks && $player.textTracks.length ? $player.textTracks.length : 0);
         const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
-        const headerData = await getHeaderData(url);
-
+        
         const metadata = {
           name: urlToFilename(url),
           url: url,
-          size: headerData.size,
-          mimeType: headerData.mimeType,
           duration: $player.duration,
-          bitrate: headerData.size / $player.duration,
-          date: headerData.lastModified,
           width: $player.videoWidth,
           height: $player.videoHeight,
           subtitles: subtitles,
-          audioTracks: audioTracks
+          audioTracks: audioTracks,
         };
+        
+        const headerData = await getHeaderData(url);
+        if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
 
+        const headerKeys = Object.keys(headerData);
+        headerKeys.forEach((k) => {
+          metadata[k] = headerData[k];
+        });
+        
         if (supportsVideoFrameCallback()) {
           metadata.framerate = await getFramerate($player);
-        }
-
-        function dateFormat(d) {
-          const formattedDate = Intl.DateTimeFormat(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric',
-            second: 'numeric'
-          }).format(d);
-          return formattedDate;
         }
 
         const mapping = {
@@ -1759,8 +1784,8 @@
         
         // Generate HTML for each fileinfo metadata item
         var html = '';
-        const keys = Object.keys(metadata);
-        keys.forEach((key) => {
+        const metadataKeys = Object.keys(metadata);
+        metadataKeys.forEach((key) => {
           const map = mapping[key];
           const label = (typeof map === 'object' ? map.name : map);
           const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
@@ -1772,12 +1797,24 @@
         $fileinfo.html(html);
       }
 
-      $player.on('loadstart', resetFileinfo);
+      function dateFormat(d) {
+        const formattedDate = Intl.DateTimeFormat(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric'
+        }).format(d);
+        return formattedDate;
+      }
+
       function resetFileinfo() {
         const $fileinfo = $('.fileinfo');
         $fileinfo.addClass('loading');
         $fileinfo.html('<li class="fileinfo-item">Metadata not yet loaded</li>');
       }
+      $player.on('loadstart', resetFileinfo);
 
       function setCurrentVideoTile() {
         const $former = $('.links .current')
@@ -1815,13 +1852,29 @@
       }
 
       function actionFullscreenToggle() {
-        if (!document.fullscreenElement) {
-            $playerContainer.requestFullscreen();
+        if (isFullscreen()) {
+          exitFullscreen();
         } else {
-          if (document.exitFullscreen) {
-            document.exitFullscreen();
-          }
+          requestFullscreen();
+        }        
+      }
+
+      function updateFullscreenSupport() {
+        if ($playerContainer.requestFullscreen) {
+          $('.btn-fullscreen').addClass('enabled');
         }
+      }
+
+      function isFullscreen() {
+        return !!document.fullscreenElement;
+      }
+
+      function requestFullscreen() {
+        if ($playerContainer.requestFullscreen) $playerContainer.requestFullscreen();
+      }
+
+      function exitFullscreen() {
+        if (document.exitFullscreen) document.exitFullscreen();
       }
 
       var timeoutFadeout;
@@ -1914,17 +1967,22 @@
         $('.btn-mute').on('click', actionMute);
         $('.btn-play').on('click', actionPlayPause);
         $('.btn-fullscreen').on('click', actionFullscreenToggle);
-        $('.btn-onedrive').on('click', openFromCloud('onedrive'));
-        $('.btn-gdrive').on('click', openFromCloud('gdrive'));
-        $('.btn-local-file').on('click', actionOpenLocalFile);
+        updateFullscreenSupport();
 
-        $('.btn-fileinfo').on('click', () => $('.fileinfo').toggleClass('show'));
+        $('.btn-fileinfo').on('click', () => {
+          $('.help').removeClass('show');
+          $('.fileinfo').toggleClass('show');
+        });
         $('.fileinfo').on('click', (e) => {
           // Only triggle `toggleFileInfo` if the target element isn't `<span class="value"/>` so that you can copy value text
           const isValue = $(e.target).hasClass('value');
           if (!isValue) $('.fileinfo').removeClass('show')
         });
         $('.help').on('click', () => $('.help').removeClass('show'));
+
+        $('.btn-onedrive').on('click', openFromCloud('onedrive'));
+        $('.btn-gdrive').on('click', openFromCloud('gdrive'));
+        $('.btn-local-file').on('click', actionOpenLocalFile);
 
         $playerContainer.on('dragenter', () => $playerContainer.addClass('drop'));
         $playerContainer.on('dragleave', (e) => {
