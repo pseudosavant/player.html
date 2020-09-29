@@ -1797,7 +1797,7 @@
         if (supportsVideoFrameCallback()) await requestVideoFrame();
 
         const url = $player.currentSrc;
-        const subtitles = ($player.textTracks && $player.textTracks.length ? $player.textTracks.length : 0);
+        const subtitles =   ($player.textTracks  && $player.textTracks.length  ? $player.textTracks.length  : 0);
         const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
 
         const metadata = {
@@ -1814,13 +1814,9 @@
         if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
 
         const headerKeys = Object.keys(headerData);
-        headerKeys.forEach((k) => {
-          metadata[k] = headerData[k];
-        });
+        headerKeys.forEach((k) => metadata[k] = headerData[k]);
 
-        if (supportsVideoFrameCallback()) {
-          metadata.framerate = await getFramerate($player);
-        }
+        if (supportsVideoFrameCallback()) metadata.framerate = await getFramerate($player);
 
         const mapping = {
           name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
