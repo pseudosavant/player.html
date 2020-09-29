@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='1.3.0'>
+  <meta name='version' content='1.4.0'>
   <meta name='Copyright' content=' ©2020 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='apple-mobile-web-app-status-bar-style' content='black'>
@@ -172,40 +172,57 @@
       justify-content: center;
     }
 
-    .fileinfo, .help {
+    .modal {
       z-index: 100;
       display: flex;
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
+      min-width: 320px;
       max-width: 100vw;
       overflow-x: hidden;
-    
+
       margin: 0;
       margin-left: -100vw;
       transition: margin-left var(--transition-base) ease;
       padding: 1rem;
-    
+
+      align-items: center;
       justify-content: flex-start;
       flex-direction: column;
       gap: 0.1rem;
 
       list-style: none;
-    
+
       background-color: var(--modal-background-color);
       backdrop-filter: blur(var(--blur-base));
-
-    }
-    .help {
-      align-items: center;
     }
 
-    .fileinfo.show, .help.show {
+    .show {
       margin-left: 0;
     }
 
-    .fileinfo-item, .help-item {
+    .modal::before {
+      display: block;
+      font-size: 1.1em;
+      margin: 0.5rem;
+    }
+    .subtitle-selection::before {
+      content: "Select a subtitle below";
+    }
+    .fileinfo::before {
+      content: "File metadata";
+    }
+    .help::before {
+      content: "Keyboard Shortcuts"
+    }
+
+    .subtitle-item {
+      cursor: pointer;
+    }
+
+    .modal-item {
       display: block;
       padding: 1rem;
       width: 100%;
@@ -267,10 +284,7 @@
 
       background: none;
       cursor: pointer;
-    }
-
-    .controls button:focus {
-      filter: drop-shadow(0 1px 3px var(--theme-color-highlight));
+      transition: filter calc(var(--transition-base) / 2);
     }
 
     .controls svg {
@@ -279,8 +293,25 @@
       height: 24px;
     }
 
-    .controls button:hover {
-      filter: saturate(0.4) brightness(5);
+    .controls button:hover, .hasSubtitles .controls .btn-subtitles:hover {
+      filter: saturate(0.1) brightness(4);
+    }
+
+    .controls button:active {
+      filter: brightness(0.5);
+    }
+
+    .controls .btn-subtitles {
+      filter: saturate(0);
+      transition: filter var(--transition-base);
+    }
+
+    .hasSubtitles .controls .btn-subtitles {
+      filter: saturate(1);
+    }
+
+    .controls.btn-subtitles:active {
+      filter: inherit;
     }
 
     .controls .stop svg {
@@ -351,8 +382,6 @@
     }
 
     .progressBar {
-      /* Content box is used to make the bar click area larger than just the area --progress-bar-base-color covers */
-      box-sizing: content-box;
       overflow: hidden;
 
       position: relative;
@@ -364,9 +393,6 @@
       cursor: pointer;
 
       border-radius: calc(2 * var(--tile-border-radius));
-      /* border: 0.5rem solid #222;
-      border-width: 0.25rem; */
-      /* margin: -0.25rem; */
 
       background-color: var(--progress-bar-base-color);
     }
@@ -377,9 +403,8 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: var(--relative-position);
-
       height: 100%;
+      width: var(--relative-position);
 
       background-color: var(--progress-bar-position-color);
     }
@@ -403,7 +428,7 @@
       z-index: 1000;
     }
 
-    .playerContainer[data-loaded="true"] .progressBar:hover + .trick {
+    [data-loaded="true"] .progressBar:hover + .trick {
       display: block;
     }
 
@@ -431,16 +456,18 @@
 
     .sources {
       position: absolute;
-      right: 0; /* Offset padding of parent container */
-      bottom: 0;
+      right: 0;
+      top: 0;
     }
 
     /* Make the `.sources` group together into it's own line if it gets too skinny */
-    @media screen and (max-width: 450px) {
+    @media screen and (max-width: 500px) {
       .sources {
         position: relative;
-        display: inline-block;
-        bottom: unset;
+      }
+
+      .sources button {
+        margin: 0;
       }
     }
 
@@ -579,23 +606,25 @@
     }
   </style>
 </head>
-<body class="">
+<body class='' style='--absolute-position: "0:00"; --duration: "0:00"; --relative-position: "0";'>
   <div class='playerContainer'>
     <div class='videoContainer'>
-      <video class='player'></video>
+      <video class='player' crossorigin="anonymous"></video>
       <div class='pauseOverlay'><svg><use xlink:href='#svgPause'></svg></div>
-      <ul class='fileinfo loading'><li class='fileinfo-item'>Metadata not yet loaded</li></ul>
-      <ul class='help'>
-        <li class='help-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of video</span></li>
-        <li class='help-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
-        <li class='help-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 15 seconds</span></li>
-        <li class='help-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 15 seconds</span></li>
-        <li class='help-item'><span class='key'>Space</span><span class='desc'>Toggle Play/Pause</span></li>
-        <li class='help-item'><span class='key'>i</span><span class='desc'>Video file information</span></li>
-        <li class='help-item'><span class='key'>f</span><span class='desc'>Toggle Fullscreen</span></li>
-        <li class='help-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
-        <li class='help-item'><span class='key'>?</span><span class='desc'>This help information</span></li>
+      <ul class='fileinfo modal'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
+      <ul class='help modal'>
+        <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of video</span></li>
+        <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
+        <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 15 seconds</span></li>
+        <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 15 seconds</span></li>
+        <li class='help-item modal-item'><span class='key'>Space</span><span class='desc'>Toggle Play/Pause</span></li>
+        <li class='help-item modal-item'><span class='key'>i</span><span class='desc'>Video file information</span></li>
+        <li class='help-item modal-item'><span class='key'>f</span><span class='desc'>Toggle Fullscreen</span></li>
+        <li class='help-item modal-item'><span class='key'>s</span><span class='desc'>Select a subtitle</span></li>
+        <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
+        <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
       </ul>
+      <ul class='subtitle-selection modal'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
     </div>
     <section class='controls'>
       <div class='progressBar'></div>
@@ -607,6 +636,7 @@
         <button class='btn-stop' type='button' title='Stop'><svg><use xlink:href='#svgStop'></svg></button>
         <button class='btn-mute' type='button' title='Mute'><svg class='on'><use xlink:href='#svgSpeakerOn'></svg><svg class='off'><use xlink:href='#svgSpeakerOff'></svg></button>
         <button class='btn-fullscreen' type='button' title='Fullscreen'><svg class='collapse'><use xlink:href='#svgCollapse'></svg><svg class='expand'><use xlink:href='#svgExpand'></svg></button>
+        <button class='btn-subtitles' type='button' title='Toggle Subtitles'><svg><use xlink:href='#svgSubtitlesEnabled'></svg></button>
         <button class='btn-fileinfo' type='button' title='Video file information'><svg><use xlink:href='#svgInfo'></svg></button>
         <section class='sources'>
           <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width='30' height='24'><use xlink:href='#svgOneDrive'></svg></button>
@@ -614,7 +644,7 @@
           <button class='btn-local-file' type='button' title='Open local video file'><svg><use xlink:href='#svgFolderOpenVertical'></svg></button>
         </section>
       </section>
-    <div class='currentTimestamp' style='--absolute-position: "0:00"; --duration: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
+    <div class='currentTimestamp'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
   </div>
   <section class='links'></section>
@@ -639,11 +669,15 @@
     <!-- ic_fluent_arrow_up_24_filled.svg -->
     <svg id='svgFolderArrow'><path d='M4.28401,10.2955 C3.89639,10.6889 3.90108,11.322 4.29449,11.7097 C4.68789,12.0973 5.32104,12.0926 5.70866,11.6992 L11,6.32889 L11,20 C11,20.5523 11.4477,21 12,21 C12.5523,21 13,20.5523 13,20 L13,6.33538 L18.2849,11.6992 C18.6726,12.0926 19.3057,12.0973 19.6991,11.7097 C20.0925,11.322 20.0972,10.6889 19.7096,10.2955 L12.8872,3.3713 C12.3976,2.87438 11.596,2.87438 11.1064,3.3713 L4.28401,10.2955 Z'/></svg>
     <!-- ic_fluent_info_24_filled.svg -->
-    <svg id='svgInfo'><path d='M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M12.0000002,3.49896738 C7.30472352,3.49896738 3.49844971,7.30524119 3.49844971,12.0005179 C3.49844971,16.6957946 7.30472352,20.5020684 12.0000002,20.5020684 C16.6952769,20.5020684 20.5015507,16.6957946 20.5015507,12.0005179 C20.5015507,7.30524119 16.6952769,3.49896738 12.0000002,3.49896738 Z M11.9963566,10.4995494 C12.3760523,10.4993013 12.6900321,10.7812497 12.7399342,11.1472927 L12.7468472,11.2490588 L12.750448,16.7506528 C12.7507187,17.1648663 12.4151521,17.5008724 12.0009386,17.5011438 C11.6212429,17.5013919 11.3072631,17.2194435 11.2573612,16.8534005 L11.2504479,16.7516344 L11.2468472,11.2500404 C11.2465765,10.8358269 11.5821431,10.4998208 11.9963566,10.4995494 Z M12.0004478,7.00178515 C12.5519939,7.00178515 12.9991104,7.44890164 12.9991104,8.00044779 C12.9991104,8.55199393 12.5519939,8.99911042 12.0004478,8.99911042 C11.4489016,8.99911042 11.0017852,8.55199393 11.0017852,8.00044779 C11.0017852,7.44890164 11.4489016,7.00178515 12.0004478,7.00178515 Z'></path></svg>
+    <svg id='svgInfo' ><path d="M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M11.996193,10.2495494 C11.4833573,10.2498854 11.0609387,10.6362021 11.0034989,11.1335785 L10.9968474,11.250204 L11.000448,16.751798 L11.0072521,16.8684147 C11.0653426,17.3657155 11.4882665,17.751479 12.0011022,17.7511438 C12.5139379,17.7508078 12.9363565,17.3644911 12.9937963,16.8671147 L13.0004478,16.7504892 L12.9968474,11.2488952 L12.9900433,11.1322785 C12.9319526,10.6349777 12.5090287,10.2492142 11.996193,10.2495494 Z M12.0004478,6.5 C11.3092523,6.5 10.7489277,7.06032464 10.7489277,7.75152012 C10.7489277,8.44271559 11.3092523,9.00304023 12.0004478,9.00304023 C12.6916433,9.00304023 13.2519679,8.44271559 13.2519679,7.75152012 C13.2519679,7.06032464 12.6916433,6.5 12.0004478,6.5 Z"></path></svg>
     <!-- ic_fluent_arrow_expand_24_filled.svg -->
     <svg id='svgExpand'><path d='M7.6687288,14.9228932 C8.05925309,14.5323689 8.69241807,14.5323689 9.08294236,14.9228932 C9.47346666,15.3134175 9.47346666,15.9465825 9.08294236,16.3371068 L9.08294236,16.3371068 L6.415,19.0042145 L8,19.0042145 C8.51283584,19.0042145 8.93550716,19.3902547 8.99327227,19.8875934 L9,20.0042145 C9,20.5564992 8.55228475,21.0042145 8,21.0042145 L8,21.0042145 L4,21.0042145 C3.44771525,21.0042145 3,20.5564992 3,20.0042145 L3,20.0042145 L3,16.0042145 C3,15.4519298 3.44771525,15.0042145 4,15.0042145 C4.55228475,15.0042145 5,15.4519298 5,16.0042145 L5,16.0042145 L5,17.5912145 L7.6687288,14.9228932 Z M16.0050107,21.0042145 C15.452726,21.0042145 15.0050107,20.5564992 15.0050107,20.0042145 C15.0050107,19.4519298 15.452726,19.0042145 16.0050107,19.0042145 L16.0050107,19.0042145 L17.5880107,19.0042145 L14.9226154,16.3368288 C14.5622731,15.9762031 14.5347666,15.4089612 14.8399456,15.0167899 L14.9231713,14.9226153 C15.313849,14.5322446 15.947014,14.5324935 16.3373847,14.9231712 L16.3373847,14.9231712 L19.0050107,17.5932145 L19.0050107,16.0042145 C19.0050107,15.4913787 19.3910509,15.0687073 19.8883896,15.0109422 L20.0050107,15.0042145 C20.5572954,15.0042145 21.0050107,15.4519298 21.0050107,16.0042145 L21.0050107,16.0042145 L21.0050107,20.0042145 C21.0050107,20.5564992 20.5572954,21.0042145 20.0050107,21.0042145 L20.0050107,21.0042145 L16.0050107,21.0042145 Z M8,3 C8.55228475,3 9,3.44771525 9,4 C9,4.55228475 8.55228475,5 8,5 L8,5 L6.417,5 L9.08238468,7.66817123 C9.44272691,8.02879686 9.47023348,8.59603878 9.1650544,8.98821005 L9.08182877,9.08238468 C8.691151,9.47275543 8.05798607,9.47250654 7.66761532,9.08182877 L7.66761532,9.08182877 L5,6.412 L5,8 C5,8.51283584 4.61395981,8.93550716 4.11662113,8.99327227 L4,9 C3.44771525,9 3,8.55228475 3,8 L3,8 L3,4 C3,3.44771525 3.44771525,3 4,3 L4,3 L8,3 Z M20.0049977,3 C20.5572824,3 21.0049977,3.44771525 21.0049977,4 L21.0049977,4 L21.0049977,8 C21.0049977,8.55228475 20.5572824,9 20.0049977,9 C19.452713,9 19.0049977,8.55228475 19.0049977,8 L19.0049977,8 L19.0049977,6.412 L16.3372498,9.08196378 C15.9768387,9.44252063 15.4096133,9.47036487 15.0172604,9.16541931 L14.9230362,9.08224975 C14.532433,8.69180444 14.532305,8.05863947 14.9227503,7.66803622 L14.9227503,7.66803622 L17.5889977,5 L16.0049977,5 C15.4921619,5 15.0694905,4.61395981 15.0117254,4.11662113 L15.0049977,4 C15.0049977,3.44771525 15.452713,3 16.0049977,3 L16.0049977,3 L20.0049977,3 Z'></path></svg>
     <!-- ic_fluent_arrow_minimize_24_filled.svg -->
     <svg id='svgCollapse'><path d='M10.498103,12.5046266 C11.0109388,12.5046266 11.4336102,12.8906668 11.4913753,13.3880055 L11.498103,13.5046266 L11.498103,21.0085171 C11.498103,21.5608018 11.0503877,22.0085171 10.498103,22.0085171 C9.98526715,22.0085171 9.56259583,21.6224769 9.50483072,21.1251382 L9.49810299,21.0085171 L9.49757619,15.9154145 L3.70710678,21.7071068 C3.34662282,22.0675907 2.77939176,22.0953203 2.38710056,21.7902954 L2.29289322,21.7071068 C1.93240926,21.3466228 1.90467972,20.7793918 2.20970461,20.3871006 L2.29289322,20.2928932 L8.08057619,14.5044145 L2.99657619,14.5046266 C2.44429144,14.5046266 1.99657619,14.0569114 1.99657619,13.5046266 C1.99657619,12.9917908 2.38261638,12.5691195 2.87995507,12.5113544 L2.99657619,12.5046266 L10.498103,12.5046266 Z M13.4990964,1.99941454 C14.0119323,1.99941454 14.4346036,2.38545473 14.4923687,2.88279341 L14.4990964,2.99941454 L14.4985762,8.08641454 L20.2928932,2.29289322 C20.6533772,1.93240926 21.2206082,1.90467972 21.6128994,2.20970461 L21.7071068,2.29289322 C22.0675907,2.65337718 22.0953203,3.22060824 21.7902954,3.61289944 L21.7071068,3.70710678 L15.9105762,9.50241454 L21.0006232,9.50330499 C21.552908,9.50330499 22.0006232,9.95102024 22.0006232,10.503305 C22.0006232,11.0161408 21.614583,11.4388122 21.1172444,11.4965773 L21.0006232,11.503305 L13.4990964,11.503305 C12.9862606,11.503305 12.5635893,11.1172648 12.5058242,10.6199261 L12.4990964,10.503305 L12.4990964,2.99941454 C12.4990964,2.44712979 12.9468117,1.99941454 13.4990964,1.99941454 Z'></path></svg>
+    <!-- ic_fluent_closed_caption_24_filled.svg -->
+    <svg id='svgSubtitlesEnabled'><path d="M18.75,4 C20.5449254,4 22,5.45507456 22,7.25 L22,16.754591 C22,18.5495164 20.5449254,20.004591 18.75,20.004591 L5.25,20.004591 C3.45507456,20.004591 2,18.5495164 2,16.754591 L2,7.25 C2,5.51696854 3.35645477,4.10075407 5.06557609,4.00514479 L5.25,4 L18.75,4 Z M10.6216203,8.59854135 C8.21322176,7.22468635 5.5,8.85441664 5.5,12 C5.5,15.1433285 8.21538655,16.7747125 10.6208022,15.4065583 C10.9808502,15.2017699 11.106713,14.7438795 10.9019246,14.3838314 C10.6971362,14.0237834 10.2392458,13.8979206 9.8791978,14.102709 C8.48410774,14.8962094 7,14.0045685 7,12 C7,9.9935733 8.48070939,9.10416685 9.87837972,9.90145865 C10.2381704,10.1066989 10.6962184,9.98141095 10.9014586,9.62162028 C11.1066989,9.2618296 10.981411,8.80378156 10.6216203,8.59854135 Z M18.1216203,8.59854135 C15.7132218,7.22468635 13,8.85441664 13,12 C13,15.1433285 15.7153866,16.7747125 18.1208022,15.4065583 C18.4808502,15.2017699 18.606713,14.7438795 18.4019246,14.3838314 C18.1971362,14.0237834 17.7392458,13.8979206 17.3791978,14.102709 C15.9841077,14.8962094 14.5,14.0045685 14.5,12 C14.5,9.9935733 15.9807094,9.10416685 17.3783797,9.90145865 C17.7381704,10.1066989 18.1962184,9.98141095 18.4014586,9.62162028 C18.6066989,9.2618296 18.481411,8.80378156 18.1216203,8.59854135 Z"></path></svg>
+    <!-- ic_fluent_closed_caption_24_regular.svg -->
+    <svg id='svgSubtitlesDisabled'><path d="M18.75,4 C20.5449254,4 22,5.45507456 22,7.25 L22,16.754591 C22,18.5495164 20.5449254,20.004591 18.75,20.004591 L5.25,20.004591 C3.45507456,20.004591 2,18.5495164 2,16.754591 L2,7.25 C2,5.51696854 3.35645477,4.10075407 5.06557609,4.00514479 L5.25,4 L18.75,4 Z M18.75,5.5 L5.25,5.5 L5.10647279,5.5058012 C4.20711027,5.57880766 3.5,6.3318266 3.5,7.25 L3.5,16.754591 C3.5,17.7210893 4.28350169,18.504591 5.25,18.504591 L18.75,18.504591 C19.7164983,18.504591 20.5,17.7210893 20.5,16.754591 L20.5,7.25 C20.5,6.28350169 19.7164983,5.5 18.75,5.5 Z M5.5,12 C5.5,8.85441664 8.21322176,7.22468635 10.6216203,8.59854135 C10.981411,8.80378156 11.1066989,9.2618296 10.9014586,9.62162028 C10.6962184,9.98141095 10.2381704,10.1066989 9.87837972,9.90145865 C8.48070939,9.10416685 7,9.9935733 7,12 C7,14.0045685 8.48410774,14.8962094 9.8791978,14.102709 C10.2392458,13.8979206 10.6971362,14.0237834 10.9019246,14.3838314 C11.106713,14.7438795 10.9808502,15.2017699 10.6208022,15.4065583 C8.21538655,16.7747125 5.5,15.1433285 5.5,12 Z M13,12 C13,8.85441664 15.7132218,7.22468635 18.1216203,8.59854135 C18.481411,8.80378156 18.6066989,9.2618296 18.4014586,9.62162028 C18.1962184,9.98141095 17.7381704,10.1066989 17.3783797,9.90145865 C15.9807094,9.10416685 14.5,9.9935733 14.5,12 C14.5,14.0045685 15.9841077,14.8962094 17.3791978,14.102709 C17.7392458,13.8979206 18.1971362,14.0237834 18.4019246,14.3838314 C18.606713,14.7438795 18.4808502,15.2017699 18.1208022,15.4065583 C15.7153866,16.7747125 13,15.1433285 13,12 Z"></path></svg>
     <!-- ic_fluent_speaker_24_filled.svg -->
     <svg id='svgSpeakerOn'><path d='M15,4.25 C15,3.17138 13.7255,2.59915 12.9195,3.31583 L8.42794,7.30909 C8.29065,7.43116 8.11333,7.49859 7.92961,7.49859 L4.25,7.49859 C3.00736,7.49859 2,8.50595 2,9.74859 L2,14.2465 C2,15.4891 3.00736,16.4965 4.25,16.4965 L7.92956,16.4965 C8.11329,16.4965 8.29063,16.5639 8.42793,16.686 L12.9194,20.6797 C13.7255,21.3965 15,20.8243 15,19.7456 L15,4.25 Z M18.9916,5.89733 C19.3244,5.65079 19.7941,5.72077 20.0407,6.05362 C21.2717,7.7157 22,9.7739 22,12 C22,14.2261 21.2717,16.2843 20.0407,17.9464 C19.7941,18.2793 19.3244,18.3492 18.9916,18.1027 C18.6587,17.8562 18.5888,17.3865 18.8353,17.0536 C19.8815,15.6411 20.5,13.8939 20.5,12 C20.5,10.1062 19.8815,8.35896 18.8353,6.94641 C18.5888,6.61356 18.6587,6.14387 18.9916,5.89733 Z M17.143,8.36933 C17.5072,8.17214 17.9624,8.30757 18.1596,8.67184 C18.6958,9.66245 19,10.7968 19,12 C19,13.2032 18.6958,14.3376 18.1596,15.3282 C17.9624,15.6924 17.5072,15.8279 17.143,15.6307 C16.7787,15.4335 16.6432,14.9783 16.8404,14.6141 C17.2609,13.8373 17.5,12.9477 17.5,12 C17.5,11.0523 17.2609,10.1627 16.8404,9.38593 C16.6432,9.02167 16.7787,8.56652 17.143,8.36933 Z'></path></svg>
     <!-- ic_fluent_speaker_off_24_filled.svg -->
@@ -738,6 +772,8 @@
           };
 
           el.off = (eventType, callback) => { el.removeEventListener(eventType, callback); return el; }
+
+          el.once = (e, fn) => el.addEventListener(e, fn, {once: true});
 
           el.trigger = (eventType, detail) => {
             detail = detail ? { detail: detail } : undefined;
@@ -1271,10 +1307,14 @@
     (function appIIFE(global) {
       'use strict';
 
+      const $body = $('body');
       const $playerContainer = $('.playerContainer');
       const $progressBar = $('.progressBar');
       const $player = $('.player');
       const $trick = $('.trick');
+      const $fileinfo = $('.fileinfo');
+      const $help = $('.help');
+      const $subtitles = $('.subtitle-selection');
       const $currentTimestamp = $('.currentTimestamp');
 
       const opts = {
@@ -1291,7 +1331,7 @@
         };
 
         const types = [
-          { mime: 'video/mp4', extensions: ['mp4', 'm4v'] },
+          { mime: 'video/mp4', extensions: ['mp4', 'm4v', 'mov'] },
           { mime: 'video/webm', extensions: ['webm'] },
           { mime: 'video/x-matroska', extensions: ['mkv'] },
           { mime: 'video/ogg', extensions: ['ogg'] }
@@ -1351,9 +1391,15 @@
       }
 
       function urlToName(url) {
-        return removeFileExtension(
-          url.split('/').pop()
-        );
+        const re = /\/{1}([^\/]+)\.(?:[\w\d]{2,4})$/;
+        const name = re.exec(url);
+        return (name && name.length > 1 ? name[1] : url);
+      }
+
+      function urlToFilename(url) {
+        const re = /\/{1}([^\/]+\.[\w\d]{2,4})$/;
+        const parts = re.exec(url);
+        return (parts && parts.length > 1 ? parts[1] : url);
       }
 
       function urlToLabel(url) {
@@ -1392,21 +1438,24 @@
       }
 
       function urlType(url) {
-        function isVideo(haystack, fileExtensions) {
-          const re = new RegExp(`\.+(${ opts.supportedVideoTypes.extensions.join('|')})+$`, 'i');
-          return re.test(haystack);
-        };
-
-
         if (isHiddenFileOrFolder(url)) {
           return 'hidden';
         } else if (url[url.length - 1] === '/') {
           return 'folder';
-        } else if (isVideo(url)) {
+        } else if (isVideo(url) || isSubtitle(url)) {
           return 'file';
         } else {
           return 'unknown';
         }
+      }
+
+      function isVideo(haystack, fileExtensions) {
+        const re = new RegExp(`\.+(${ opts.supportedVideoTypes.extensions.join('|')})+$`, 'i');
+        return re.test(haystack);
+      };
+
+      function isSubtitle(url) {
+        return url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
       }
 
       function isHiddenFileOrFolder(url) {
@@ -1441,7 +1490,7 @@
 
       function asyncLinkRequest(url) {
         const $frame = $('<iframe/>');
-        $('body').append($frame);
+        $body.append($frame);
 
         const promise = new Promise((resolve, reject) => {
           $frame.on('error', reject);
@@ -1466,13 +1515,12 @@
         showLinks(links);
       }
 
-      function showLinks(links) {
+      async function showLinks(links) {
         var html = '';
         const folders = links.folders;
         const files = links.files;
         const base = getBaseLocation(window.location);
 
-        files.sort(sortFiles);
 
         folders.forEach((folder) => {
           const rawUrl = folder;
@@ -1482,7 +1530,14 @@
           html += createFolderTemplate(rawUrl, label);
         });
 
-        files.forEach((file) => {
+        const subtitles = files.filter(isSubtitle);
+        populateSubtitles(subtitles);
+
+        const videos = files.filter(isVideo);
+
+        videos.sort(sortFiles);
+
+        videos.forEach((file) => {
           const rawUrl = file;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
@@ -1517,14 +1572,11 @@
         // `this` always refers to the parent element. `e.target` can be children too instead.
         const $el = $(this);
 
+        if ($el.hasClass('file')) actionPlay($el.href);
+
         if ($el.hasClass('folder')) {
           hashState.location = $el.href;
           createLinks($el.href);
-        }
-
-        if ($el.hasClass('file')) {
-          hashState.video = $el.href;
-          actionPlay($el.href);
         }
 
         updateHash();
@@ -1566,7 +1618,7 @@
         }
       }
 
-      function getPosition() {
+      function getRelativePosition() {
         return $player.currentTime / $player.duration;
       }
 
@@ -1648,23 +1700,31 @@
         if (url === $player.currentSrc) return;
 
         resetFileinfo();
-        $playerContainer.removeClass('paused');
+        $body.removeClass('paused');
 
         if (!!url) {
           $player.autoplay = true;
+
+          $player.once('loadedmetadata', () => updateDuration($player.duration));
           $player.removeAttribute('poster');
+
           $player.src = $trick.src = hashState.video = url;
 
-          $playerContainer.dataset.loaded = true;
+          hashState.video = url;
+          $body.dataset.loaded = true;
+
           console.info(`Playback started: ${url}`);
         } else {
+          updateDuration(0);
           $player.poster = opts.poster;
+
           $player.removeAttribute('src');
           $trick.removeAttribute('src');
-          hashState.video = undefined;
-          console.info(`Playback stopped`);
 
-          delete $playerContainer.dataset.loaded;
+          hashState.video = undefined;
+          delete $body.dataset.loaded;
+
+          console.info(`Playback stopped`);
         }
 
         $player.load();
@@ -1683,7 +1743,7 @@
         try {
           const f = await fetch(url, opts);
           const h = f.headers;
-          
+
           if (url.startsWith('http')) {
             const size = h.get('Content-Length');
             const mimeType = h.get('Content-Type');
@@ -1700,14 +1760,9 @@
         }
       }
 
-      function urlToFilename(url) {
-        const parts = url.split('/');
-        return (parts.length === 1 ? parts[0] : parts[parts.length - 1]);
-      }
-
       async function getFramerate() {
         const frame1 = await requestVideoFrame();
-        
+
         // Wait a few extra frames to make estimate more accurate
         for (var i = 0; i < 10; i++) {
           const waitFrame = await requestVideoFrame();
@@ -1744,7 +1799,7 @@
         const url = $player.currentSrc;
         const subtitles = ($player.textTracks && $player.textTracks.length ? $player.textTracks.length : 0);
         const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
-        
+
         const metadata = {
           name: urlToFilename(url),
           url: url,
@@ -1754,7 +1809,7 @@
           subtitles: subtitles,
           audioTracks: audioTracks,
         };
-        
+
         const headerData = await getHeaderData(url);
         if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
 
@@ -1762,7 +1817,7 @@
         headerKeys.forEach((k) => {
           metadata[k] = headerData[k];
         });
-        
+
         if (supportsVideoFrameCallback()) {
           metadata.framerate = await getFramerate($player);
         }
@@ -1778,10 +1833,10 @@
           framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
           width: 'Width',
           height: 'Height',
-          subtitles: 'Subtitle Tracks',
+          subtitles: 'Embedded Subtitles',
           audioTracks: 'Audio Tracks'
         }
-        
+
         // Generate HTML for each fileinfo metadata item
         var html = '';
         const metadataKeys = Object.keys(metadata);
@@ -1789,11 +1844,9 @@
           const map = mapping[key];
           const label = (typeof map === 'object' ? map.name : map);
           const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
-          html += `<li class='fileinfo-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
+          html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
         });
 
-        const $fileinfo = $('.fileinfo');
-        $fileinfo.removeClass('loading');
         $fileinfo.html(html);
       }
 
@@ -1810,11 +1863,126 @@
       }
 
       function resetFileinfo() {
-        const $fileinfo = $('.fileinfo');
-        $fileinfo.addClass('loading');
-        $fileinfo.html('<li class="fileinfo-item">Metadata not yet loaded</li>');
+        $fileinfo.html('<li class="fileinfo-item modal-item">Metadata not yet loaded</li>');
       }
       $player.on('loadstart', resetFileinfo);
+
+      async function populateSubtitles(subtitles) {
+        var html = '';
+
+        if (subtitles.length === 0) {
+          $body.removeClass('hasSubtitles');
+          html = `<li class='subtitle-item modal-item'>No subtitles found in current folder</li>`;
+        } else {
+          $body.addClass('hasSubtitles');
+
+          for (let i = 0; i < subtitles.length; i++) {
+            const url = subtitles[i];
+            const name = decodeURIComponent(urlToFilename(url));
+            const duration = await getSubtitleDuration(url);
+            const hms = secondsToString(duration);
+            html += `<li class='subtitle-item modal-item' data-subtitle-url='${url}' title='${url}'>${name} (${hms})</li>`
+          }
+        }
+
+        html += `<li class='subtitle-item modal-item disable-subtitles'>Turn off subtitles</li>`;
+
+        $subtitles.html(html);
+
+        const list = [...$subtitles.querySelectorAll('li')];
+        list.forEach((li) => {
+          const $li = $(li);
+          $li.on('click', (e) => {
+            e.preventDefault();
+
+            if ($li.hasClass('disable-subtitles')) {
+              clearSubtitles();
+            } else {
+              loadSubtitle(li.dataset.subtitleUrl);
+            }
+          });
+        })
+      }
+
+      function clearSubtitles() {
+        const tracks = [...document.querySelectorAll('track')];
+
+        if (tracks) {
+          tracks.forEach((track) => {
+            $(track).remove();
+          });
+        }
+      }
+
+      async function srtToVtt(url) {
+        const re = /(\d{2}:\d{2}:\d{2}),(\d{3})/g;
+
+        const srt = await fetch(url);
+        const text = await srt.text();
+        const converted = `WEBVTT\r\n\r\n${text.replace(re, "$1.$2")}`;
+
+        const blob = new Blob([converted], {type: 'text/vtt'})
+        return URL.createObjectURL(blob);
+      }
+
+      async function loadSubtitle(url) {
+        clearSubtitles();
+
+        if (isSRT(url)) {
+          url = await srtToVtt(url);
+        } else {
+          url = await urlToObjectUrl(url, 'text/vtt');
+        }
+
+        getSubtitleDuration(url);
+
+        const $track = $(`<track src='${url}' label='${url}' default>`);
+        $player.append($track);
+      }
+
+      async function getSubtitleDuration(url) {
+        const f = await fetch(url);
+        const text = await f.text();
+
+        const lines = text.split('--> ');
+        const lastLinePosition = lines.length - 1
+        const lastLine = lines[lastLinePosition];
+
+        const re = /(\d{2}):(\d{2}):(\d{2}).(\d{3})/g;
+
+        const results = re.exec(lastLine);
+
+        if (results) {
+          const h = parseInt(results[1]);
+          const m = parseInt(results[2]);
+          const s = parseInt(results[3]) + parseInt(results[4]);
+
+          const seconds = h * 60 * 60 + m * 60 + s;
+          return seconds;
+        }
+
+        return;
+      }
+
+      async function urlToObjectUrl(url, type) {
+        const srt = await fetch(url);
+        const blob = await srt.blob();
+
+        if (type) {
+          return URL.createObjectURL(blob.slice(0, blob.size, type));
+        } else {
+          return URL.createObjectURL(blob);
+        }
+
+      }
+
+      function isSRT(url) {
+        try {
+          return url.endsWith('.srt');
+        } catch (e) {
+          return false;
+        }
+      }
 
       function setCurrentVideoTile() {
         const $former = $('.links .current')
@@ -1833,9 +2001,9 @@
 
       function updateMute() {
         if (!$player.muted) {
-          $playerContainer.removeClass('muted');
+          $body.removeClass('muted');
         } else {
-          $playerContainer.addClass('muted');
+          $body.addClass('muted');
         }
       }
 
@@ -1856,7 +2024,7 @@
           exitFullscreen();
         } else {
           requestFullscreen();
-        }        
+        }
       }
 
       function updateFullscreenSupport() {
@@ -1895,14 +2063,13 @@
 
       function updateProgress() {
         function update() {
-          updateRelativePosition(getPosition());
-
-          $currentTimestamp.style = `--absolute-position: '${secondsToString($player.currentTime)}'; --duration: '${secondsToString($player.duration)}';`;
+          updateRelativePosition(getRelativePosition());
+          updateAbsolutePosition($player.currentTime);
         }
 
         // Chromium fires `timeupdate` 4 times per second
         // Don't do the calculations if the video is long and extra updates would be <1 pixel
-        if ($player.duration > $player.offsetWidth / 4) return update();
+        if (false && $player.duration > (getProgressBarWidth() / 4)) return update();
 
         // Update once a frame for 250ms (frequency of timeupdate events)
         var done = false;
@@ -1916,8 +2083,18 @@
         rafCb();
       }
 
-      const updateRelativePosition      = p => $playerContainer.style.setProperty('--relative-position', `${p * 100}%`);
-      const updateTrickRelativePosition = p => $playerContainer.style.setProperty('--trick-position'   , `${p * 100}%`);
+      const updateRelativePosition      = p => setCSSVariable('--relative-position', `${p * 100}%`);
+      const updateTrickRelativePosition = p => setCSSVariable('--trick-position'   , `${p * 100}%`);
+      const updateAbsolutePosition =      p => setCSSVariable('--absolute-position', secondsToString(p));
+      const updateDuration =              d => setCSSVariable('--duration',          secondsToString(d));
+
+      function setCSSVariable(k, v) {
+        if (typeof v === 'number' || v.endsWith('%')) {
+          return $body.style.setProperty(k, v);
+        } else {
+          return $body.style.setProperty(k, `'${v}'`);
+        }
+      }
 
       function progressBarTrickHover(e) {
         const relative = e.offsetX / getProgressBarWidth();
@@ -1946,17 +2123,17 @@
         $playerContainer.removeClass('drop');
         e.preventDefault();
         const files = e.dataTransfer.files;
-        if (files && files.length > 0) openFile(files[0]);
+        if (files && files.length > 0) playFile(files[0]);
       }
 
       function actionOpenLocalFile() {
         const reader = new FileReader();
         const $input = $(`<input type="file" accept="${opts.supportedVideoTypes.mime.join(',')}"/>`);
-        $input.on('change', () => openFile($input.files[0]));
+        $input.on('change', () => playFile($input.files[0]));
         $input.click();
       }
 
-      function openFile(file) {
+      function playFile(file) {
         if (file) return actionPlay(URL.createObjectURL(file));
       }
 
@@ -1968,17 +2145,16 @@
         $('.btn-play').on('click', actionPlayPause);
         $('.btn-fullscreen').on('click', actionFullscreenToggle);
         updateFullscreenSupport();
+        delay(10, updateMute);
 
-        $('.btn-fileinfo').on('click', () => {
-          $('.help').removeClass('show');
-          $('.fileinfo').toggleClass('show');
-        });
-        $('.fileinfo').on('click', (e) => {
-          // Only triggle `toggleFileInfo` if the target element isn't `<span class="value"/>` so that you can copy value text
+        $('.btn-subtitles').on('click', () => toggleModal($subtitles));
+        $('.btn-fileinfo').on('click', () => toggleModal($fileinfo));
+        $fileinfo.on('click', (e) => {
+          // Only hide the fileinfo if the target element isn't `<span class="value"/>` so that you can copy value text
           const isValue = $(e.target).hasClass('value');
-          if (!isValue) $('.fileinfo').removeClass('show')
+          if (!isValue) hideModals();
         });
-        $('.help').on('click', () => $('.help').removeClass('show'));
+        $help.on('click', () => hideModals);
 
         $('.btn-onedrive').on('click', openFromCloud('onedrive'));
         $('.btn-gdrive').on('click', openFromCloud('gdrive'));
@@ -1995,23 +2171,21 @@
           e.preventDefault();
         });
 
-        delay(10, updateMute);
-
         $player.on('loadedmetadata', updateFileinfo);
-        $player.on('pause', () => $playerContainer.addClass('paused'));
-        $player.on('play',  () => $playerContainer.removeClass('paused'));
-        $player.on('ended', () => $playerContainer.removeClass('paused'));
+        $player.on('loadeddata', syncTrickSrc);
+        $player.on('timeupdate', throttle(updateProgress, 30/1000));
+        $player.on('pause', () => $body.addClass('paused'));
+        $player.on('play',  () => $body.removeClass('paused'));
+        $player.on('ended', () => $body.removeClass('paused'));
         $player.on('click', () => {
           if ($player.src.length > 0) actionPlayPause();
         });
         $('.pauseOverlay').on('click', actionPlayPause);
 
-        $player.on('loadeddata', syncTrickSrc);
-        $player.on('timeupdate', updateProgress);
-        $progressBar.on('mousemove', throttle(progressBarTrickHover, 17));
+        $progressBar.on('mousemove', throttle(progressBarTrickHover, 30/1000)); // Not more than 30fps
         $progressBar.on('click', actionProgressBarSeek);
-        
-        $('body').on('paste', actionPasteAndPlay);
+
+        $body.on('paste', actionPasteAndPlay);
       }
 
       $(document).on('keydown', keyboardBroker);
@@ -2056,16 +2230,18 @@
             actionPlayPause();
             break;
           case 'i':
-          $('.help').removeClass('show');
-          $('.fileinfo').toggleClass('show');
+            toggleModal($fileinfo);
             break;
           case '?':
-            $('.fileinfo').removeClass('show');
-            $('.help').toggleClass('show');
+          case 'F1':
+            e.preventDefault();
+            toggleModal($help);
+            break;
+          case 's':
+            toggleModal($subtitles);
             break;
           case 'Escape':
-            $('.fileinfo').removeClass('show');
-            $('.help').removeClass('show');
+            hideModals();
             break;
           case 'f':
             actionFullscreenToggle();
@@ -2073,10 +2249,34 @@
         }
       }
 
+      function toggleModal($el) {
+        if ($el.hasClass('show')) {
+          hideModals();
+        } else if ($('.modal.show')) {
+          hideModals();
+          showModal($el);
+        } else {
+          showModal($el);
+        }
+      }
+
+      function showModal($el) {
+        $el.addClass('show');
+        $el.once('click', hideModals)
+      }
+
+      function hideModals(e) {
+        if (e && $(e.target).hasClass('value')) {
+          return;
+        }
+
+        const modals = [...document.querySelectorAll('.modal.show')];
+        modals.forEach((el) => $(el).removeClass('show'));
+      }
+
       function syncTrickSrc() {
         return $trick.src = $player.src;
       }
-
 
       function setVideoPoster(r,g,b){
         if (opts.poster) {
@@ -2179,7 +2379,7 @@
               ctx.drawImage($player, 0, 0, w, h);
               bitmap = createImageBitmap(c);
             }
-            
+
             return bitmap.then(resolve).catch(reject);
           }, false);
 
@@ -2187,7 +2387,7 @@
         });
 
         // Relative seek if `0 < time < 1`, absolute otherwise
-        $player.currentTime = (time > 0 && time < 1 ? $player.duration * time : time); 
+        $player.currentTime = (time > 0 && time < 1 ? $player.duration * time : time);
 
         return promise;
       }
@@ -2263,6 +2463,7 @@
         const hash = getHash();
 
         if (hash && hash.location && hash.location.length > 1) {
+          hashState.location = hash.location;
           createLinks(hash.location);
         } else {
           createLinks();
