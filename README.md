@@ -1,7 +1,13 @@
-# player.html
+# Player.html
 One file drop-in video player web app for using MP4 video files served using basic directory listing.
 
 ![player.html in action](https://user-images.githubusercontent.com/455424/94622509-317b8e00-0267-11eb-904a-ffd75fe644df.jpg)
+
+# Supported Devices 
+* T.V.
+* Mobail
+* Tablet 
+
 ![player.html on all of your devices](https://user-images.githubusercontent.com/455424/94621565-6981d180-0265-11eb-98da-c0400530ac1a.jpg)
 
 ## Usage
