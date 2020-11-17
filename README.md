@@ -7,7 +7,7 @@ One file drop-in video player web app for using MP4 video files served using bas
 ## Usage
 `player.html` is designed to be a drop-in video player that does not require any configuration or other files.
 
-To use it, copy the [`./src/player.html`](src/player.html) file into a folder that is served over HTTP using the web server's folder listing functionality. `player.html` basically uses the folder listing as an API for enumerating the files and folders. It should work with almost any web server, but it has only be tested against NGINX, Apache, and IIS.
+To use it, copy the [`./src/player.html`](src/player.html) file into a folder that is served over HTTP using the web server's folder listing functionality. `player.html` basically uses the folder listing as an API for enumerating the files and folders. It should work with almost any web server, but it has only been tested against NGINX, Apache, and IIS.
 
 ### Supported features
 
@@ -16,7 +16,7 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 * May be installed as a PWA (Progressive Web App) app. Dynamically generated inline data URI manifest file.
 * Playback of `MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, and `OGG` files using the browser video engine
 * Support for loading external `SRT` and `VTT` subtitle files
-* Sharable URL that will load `player.html` in the same folder location, and video position
+* Shareable URL that will load `player.html` in the same folder location, and video position
 * Custom video playback controls (fullscreen, play, pause, mute, etc)
 * Progress bar with timestamp preview thumbnail on hover
 * Video thumbnail generation, with concurrency configuration (default 1)*
