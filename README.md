@@ -29,15 +29,31 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 
 \* Be careful with concurrency. Increasing the setting above 1 does make it generate thumbnails much faster. But it is very easy for HTTP requests for generating thumbnails to saturate a connection enough that the main video gets starved for bandwidth. Especially if you browse into a folder with many dozens of videos in it.
 
-### Other
+## Supported Browsers
 
-`player.html` uses [`folder.api](https://github.com/pseudosavant/folder.api) to consume HTTP directory listings like an API
+The latest version of these browsers is supported:
 
-### Supported Web Servers
+* Edge (Chromium)
+* Edge (Xbox EdgeHTML)†
+* Firefox‡
+* Safari (Mac, iPadOS, iOS)‡
+* Chrome
+
+† EdgeHTML is only supported on Xbox as it has been replaced on Windows 10. It will still probably work with the Windows 10 EdgeHTML but it is untested.
+
+‡ These browsers do not support thumbnailing
+
+## Supported Web Servers
+
+The latest version of these web servers (others may work as well):
 
 * NGINX ([`autoindex`](https://nginx.org/en/docs/http/ngx_http_autoindex_module.html) on)
 * Apache ([`mod_autoindex`](https://cwiki.apache.org/confluence/display/HTTPD/DirectoryListings))
 * IIS (enable [`Directory Browsing`](https://docs.microsoft.com/en-us/iis/configuration/system.webserver/directorybrowse))
+
+## Other
+
+`player.html` uses [`folder.api](https://github.com/pseudosavant/folder.api) to consume HTTP directory listings like an API
 
 ## License
 

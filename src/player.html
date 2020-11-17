@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='1.4.0'>
+  <meta name='version' content='1.4.1'>
   <meta name='Copyright' content=' ©2020 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='apple-mobile-web-app-status-bar-style' content='black'>
@@ -73,6 +73,13 @@
       );
     }
 
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    .playerContainer:-webkit-full-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
     .playerContainer:fullscreen {
       display: flex;
       flex-direction: column;
@@ -80,7 +87,13 @@
       justify-content: center;
     }
 
-    .playerContainer:fullscreen .controls {
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    .playerContainer:-webkit-full-screen .controls {
+      position: absolute;
+      bottom: 0;
+      overflow: hidden;
+    }
+    :fullscreen .controls {
       position: absolute;
       bottom: 0;
       overflow: hidden;
@@ -116,15 +129,30 @@
       opacity: 100%;
       transition: opacity var(--transition-base);
     }
-    :fullscreen.fadeout .controls{
+
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    :-webkit-full-screen.fadeout .controls {
+      opacity: 0;
+    }
+    :fullscreen.fadeout          .controls {
       opacity: 0;
     }
 
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    :-webkit-full-screen.fadeout {
+      cursor: none;
+    }
     :fullscreen.fadeout {
       cursor: none;
     }
 
-    :fullscreen .player {
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    :-webkit-full-screen .player {
+      margin: 0;
+      min-height: 100vh;
+      max-height: 100vh;
+    }
+    :fullscreen          .player {
       margin: 0;
       min-height: 100vh;
       max-height: 100vh;
@@ -342,14 +370,21 @@
       display: inline-block;
     }
 
-    .btn-fullscreen .collapse,
-    :fullscreen .btn-fullscreen .expand {
+    .btn-fullscreen .collapse { /* Hide `.collapse` by default */
       display: none;
     }
-
-    .btn-fullscreen .expand,
-    :fullscreen .btn-fullscreen .collapse {
+    .btn-fullscreen .expand { /* Show `.expand` by default */
       display: block;
+    }
+
+    :-webkit-full-screen .btn-fullscreen .collapse, /* Show collapse in fullscreen mode */
+    :fullscreen          .btn-fullscreen .collapse {
+      display: block;
+    }
+
+    :-webkit-full-screen .btn-fullscreen .expand, /* Hide collapse in fullscreen mode */
+    :fullscreen          .btn-fullscreen .expand {
+      display: none;
     }
 
     .pauseOverlay svg {
@@ -820,7 +855,9 @@
       global.$ = $;
 
       window.canThumbnail = function canThumbnail(){
-        // Must support `localStorage` and `createImageBitmap`
+        const falseMessage = 'Thumbnail support: false';
+
+        // Must support `localStorage`, `createImageBitmap`, and `OffscreenCanvas`
         try {
             const key = '__canThumbnailTest__';
             const val = 'true';
@@ -828,9 +865,14 @@
             localStorage.setItem(key, val);
             const getItemSuccess = localStorage.getItem(key) === val;
             localStorage.removeItem(key);
-          return (!!createImageBitmap && !!getItemSuccess);
+
+          const supported = (!!createImageBitmap && !!getItemSuccess && !!window.OffscreenCanvas); // Firefox requires checking for OffscreenCanvas off of `window`
+
+          if (!supported) console.info(falseMessage);
+
+          return supported;
         } catch (e) {
-          console.info('Thumbnail support: false');
+          console.info(falseMessage);
           return false;
         }
       }
@@ -1304,7 +1346,7 @@
       main();
     })(this);
 
-    // folder.api (https://github.com/pseudosavant/folder.api): v1.0
+    // folder.api (https://github.com/pseudosavant/folder.api): v1.0.1
     (function folderApiIIFE(global) {
       'use strict';
 
@@ -1340,7 +1382,7 @@
         return parts.join('/') + '/';
       }
 
-      function urlToFoldername(url){
+      function urlToFoldername(url) {
         var pieces = url.split('/');
         return pieces[pieces.length - 2]; // Return piece before final `/`
       }
@@ -1354,8 +1396,8 @@
       async function linkToMetadata(node, server) {
         return (
           typeof servers[server] === 'function' ?
-          servers[server](node) :
-          {}
+            servers[server](node) :
+            {}
         );
       }
 
@@ -1374,7 +1416,7 @@
 
       async function getServer(url) {
         const h = await getHeaderData(url);
-        const server = h.get('Server').toString().toLowerCase();
+        const server = (h.get('Server') ? h.get('Server').toString().toLowerCase() : undefined);
         if (server && server.includes) {
           if (server.includes('nginx')) {
             return 'nginx';
@@ -1385,7 +1427,7 @@
           }
         }
 
-        return;
+        return 'generic';
       }
 
       const servers = {
@@ -1433,7 +1475,7 @@
 
           return metadata;
         },
-        nginx: function(node) {
+        nginx: function (node) {
           const metadata = { date: undefined, size: undefined };
 
           const metadataNode = node.nextSibling;
@@ -1455,7 +1497,7 @@
 
           return metadata;
         },
-        iis: function(node) {
+        iis: function (node) {
           const metadata = { date: undefined, size: undefined };
 
           const metadataNode = node.previousSibling;
@@ -1477,7 +1519,7 @@
 
           return metadata;
         },
-        fallback: function(node) {
+        fallback: function (node) {
           const metadata = { date: undefined, size: undefined };
 
           const metadataNode = node.nextSibling;
@@ -1557,7 +1599,7 @@
             ) {
               res.type = 'parent';
             } else if (url === '/') {
-              res.type =  'root';
+              res.type = 'root';
             }
           }
 
@@ -1568,7 +1610,6 @@
       }
 
       async function folderApiRequest(url) {
-        console.log(`Going to: ${url}`);
         const $frame = document.createElement('iframe');
         $frame.style.visibility = 'hidden';
 
@@ -1781,7 +1822,6 @@
         videos.sort(sortFiles);
 
         videos.forEach((file) => {
-          console.log(file);
           const rawUrl = file.url;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
@@ -2268,21 +2308,34 @@
       }
 
       function updateFullscreenSupport() {
-        if ($playerContainer.requestFullscreen) {
+        const $el = $playerContainer;
+        if (
+          (document.fullscreenEnabled       && $el.requestFullscreen) ||
+          (document.webkitFullscreenEnabled && $el.webkitRequestFullscreen)
+        ) {
           $('.btn-fullscreen').addClass('enabled');
         }
       }
 
       function isFullscreen() {
-        return !!document.fullscreenElement;
+        return !!document.fullscreenElement || !!document.webkitFullscreenElement;
       }
 
       function requestFullscreen() {
-        if ($playerContainer.requestFullscreen) $playerContainer.requestFullscreen();
+        const $el = $playerContainer;
+        const requests = ['requestFullscreen', 'webkitRequestFullscreen', 'msRequestFullscreen'];
+        prefixRun($el, requests);
       }
 
       function exitFullscreen() {
-        if (document.exitFullscreen) document.exitFullscreen();
+        const $el = document;
+        const exits = ['exitFullscreen', 'webkitExitFullScreen', 'msExitFullscreen'];
+        prefixRun($el, exits);
+      }
+
+      function prefixRun($el, methods) {
+        const supportedMethod = methods.find(method => $el[method]);
+        $el[supportedMethod]();
       }
 
       var timeoutFadeout;
