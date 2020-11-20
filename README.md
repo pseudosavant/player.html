@@ -1,22 +1,33 @@
 # Video Player In HTML
-## Player.html
+## 💽 Player.html 💽
 One file drop-in video player web app for using MP4 video files served using basic directory listing.
 
 ![player.html in action](https://user-images.githubusercontent.com/455424/94622509-317b8e00-0267-11eb-904a-ffd75fe644df.jpg)
-
-# Supported Devices 
-* T.V.
-* Mobail
-* Tablet 
-
 ![player.html on all of your devices](https://user-images.githubusercontent.com/455424/94621565-6981d180-0265-11eb-98da-c0400530ac1a.jpg)
 
-## Usage
+# 👨‍💻  Language Used 👨‍💻 
+* HTML
+* CSS
+
+#  ❗️📳 Supported Devices ❕📳
+* 📺 T.V.
+* 📱 Mobail
+* 📟 Tablet 
+
+
+
+### ❗️🌐 Supported Web Servers ❕🌐
+
+* NGINX ([`autoindex`](https://nginx.org/en/docs/http/ngx_http_autoindex_module.html) on)
+* Apache ([`mod_autoindex`](https://cwiki.apache.org/confluence/display/HTTPD/DirectoryListings))
+* IIS (enable [`Directory Browsing`](https://docs.microsoft.com/en-us/iis/configuration/system.webserver/directorybrowse))
+
+## 🧰 Usage 🧰
 `player.html` is designed to be a drop-in video player that does not require any configuration or other files.
 
 To use it, copy the [`./src/player.html`](src/player.html) file into a folder that is served over HTTP using the web server's folder listing functionality. `player.html` basically uses the folder listing as an API for enumerating the files and folders. It should work with almost any web server, but it has only been tested against NGINX, Apache, and IIS.
 
-### Supported features
+### ❗️ ❕ Supported features ❕ ❗️
 
 * Only 1 file with zero external dependencies
 * [`SVG images`](https://github.com/microsoft/fluentui-system-icons/) are inlined
@@ -36,13 +47,7 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 
 \* Be careful with concurrency. Increasing the setting above 1 does make it generate thumbnails much faster. But it is very easy for HTTP requests for generating thumbnails to saturate a connection enough that the main video gets starved for bandwidth. Especially if you browse into a folder with many dozens of videos in it.
 
-### Supported Web Servers
-
-* NGINX ([`autoindex`](https://nginx.org/en/docs/http/ngx_http_autoindex_module.html) on)
-* Apache ([`mod_autoindex`](https://cwiki.apache.org/confluence/display/HTTPD/DirectoryListings))
-* IIS (enable [`Directory Browsing`](https://docs.microsoft.com/en-us/iis/configuration/system.webserver/directorybrowse))
-
-## License
+## 📑 License 📑
 
 * [MIT](./LICENSE)
 
