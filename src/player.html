@@ -641,7 +641,7 @@
     }
   </style>
 </head>
-<body class='' style='--absolute-position: "0:00"; --duration: "0:00"; --relative-position: "0";'>
+<body class=''>
   <div class='playerContainer'>
     <div class='videoContainer'>
       <video class='player' crossorigin="anonymous"></video>
@@ -661,7 +661,7 @@
       </ul>
       <ul class='subtitle-selection modal'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
     </div>
-    <section class='controls'>
+    <section class='controls' style='--absolute-position: "0:00"; --duration: "0:00"; --relative-position: "0";'>
       <div class='progressBar'></div>
       <video class='trick'></video>
       <section class='primary-buttons'>
@@ -773,6 +773,10 @@
           color: '32,32,32', // What overlay color should be blended with the image
           resizeQuality: 'high', // `<canvas>` resize quality
           concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
+        },
+        updateRate: { // Limit UI update rates in ms
+          timeupdate: 1000/5, // video playback `timeupdate` events
+          trickHover: 1000/10 // Seeking on trickplay hover overlay
         }
       }
     };
@@ -943,8 +947,9 @@
       }
       global.retrieve = retrieve;
 
-      function getCSSVariable(v) {
-        const val = getComputedStyle(document.body).getPropertyValue(v);
+      function getCSSVariable(v, optTarget) {
+        const target = (!optTarget ? document.body : optTarget);
+        const val = getComputedStyle(target).getPropertyValue(v);
 
         if (val == +val) {
           return +val; // Convert to number
@@ -1654,11 +1659,9 @@
       const $subtitles = $('.subtitle-selection');
       const $currentTimestamp = $('.currentTimestamp');
 
-      const opts = {
-        thumbnails: app.options.thumbnails,
-        supportedVideoTypes: getSupportedVideoTypes(),
-        poster: getSVGPoster(),
-      };
+      const opts = app.options;
+      opts.supportedVideoTypes = getSupportedVideoTypes();
+      opts.poster = getSVGPoster();
       console.info(`Supported video mime-types: ${opts.supportedVideoTypes.mime.join(', ')}`);
 
       function getSupportedVideoTypes() {
@@ -2360,32 +2363,21 @@
           updateAbsolutePosition($player.currentTime);
         }
 
-        // Chromium fires `timeupdate` 4 times per second
-        // Don't do the calculations if the video is long and extra updates would be <1 pixel
-        if (false && $player.duration > (getProgressBarWidth() / 4)) return update();
-
-        // Update once a frame for 250ms (frequency of timeupdate events)
-        var done = false;
-        setTimeout(() => (done = true), 250);
-
-        function rafCb() {
-          update();
-
-          if (!done) requestAnimationFrame(rafCb);
-        }
-        rafCb();
+        requestAnimationFrame(update);
       }
 
-      const updateRelativePosition      = p => setCSSVariable('--relative-position', `${p * 100}%`);
-      const updateTrickRelativePosition = p => setCSSVariable('--trick-position'   , `${p * 100}%`);
-      const updateAbsolutePosition =      p => setCSSVariable('--absolute-position', secondsToString(p));
-      const updateDuration =              d => setCSSVariable('--duration',          secondsToString(d));
+      const cssVarTarget = $('.controls');
+      const updateDuration =              d => setCSSVariable('--duration',          secondsToString(d), cssVarTarget);
+      const updateAbsolutePosition =      p => setCSSVariable('--absolute-position', secondsToString(p), cssVarTarget);
+      const updateRelativePosition      = p => setCSSVariable('--relative-position', `${p * 100}%`, cssVarTarget);
+      const updateTrickRelativePosition = p => setCSSVariable('--trick-position'   , `${p * 100}%`, cssVarTarget);
 
-      function setCSSVariable(k, v) {
+      function setCSSVariable(k, v, optTarget) {
+        const target = (!optTarget ? document.body : optTarget);
         if (typeof v === 'number' || v.endsWith('%')) {
-          return $body.style.setProperty(k, v);
+          return requestAnimationFrame(() => target.style.setProperty(k, v));
         } else {
-          return $body.style.setProperty(k, `'${v}'`);
+          return requestAnimationFrame(() => target.style.setProperty(k, `'${v}'`));
         }
       }
 
@@ -2466,7 +2458,7 @@
 
         $player.on('loadedmetadata', updateFileinfo);
         $player.on('loadeddata', syncTrickSrc);
-        $player.on('timeupdate', throttle(updateProgress, 30/1000));
+        $player.on('timeupdate', throttle(updateProgress, opts.updateRate.timeupdate));
         $player.on('pause', () => $body.addClass('paused'));
         $player.on('play',  () => $body.removeClass('paused'));
         $player.on('ended', () => $body.removeClass('paused'));
@@ -2475,7 +2467,7 @@
         });
         $('.pauseOverlay').on('click', actionPlayPause);
 
-        $progressBar.on('mousemove', throttle(progressBarTrickHover, 30/1000)); // Not more than 30fps
+        $progressBar.on('mousemove', throttle(progressBarTrickHover, opts.updateRate.trickHover));
         $progressBar.on('click', actionProgressBarSeek);
 
         $body.on('paste', actionPasteAndPlay);
