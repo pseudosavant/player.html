@@ -35,13 +35,11 @@ The latest version of these browsers is supported:
 
 * Edge (Chromium)
 * Edge (Xbox EdgeHTML)†
-* Firefox‡
-* Safari (Mac, iPadOS, iOS)‡
+* Firefox
+* Safari (Mac, iPadOS, iOS)
 * Chrome
 
 † EdgeHTML is only supported on Xbox as it has been replaced on Windows 10. It will still probably work with the Windows 10 EdgeHTML but it is untested.
-
-‡ These browsers do not support thumbnailing
 
 ## Supported Web Servers
 
