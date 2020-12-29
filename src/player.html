@@ -37,6 +37,7 @@
       --folder-color: hsl(44,100%,68%);
       --playing-color: hsl(87, 100%, 50%);
       --modal-background-color: rgba(32,32,32,0.5);
+      --thumbnail-overlay-color: rgba(64,64,64,0.2);
 
       --transition-base: 300ms;
       --blur-base: 1rem;
@@ -578,7 +579,9 @@
 
     .links a.file {
       background-size: cover;
-      background-image: var(--image-url);
+      background-image:
+        linear-gradient(to top, var(--thumbnail-overlay-color), var(--thumbnail-overlay-color)),
+        var(--image-url);
     }
 
     .links a.file:hover:not(.current) {
@@ -767,10 +770,13 @@
         },
         thumbnails: {
           enabled: true, // Should it generate thumbnails
-          timestamp: 0.10, // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
+          time: 0.10, // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
           size: 480, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
-          opacity: '0.5', // How opaque should the image from the video be
-          color: '32,32,32', // What overlay color should be blended with the image
+          mime: {
+            type: 'image/webp',
+            quality: 0.1
+          },
+          cache: true, // Should thumbnails be written and read from localStorage cache
           resizeQuality: 'high', // `<canvas>` resize quality
           concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
         },
@@ -857,29 +863,6 @@
         return el;
       }
       global.$ = $;
-
-      window.canThumbnail = function canThumbnail(){
-        const falseMessage = 'Thumbnail support: false';
-
-        // Must support `localStorage`, `createImageBitmap`, and `OffscreenCanvas`
-        try {
-            const key = '__canThumbnailTest__';
-            const val = 'true';
-
-            localStorage.setItem(key, val);
-            const getItemSuccess = localStorage.getItem(key) === val;
-            localStorage.removeItem(key);
-
-          const supported = (!!createImageBitmap && !!getItemSuccess && !!window.OffscreenCanvas); // Firefox requires checking for OffscreenCanvas off of `window`
-
-          if (!supported) console.info(falseMessage);
-
-          return supported;
-        } catch (e) {
-          console.info(falseMessage);
-          return false;
-        }
-      }
 
       function delay(ms, fn) {
         fn = fn || function(){};
@@ -992,6 +975,158 @@
         return Math.round(v * factor) / factor;
       }
       global.limitPrecision = limitPrecision;
+    })(this);
+
+    (function videoThumbnailIIFE(global) {
+      // video-thumbnail.js
+      // https://github.com/pseudosavant/video-thumbnail.js
+      // © 2020 Paul Ellis (https://github.com/pseudosavant)
+      // License: MIT
+      // v1.0.0
+
+      function store(key, val) {
+        try {
+          return localStorage.setItem(key, val);
+        } catch (e) {
+          console.warn(`Failed to store: ${key}`, e);
+          return null;
+        }
+      }
+
+      function retrieve(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          console.warn(`Failed to retrieve: ${key}`, e);
+          return null;
+        }
+      }
+
+      function getVideo(url) {
+        const $player = document.createElement('video');
+        $player.crossorigin = 'anonymous';
+        $player.muted = true;
+        $player.autoplay = true; // Must be set to `true` for iOS
+        $player.playsInline = true; // Must be set to `true` to prevent automatic fullscreen on iOS
+        
+        const eventName = 'canplay';
+        const promise = new Promise((resolve, reject) => {
+          $player.addEventListener(eventName, function loadedmetadata() {
+            $player.pause();
+            
+            resolve($player);
+          }, false);
+          
+          $player.addEventListener('error', reject);
+        });
+        $player.src = url;
+        
+        return promise;
+      }
+      
+      function videoToDataURI(videoSrc, time, size, mime, type) {
+        const $player = videoSrc;
+        
+        const promise = new Promise((resolve, reject) => {
+          $player.addEventListener('seeked', async function seeked() {
+            const aspectRatio = $player.videoHeight / $player.videoWidth;
+            const w = size;
+            const h = w * aspectRatio;
+            const c = document.createElement('canvas');
+            
+            c.width = w;
+            c.height = h;
+            
+            const ctx = c.getContext('2d');
+            ctx.drawImage($player, 0, 0, w, h);
+            
+            if (type === 'objectURL') {
+              c.toBlob((blob) => resolve(URL.createObjectURL(blob)), mime.type, mime.quality);
+            } else {
+              const dataURI = c.toDataURL(mime.type, mime.quality)
+              resolve(dataURI);
+            }
+          }, false);
+          
+          $player.addEventListener('error', reject);
+        });
+        
+        // Relative seek if `0 < time < 1`, absolute otherwise
+        const seekTime = (betweenZeroAndOne(time) ? time * $player.duration : time);
+        $player.currentTime = seekTime;
+        
+        // Play/pause must be trigger to ensure correct seeking on iOS
+        $player.play();
+        // $player.pause();
+
+        return promise;
+      }
+
+      function betweenZeroAndOne(n) {
+        return (n > 0 && n < 1);
+      }
+
+      const canThumbnail = (function(){
+        const falseMessage = 'Thumbnail support: false';
+
+        // Must support `localStorage`
+        try {
+            const key = '__canThumbnailTest__';
+            const val = 'true';
+
+            localStorage.setItem(key, val);
+            const supported = localStorage.getItem(key) === val;
+            localStorage.removeItem(key);
+
+          if (!supported) console.info(falseMessage);
+
+          return supported;
+        } catch (e) {
+          console.info(falseMessage);
+          return false;
+        }
+      })();
+
+      async function getThumbnailDataURI(url, opts) {
+        if (!canThumbnail) return undefined;
+
+        const def = {
+          time: 0.1,
+          size: 480,
+          mime: { type: 'image/png' },
+          type: 'dataURI',
+          cache: false
+        };
+
+        const isImageMimeType = (s) => (/image\/.+/i).test(s);
+
+        const time = (typeof opts.time === 'number' && opts.time >= 0 ? opts.time : def.size);
+        const size = (typeof opts.size === 'number' && opts.size >  0 ? opts.size : def.size);
+        const mime = (opts.mime && isImageMimeType(opts.mime.type)    ? opts.mime : def.mime);
+        const type = (opts.type === 'objectURL'                       ? opts.type : def.type);
+        const cache = (typeof opts.cache === 'boolean'                ? opts.cache : def.cache);
+
+        try {
+          const key = `video-thumbnail.js-cache-${size}|${time}|${url}`;
+          const cachedURI = retrieve(key);
+
+          if (cache && cachedURI) {
+            return cachedURI;
+          } else {
+            const $player = await getVideo(url);
+            const dataURI = await videoToDataURI($player, time, size, mime, type);
+            $player.src = ''; // Unset video
+            
+            if (cache) store(key, dataURI);
+
+            return dataURI;
+          }
+        } catch (e) {
+          console.info(`Unable to create thumbnail for: ${url}`, e);
+        }
+      }
+
+      global.videoThumbnail = getThumbnailDataURI;
     })(this);
 
     (async function pwaIIFE() {
@@ -1617,6 +1752,7 @@
       async function folderApiRequest(url) {
         const $frame = document.createElement('iframe');
         $frame.style.visibility = 'hidden';
+        document.body.appendChild($frame); // `<iframe>` must be appended before setting `src` or iOS calls load on `appendChild` as well
 
         const promise = new Promise((resolve, reject) => {
           $frame.addEventListener('error', reject, false);
@@ -1624,12 +1760,10 @@
           $frame.addEventListener('load', async () => {
             const links = await getLinksFromFrame($frame, url);
             $frame.parentElement.removeChild($frame);
-
             resolve(links);
           }, false);
         });
 
-        document.body.appendChild($frame);
         $frame.src = url; // Setting src starts loading
 
         return promise;
@@ -1838,7 +1972,7 @@
         const $links = [...document.querySelectorAll('.file, .folder')];
         $links.forEach((link) => $(link).on('click', clickLink));
 
-        if (opts.thumbnails.enabled && canThumbnail()) {
+        if (opts.thumbnails.enabled) {
           try {
             populateThumbnails();
           } catch (e) { console.warn(e); }
@@ -2602,141 +2736,15 @@
         return canvas.toDataURL('image/png');
       }
 
-      // Thumbnail generation
-      function getVideo(url) {
-        const $player = document.createElement('video');
-        $player.crossorigin = 'anonymous';
-        $player.muted = true;
-        $player.autoplay = false;
-        $player.preload = false;
-        $player.playbackRate = 0;
-
-        const promise = new Promise((resolve, reject) => {
-          $player.addEventListener('loadedmetadata', function loadedmetadata(){
-            $player.pause();
-            resolve($player);
-          }, false);
-
-          $player.addEventListener('error', reject);
-        });
-        $player.src = url;
-
-        return promise;
-      }
-
-      async function cibOptsSupport() {
-        const c = document.createElement('canvas');
-        c.width = 10;
-        c.height = 10;
-
-        try {
-          const bitmap = await createImageBitmap(c, 0, 0, 10, 10, { resizeWidth: 1 })
-          return bitmap.width === 1;
-        } catch (e) {
-          return false;
-        }
-      }
-
-      function getBitmap(videoSrc, time) {
-        const $player = videoSrc;
-
-        const promise = new Promise((resolve, reject) => {
-          $player.addEventListener('seeked', async function seeked(){
-            var bitmap;
-            // Check for `createImageBitmap` options support
-            if (await cibOptsSupport()) {
-              const cibOpts = {
-                resizeWidth: opts.thumbnails.size,
-                resizeQuality: opts.thumbnails.resizeQuality
-              };
-              bitmap = createImageBitmap($player, cibOpts);
-            } else {
-              // Fall back to `canvas.drawImage` for scaling
-              const aspectRatio = $player.videoHeight / $player.videoWidth;
-              const w = opts.thumbnails.size;
-              const h = w * aspectRatio;
-
-              const c = document.createElement('canvas');
-              c.width = w;
-              c.height = h;
-
-              const ctx = c.getContext('2d');
-              ctx.drawImage($player, 0, 0, w, h);
-              bitmap = createImageBitmap(c);
-            }
-
-            return bitmap.then(resolve).catch(reject);
-          }, false);
-
-          $player.addEventListener('error', reject);
-        });
-
-        // Relative seek if `0 < time < 1`, absolute otherwise
-        $player.currentTime = (time > 0 && time < 1 ? $player.duration * time : time);
-
-        return promise;
-      }
-
-      function bitmapToOffscreenCanvas(bitmap) {
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-
-        const ctx = canvas.getContext('bitmaprenderer');
-        ctx.transferFromImageBitmap(bitmap);
-
-        return canvas;
-      }
-
-      function bitmapToDataURI(bitmap) {
-        const p = new Promise(async (resolve, reject) => {
-          const mime = getIdealMimeType();
-          const canvas = bitmapToOffscreenCanvas(bitmap);
-          const blob = await canvas.convertToBlob(mime);
-
-          var reader = new FileReader();
-          reader.readAsDataURL(blob);
-          reader.onloadend = () => resolve(reader.result);
-        });
-
-        return p;
-      }
-
       async function setThumbnail(node, url) {
-        const thumbnails = opts.thumbnails;
-        const thumbnail = await getThumbnailDataURI(url, thumbnails.timestamp);
+        const thumbnail = await videoThumbnail(url, opts.thumbnails);
 
         if (thumbnail && thumbnail.length > 30) {
           node.style.setProperty('--image-url',`url(${thumbnail})`);
-          node.style.setProperty('--rgba-color', `${thumbnails.color}, ${thumbnails.opacity}`);
         }
 
         return thumbnail;
       }
-
-      async function getThumbnailDataURI(url, time) {
-        const size = opts.thumbnails.size;
-
-        const key = `${size}|${time}|${url}`;
-        try {
-          const cached = retrieve(key);
-
-          if (cached) {
-            return cached;
-          } else {
-            const $player = await getVideo(url);
-            const bitmap = await getBitmap($player, time);
-
-            $player.src = ''; // Unset video
-
-            const dataURI = await bitmapToDataURI(bitmap);
-            store(key, dataURI);
-
-            return dataURI;
-          }
-        } catch (e) {
-          console.info(`Unable to create thumbnail for: ${e.target.src}`);
-        }
-      }
-
 
       // main()
       async function main() {
