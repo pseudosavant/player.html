@@ -2125,7 +2125,7 @@
 
       function actionPlay(url) {
         // Don't restart playback if it is the currently playing video
-        if (url === $player.currentSrc) return;
+        if (url === $player.currentSrc && $player.src.length > 0) return;
 
         resetFileinfo();
         $body.removeClass('is-paused');
@@ -2414,7 +2414,7 @@
         if ($current && $current.classList) $current.classList.add('current');
       }
 
-      function actionPlayPause(){ $player.paused ? $player.play() : $player.pause() }
+      const actionPlayPause = () => ($player.paused ? $player.play() : $player.pause());
 
       function actionVolume() {
         let volume = +$player.dataset.volume;
