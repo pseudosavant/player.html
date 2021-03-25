@@ -175,27 +175,6 @@
       max-height: 100vh;
     }
 
-    .is-paused .player {
-      filter:
-        blur( calc(var(--blur-base) / 4) )
-        contrast(0.8)
-        brightness(0.5);
-    }
-
-    .pause-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-    }
-    .is-paused .player + .pause-overlay {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     .modal {
       z-index: 100;
       display: flex;
@@ -310,7 +289,7 @@
 
       width: 2.5rem;
 
-      margin: 1rem 0;
+      margin: 1rem 0.1rem;
 
       background: none;
       cursor: pointer;
@@ -336,13 +315,31 @@
     .controls button:active      svg { fill: hsl(var(--theme-hue), 100%, 33%); }
     .controls .stop svg { margin: 0 0.5rem; }
 
-    .controls .level-0, .controls .level-1, .controls .level-2, .controls .level-3 {
+    .primary-buttons .level-0, .primary-buttons .level-1, .primary-buttons .level-2, .primary-buttons .level-3 {
       display: none;
     }
 
-    .controls.volume-0 .level-0, .controls.volume-1 .level-1, .controls.volume-2 .level-2, .controls.volume-3 .level-3 {
+    .primary-buttons.volume-0 .level-0, .primary-buttons.volume-1 .level-1, .primary-buttons.volume-2 .level-2, .primary-buttons.volume-3 .level-3 {
       display: inline-block;
     }
+
+    .controls .btn-playback-rate {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--theme-color);
+      color: white;
+      font-weight: bold;
+      font-size: 0.7rem;
+      font-family: 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
+      border-radius: 50%;
+      height: 28.4px;
+      width: 28.4px;
+      margin: 0 0.5rem;
+    }
+    .controls .btn-playback-rate::after { content: var(--playback-rate) 'x'; }
+    .controls .btn-playback-rate:hover  { background-color: hsl(var(--theme-hue), 70%, 75%); }
+    .controls .btn-playback-rate:active { background-color: hsl(var(--theme-hue), 100%, 33%); }
 
     .is-paused .btn-play-pause .paused, .btn-play-pause .playing { display: inline-block; }
     .is-paused .btn-play-pause .playing, .btn-play-pause .paused { display: none; }
@@ -358,14 +355,6 @@
     :-webkit-full-screen .btn-fullscreen .expand, /* Hide collapse in fullscreen mode */
     :fullscreen          .btn-fullscreen .expand {
       display: none;
-    }
-
-    .pause-overlay svg {
-      width: 24px;
-      height: 24px;
-      transform: scale(2);
-      fill: var(--theme-color);
-      filter: drop-shadow(0 0 5px rgba(0,0,0,0.7));
     }
 
     .current-timestamp {
@@ -458,11 +447,16 @@
     button.btn-gdrive { width: 24px; }
 
     .primary-buttons {
+      display: flex;
+      width: 100%;
       position: relative;
       margin-top: 1rem;
+      justify-content: center;
+      align-items: center;
     }
 
     .sources {
+      display: block;
       position: absolute;
       right: 0;
       top: 0;
@@ -633,7 +627,6 @@
   <div class='player-container'>
     <div class='video-container'>
       <video class='player' data-volume="3" crossorigin="anonymous"></video>
-      <div class='pause-overlay'><svg><use xlink:href='#svg-pause'></svg></div>
       <ul class='fileinfo modal'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
       <ul class='help modal'>
         <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of video</span></li>
@@ -649,12 +642,12 @@
       </ul>
       <ul class='subtitle-selection modal'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
     </div>
-    <section class='controls volume-3' style='--absolute-position: "0:00"; --duration: "0:00"; --relative-position: "0";'>
+    <section class='controls' style='--absolute-position: "0:00"; --duration: "0:00"; --relative-position: "0";'>
       <div class='progress-bar'></div>
       <div class='trick-container'>
         <video class='trick'></video>
       </div>
-      <section class='primary-buttons'>
+      <section class='primary-buttons volume-3' style='--playback-rate: "1.00"'>
         <button class='btn-play-pause' type='button' title='Play/Pause [Spacebar]'><svg class='playing'><use xlink:href='#svg-play'></svg><svg class='paused'><use xlink:href='#svg-pause'></svg></button>
         <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]'><svg><use xlink:href='#svg-replay'></svg></button>
         <button class='btn-fast-forward' type='button' title='Go forward 15 seconds [Right Arrow]'><svg><use xlink:href='#svg-skip'></svg></button>
@@ -668,7 +661,8 @@
         <button class='btn-fullscreen' type='button' title='Fullscreen'><svg class='collapse'><use xlink:href='#svg-collapse'></svg><svg class='expand'><use xlink:href='#svg-expand'></svg></button>
         <button class='btn-subtitles' type='button' title='Toggle Subtitles'><svg><use xlink:href='#svg-subtitles-enabled'></svg></button>
         <button class='btn-fileinfo' type='button' title='Video file information'><svg><use xlink:href='#svg-info'></svg></button>
-        <section class='sources'>
+        <button class='btn-playback-rate' type='button' title='Alter video playback rate'></button>
+          <section class='sources'>
           <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width='30' height='24'><use xlink:href='#svg-onedrive'></svg></button>
           <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width='18' height='24'><use xlink:href='#svg-google-drive'></svg></button>
           <button class='btn-local-file' type='button' title='Open local video file'><svg><use xlink:href='#svg-folder-open-vertical'></svg></button>
@@ -793,10 +787,12 @@
           timeupdate: 1000/5, // video playback `timeupdate` events
           trickHover: 1000/10 // Seeking on trickplay hover overlay
         }
-      }
+      },
+      links: [],
+      metadata: {}
     };
 
-    (function utilitiesIIFE(global){
+    (function utilitiesIIFE(global) {
       // jQuery-like syntactic sugar. Only queries for one element. Does not loop over multiple like jQuery
       function $(query) {
         if (typeof query === 'undefined') throw 'No query provided to $';
@@ -1156,7 +1152,10 @@
         ],
         display: 'standalone',
         start_url: `${window.location.origin}${window.location.pathname}`,
-        scope: window.pathname
+        scope: window.pathname,
+        screenshots : [
+          { src: `https://cdn.statically.io/screenshot/mobile/${location.host}${location.pathname}` }
+        ]
       }
 
       setPWAManifest(manifest);
@@ -1940,7 +1939,27 @@
 
       async function createLinks(url) {
         const links = await folderApiRequest(urlToFolder(url || window.location.href));
-        showLinks(links);
+
+        const oldLinksHash = linksHash(app.links);
+        const newLinksHash = linksHash(links);
+        
+        app.links = links;
+
+        // Only show the links if they have changed
+        if (oldLinksHash !== newLinksHash) showLinks(links);
+      }
+
+      function linksHash(links) {
+        var output = '';
+        if (links.files && links.files.length > 0) {
+          output += links.files.reduce((acc, link) => acc + link.url, '')
+        }
+
+        if (links.folders && links.folders.length > 0) {
+          output += links.folders.reduce((acc, link) => acc + link.url, '')
+        }
+
+        return output;
       }
 
       async function showLinks(links) {
@@ -1948,7 +1967,6 @@
         const folders = links.folders;
         const files = links.files;
         const base = getBaseLocation(window.location);
-
 
         folders.forEach((folder) => {
           const rawUrl = folder.url;
@@ -2129,6 +2147,8 @@
 
         resetFileinfo();
         $body.removeClass('is-paused');
+        $player.playbackRate = 1;
+        updatePlaybackRate();
 
         if (!!url) {
           $player.autoplay = true;
@@ -2222,8 +2242,6 @@
       }
 
       async function updateFileinfo() {
-        if (supportsVideoFrameCallback()) await requestVideoFrame();
-
         const url = $player.currentSrc;
         const subtitles =   ($player.textTracks  && $player.textTracks.length  ? $player.textTracks.length  : 0);
         const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
@@ -2260,6 +2278,8 @@
           subtitles: 'Embedded Subtitles',
           audioTracks: 'Audio Tracks'
         }
+        app.metadata = metadata;
+        console.log(metadata);
 
         // Generate HTML for each fileinfo metadata item
         var html = '';
@@ -2286,7 +2306,10 @@
         return formattedDate;
       }
 
-      const resetFileinfo = () => $fileinfo.html('<li class="fileinfo-item modal-item">Metadata not yet loaded</li>');
+      const resetFileinfo = () => {
+        $fileinfo.html('<li class="fileinfo-item modal-item">Metadata not yet loaded</li>');
+        app.metadata = {};
+      }
       $player.on('loadstart', resetFileinfo);
 
       async function populateSubtitles(subtitles) {
@@ -2430,7 +2453,7 @@
       }
 
       function updateVolume() {
-        const $el = $('.controls');
+        const $el = $('.primary-buttons');
         const levelPrefix = 'volume-';
         const levels = [0, 1, 2, 3];
         const currentLevel = +$player.dataset.volume;
@@ -2448,9 +2471,44 @@
       $player.on('volumechange', updateVolume);
       const volumeRound = (n) => Math.floor(n * 3) / 3;
       
+      function actionPlaybackRate() {
+        const playbackRate = +$player.playbackRate;
+
+        if (playbackRate >= 2) {
+          $player.playbackRate = 0;
+        } else {
+          $player.playbackRate += 0.25;
+        }
+      }
+
+      function updatePlaybackRate() {
+        setCSSVariableString('--playback-rate', $player.playbackRate.toFixed(2), $('.primary-buttons'));
+      }
+
       const actionStop = () => actionPlay(); // Calling `actionPlay` with no source unsets the video
-      const actionReplay = () => $player.currentTime = Math.max($player.currentTime - 10, 0);
-      const actionSkip = () => $player.currentTime = Math.min($player.currentTime + 30, $player.duration);
+      const actionReplay = () => {
+        const framerate = (app.metadata.framerate ? app.metadata.framerate : 30);
+        const seekTime = Math.max(
+          10 * $player.playbackRate,
+          1/framerate
+        );
+        $player.currentTime = Math.max(
+          $player.currentTime - seekTime,
+          0
+        );
+      }
+      const actionSkip = () => {
+        const framerate = (app.metadata.framerate ? app.metadata.framerate : 30);
+        const seekTime = Math.max(
+          30 * $player.playbackRate,
+          1/framerate
+        );
+        $player.currentTime = Math.min(
+          $player.currentTime - seekTime,
+          $player.duration
+        );
+      }
+      
       const actionFullscreenToggle = () => (isFullscreen() ? exitFullscreen() : requestFullscreen());
 
       function updateFullscreenSupport() {
@@ -2571,6 +2629,9 @@
         $('.btn-fullscreen').on('click', actionFullscreenToggle);
         updateFullscreenSupport();
 
+        $player.on('ratechange', updatePlaybackRate);
+        $('.btn-playback-rate').on('click', actionPlaybackRate);
+
         $('.btn-subtitles').on('click', () => toggleModal($subtitles));
         $('.btn-fileinfo').on('click', () => toggleModal($fileinfo));
         $fileinfo.on('click', (e) => {
@@ -2604,7 +2665,6 @@
         $player.on('click', () => {
           if ($player.src.length > 0) actionPlayPause();
         });
-        $('.pause-overlay').on('click', actionPlayPause);
 
         $progressBar.on('mousemove', throttle(progressBarTrickHover, opts.updateRate.trickHover));
         $progressBar.on('click', actionProgressBarSeek);
