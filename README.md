@@ -17,12 +17,11 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 * Playback of `MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, and `OGG` files using the browser video engine
 * Support for loading external `SRT` and `VTT` subtitle files
 * Shareable URL that will load `player.html` in the same folder location, and video position
-* Custom video playback controls (fullscreen, play, pause, mute, etc)
+* Custom video playback controls (fullscreen, play, pause, mute, etc, volume, playback rate)
 * Progress bar with timestamp preview thumbnail on hover
 * Video thumbnail generation, with concurrency configuration (default 1)*
 * Thumbnail caching using `localStorage`
-* Variable playback rate
-* Select your own theme color
+* Select your own custom theme color
 * Social media metadata (`og:\*`, `twitter:\*`)
 * Video file metadata (bitrate, resolution, etc)
 * Keyboard shortcuts (press `?` to see the list)
