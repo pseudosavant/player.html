@@ -186,10 +186,10 @@
     .player {
       grid-area: player;
       width: 100%;
-      height: 75vh;
+      max-height: 75vh;
       margin: auto;
       background-image: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnIHN0YW5kYWxvbmU9J25vJz8+Cjxzdmcgd2lkdGg9JzU3JyBoZWlnaHQ9JzM1JyB2aWV3Qm94PScwIDAgNTUgMzYnIHZlcnNpb249JzEuMScgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz4KICA8ZyB0cmFuc2Zvcm09J3RyYW5zbGF0ZSg0LC02Ljk1MjUwOCknPgogICAgPHBhdGggc3R5bGU9J2ZpbGw6IGhzbCggIDMyMywgMTAwJSwgNTAlKScgZD0nTSAxMy43NTAxMzQsOC40MTIxMjAzIDM4LjE2NzE4OSwyMS4xMTY5MjkgYyAxLjU5MjI3NiwwLjgyODUwMiAyLjIxMTQzOCwyLjc5MDkyOSAxLjM4MjkzNiw0LjM4MzIwNSAtMC4zMDgwNTEsMC41OTIwMzcgLTAuNzkwODk5LDEuMDc0ODg1IC0xLjM4MjkzNiwxLjM4MjkzNyBMIDEzLjc1MDEzNCwzOS41ODc4OCBDIDEyLjE1Nzg1OCw0MC40MTYzODEgMTAuMTk1NDMxLDM5Ljc5NzIxOSA5LjM2NjkyOTMsMzguMjA0OTQzIDkuMTI1ODYzLDM3Ljc0MTY0NCA5LDM3LjIyNzA3MiA5LDM2LjcwNDgwOSBWIDExLjI5NTE5MSBjIDAsLTEuNzk0OTI1NCAxLjQ1NTA3NSwtMy4yNSAzLjI1LC0zLjI1IDAuNDQ3NjU0LDAgMC44ODk2NTgsMC4wOTI0NzEgMS4yOTg1NjYsMC4yNzA2OTk1IHogbSAtMS4xNTM5NDksMi4yMTc3NDY3IC0wLjExMDQ4NywtMC4wNDY2OCBjIC0wLjA3NTc5LC0wLjAyNTA5IC0wLjE1NTM1LC0wLjAzOCAtMC4yMzU2OTgsLTAuMDM4IC0wLjQxNDIxNCwwIC0wLjc1LDAuMzM1Nzg2IC0wLjc1LDAuNzUgdiAyNS40MDk2MTggYyAwLDAuMTIwNTIyIDAuMDI5MDQsMC4yMzkyNyAwLjA4NDY4LDAuMzQ2MTg1IDAuMTkxMTkzLDAuMzY3NDQ4IDAuNjQ0MDYxLDAuNTEwMzMyIDEuMDExNTA5LDAuMzE5MTM5IEwgMzcuMDEzMjQsMjQuNjY1MzI0IGMgMC4xMzY2MjQsLTAuMDcxMDkgMC4yNDgwNSwtMC4xODI1MTUgMC4zMTkxMzksLTAuMzE5MTM5IDAuMTkxMTkyLC0wLjM2NzQ0OSAwLjA0ODMxLC0wLjgyMDMxNiAtMC4zMTkxMzksLTEuMDExNTA5IHonLz4KICA8L2c+Cjwvc3ZnPg==');
-      background-size: contain;
+      background-size: 56.25vw; /* 9/16 - icon will never be taller than a 16x9 video */
       background-repeat: no-repeat;
       background-position: center;
 
@@ -1049,6 +1049,53 @@
   <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>
   <script type='text/javascript' src='https://js.live.net/v7.2/OneDrive.js' defer></script>
   
+  <!-- Global Config -->
+  <script defer>
+    /* IMPORTANT!!!
+
+      If you would like support for opening directly from the cloud, you must supply the appropriate keys
+      in the `app.options.cloud` below AND register your app with Google and/or Microsoft.
+
+      OneDrive Docs: https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration?view=odsp-graph-online
+      GDrive Docs: https://developers.google.com/drive/api/v3/picker
+
+    */
+    const global = window;
+    global.app = {
+      options: {
+        cloud: {
+          onedrive: {
+            clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
+          },
+          gdrive: {
+            developerKey: 'AIzaSyASwr9ZqtB_DGszfJ7E1nIq-SRO44rsXdc', // Browser API key obtained from the Google API Console.
+            clientId: '350482528905-uplflng9avfo3p5sghlgr0g059r04v0b.apps.googleusercontent.com', // Client ID obtained from the Google API Console. Replace with your own Client ID.
+            appId: '350482528905' // console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
+          }
+        },
+        thumbnails: {
+          enabled: true, // Should it generate thumbnails
+          time: 0.10, // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
+          size: 480, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
+          mime: {
+            type: 'image/webp',
+            quality: 0.1
+          },
+          cache: true, // Should thumbnails be written and read from localStorage cache
+          resizeQuality: 'high', // `<canvas>` resize quality
+          concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
+        },
+        updateRate: { // Limit UI update rates in ms
+          timeupdate: 1000/5, // video playback `timeupdate` events
+          trickHover: 1000/10 // Seeking on trickplay hover overlay
+        }
+      },
+      links: [],
+      metadata: {}
+    };
+  </script>
+
+
   <!-- Utitilies -->
   <script defer>
     (function utilitiesIIFE(global) {
@@ -2106,50 +2153,7 @@
   </script>
 
   <!-- App code -->
-  <script defer>
-    /* IMPORTANT!!!
-
-      If you would like support for opening directly from the cloud, you must supply the appropriate keys
-      in the `app.options.cloud` below AND register your app with Google and/or Microsoft.
-
-      OneDrive Docs: https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration?view=odsp-graph-online
-      GDrive Docs: https://developers.google.com/drive/api/v3/picker
-
-    */
-    const global = window;
-    global.app = {
-      options: {
-        cloud: {
-          onedrive: {
-            clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
-          },
-          gdrive: {
-            developerKey: 'AIzaSyASwr9ZqtB_DGszfJ7E1nIq-SRO44rsXdc', // Browser API key obtained from the Google API Console.
-            clientId: '350482528905-uplflng9avfo3p5sghlgr0g059r04v0b.apps.googleusercontent.com', // Client ID obtained from the Google API Console. Replace with your own Client ID.
-            appId: '350482528905' // console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
-          }
-        },
-        thumbnails: {
-          enabled: true, // Should it generate thumbnails
-          time: 0.10, // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
-          size: 480, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
-          mime: {
-            type: 'image/webp',
-            quality: 0.1
-          },
-          cache: true, // Should thumbnails be written and read from localStorage cache
-          resizeQuality: 'high', // `<canvas>` resize quality
-          concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
-        },
-        updateRate: { // Limit UI update rates in ms
-          timeupdate: 1000/5, // video playback `timeupdate` events
-          trickHover: 1000/10 // Seeking on trickplay hover overlay
-        }
-      },
-      links: [],
-      metadata: {}
-    };
-
+  <script>
     (function appIIFE(global) {
       'use strict';
 

@@ -17,10 +17,14 @@
             font-family: Calibri, sans-serif;
             position: relative;
             height: 1300px;
-            overflow: auto;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
 
         body {
+          width: calc(1920px * 0.8);
         }
 
         iframe {
@@ -32,13 +36,12 @@
         }
 
         .devices {
-            height: 100%;
+            height: 100vh;
             width: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: relative;
             display: flex;
             justify-content: center;
+            align-items: flex-start;
         }
 
         .devices > * {
@@ -160,7 +163,6 @@
                 setTimeout(() => {
                     doc.querySelector('.player').pause();
                     doc.querySelector('.player').style.filter = '';
-                    doc.querySelector('.pauseOverlay').style.opacity = 0;
                     doc.querySelector('html').style.overflow = 'hidden';
                 }, 15000);
             });
