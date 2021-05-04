@@ -21,6 +21,8 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 * Progress bar with timestamp preview thumbnail on hover
 * Video thumbnail generation, with concurrency configuration (default 1)*
 * Thumbnail caching using `localStorage`
+* Variable playback rate
+* Select your own theme color
 * Social media metadata (`og:\*`, `twitter:\*`)
 * Video file metadata (bitrate, resolution, etc)
 * Keyboard shortcuts (press `?` to see the list)
@@ -58,4 +60,4 @@ The latest version of these web servers (others may work as well):
 
 * [MIT](./LICENSE)
 
-&copy; 2020 Paul Ellis
+&copy; 2021 Paul Ellis
