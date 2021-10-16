@@ -2654,6 +2654,7 @@
 
         if ($el.hasClass('folder')) {
           hashState.location = $el.href;
+          clearThumbnailQueue();
           createLinks($el.href);
         }
 
@@ -2669,22 +2670,23 @@
         s.border = '0 none';
       }
 
+      var thumbnailPromises = [];
       async function populateThumbnails(){
         const $files = [...document.querySelectorAll('.file')];
-        const promises = [];
+        // const promises = [];
         const queue = [];
 
         $files.forEach(($file) => {
           const url = $file.href;
-          promises.push({$file, url});
+          thumbnailPromises.push({$file, url});
         });
 
         const concurrency = app.options.thumbnails.concurrency;
 
-        for (let j = 0; j < promises.length; j + concurrency) {
+        for (let j = 0; j < thumbnailPromises.length; j + concurrency) {
           // If there are promises left shift the first one into the queue
-          if (promises.length > 0) {
-            let work = promises.shift();
+          if (thumbnailPromises.length > 0) {
+            let work = thumbnailPromises.shift();
             queue.push(setThumbnail(work.$file, work.url));
           }
 
@@ -2694,6 +2696,10 @@
             queue.length = 0; // clears array
           }
         }
+      }
+
+      const clearThumbnailQueue = () => {
+        thumbnailPromises = [];
       }
 
       function getRelativePosition() {
