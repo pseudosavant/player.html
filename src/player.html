@@ -2498,8 +2498,6 @@
         return re.test(haystack);
       };
 
-      const isSubtitle = (url) => url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
-
       const isHiddenFileOrFolder = (url) => {
         const reHidden = /\/\..+$/i;
         return url.toString().match(reHidden);
@@ -2723,6 +2721,7 @@
 
       const resetPlayer = () => {
         resetFileinfo();
+        clearSubtitles();
         $body.removeClass('is-paused');
         $player.playbackRate = 1;
         $player.onerror = undefined;
@@ -2867,6 +2866,8 @@
           });
         }
       }
+
+      const isSubtitle = (url) => url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
 
       const isSRT = (url) => {
         try {
