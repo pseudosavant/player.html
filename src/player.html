@@ -2486,8 +2486,8 @@
       }
 
       const sortFiles = (a, b) => {
-        const labelA = urlToLabel(a);
-        const labelB = urlToLabel(b);
+        const labelA = urlToLabel(a.url);
+        const labelB = urlToLabel(b.url);
 
         return labelA < labelB ? -1 : 1;
       }
