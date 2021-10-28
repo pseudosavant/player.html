@@ -48,7 +48,8 @@
       --base-background-color: var(--base-background-color-dark);
       --base-overlay-color: 128,128,128;
 
-      --theme-hue: 323;
+      --default-hue: 323;
+      --theme-hue: var(--default-hue);
       --theme-color-base: var(--theme-hue), 100%, 50%;
       --theme-color: hsl(var(--theme-color-base));
 
@@ -350,19 +351,16 @@
       background-color: hsl(var(--theme-hue), 50%, 40%);
       padding-top: 0.25rem;
     }
-
-    .modal .cache-size {
-      background: none;
-      color: #FFF;
-      border: 0 none;
-      width: unset;
-      max-width: 100px;
+    
+    .modal .setting-cache + .metadata {
+      margin-left: 1rem;
     }
-    .modal .cache-size::after {
+
+    .modal .setting-cache + .metadata::after {
       content: 'KB';
     }
 
-    .modal .clear-cache {
+    .modal input[type=button] {
       background-color: var(--theme-color);
       border: 0 none;
       color: #FFF;
@@ -372,9 +370,6 @@
     .modal input[type='checkbox']:before {
       content: '';
       display: flex;
-      /* position: absolute;
-      top: 0;
-      left: 0; */
       width: 100%;
       height: 100%;
 
@@ -735,9 +730,12 @@
       background-origin: border-box;
       background-repeat: no-repeat;
 
-      background-image: var(--fallback-url);
+      background-image: var(--image-url-0);
       animation: animateThumbnail 1000ms infinite;
       animation-play-state: paused;
+    }
+    .no-thumbnail-animation .links a {
+      animation: unset;
     }
 
     .links a:hover {
@@ -925,49 +923,7 @@
         <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
       </ul>
       <ul class='subtitle-selection modal'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
-      <ul class='settings modal'>
-        <li class='modal-item setting-item'><span class='key'>Theme color</span>
-          <span class='desc'>
-            <label><input type="color" class="setting-theme-color" data-setting='theme-hue' data-change-event='input'></label>
-          </span>
-        </li>
-        <!-- Hide user mode dark setting - for now
-        <li class='modal-item setting-item'><span class='key'>Dark Mode</span>
-          <span class='desc'>
-            <label><input type="checkbox" class='setting-dark-mode' data-setting='color-scheme' data-change-event='change'></label>
-          </span>
-        </li> -->
-        <li class='modal-item setting-item'><span class='key'>UI Transitions</span>
-          <span class='desc'>
-            <label><input type="checkbox" class='setting-transitions' data-setting='transitions' data-change-event='change'></label>
-          </span>
-        </li>
-        <li class='modal-item setting-item'><span class='key'>UI Blur Effects</span>
-          <span class='desc'>
-            <label><input type="checkbox" class='setting-blur' data-setting='blur' data-change-event='change'></label>
-          </span>
-        </li>
-        <li class='modal-item setting-item' title="Generate thumbnails for video listings. It may use a lot of bandwidth, especially in large folders of videos. Turn off if it causes playback problems."><span class='key'>Generate Thumbnails</span>
-          <span class='desc'>
-            <label><input type="checkbox" class='setting-thumbnailing' data-setting='thumbnailing' data-change-event='change'></label>
-          </span>
-        </li>
-        <li class='modal-item setting-item'><span class='key'>Reset to defaults</span>
-          <span class='desc'>
-            <label>
-              <button type='button' class='reset-defaults' data-setting='reset' data-change-event='click'>Reset</button>
-            </label>
-          </span>
-        </li>
-        <li class='modal-item setting-item'><span class='key'>Thumbnail cache</span>
-          <span class='desc'>
-            <label>
-              <button type='button' class='cache-size' data-setting='cache-size' data-change-event='click'>xyzKB</button>
-              <button type='button' class='clear-cache' data-setting='clear-cache' data-change-event='click'>Clear</button>
-            </label>
-          </span>
-        </li>
-      </ul>
+      <ul class='settings modal'></ul>
       <div class="modal-background-overlay"></div>
     </div>
     <section class='controls'>
@@ -1109,12 +1065,11 @@
           }
         },
         thumbnails: {
-          enabled: true, // Should it generate thumbnails
           timestamps: [0.01, 0.02, 0.03, 0.04, 0.05], // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
           size: 320, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
           mime: {
             type: 'image/webp',
-            quality: 0.1
+            quality: 0.25
           },
           cache: true, // Should thumbnails be written and read from localStorage cache
           resizeQuality: 'high', // `<canvas>` resize quality
@@ -1135,8 +1090,10 @@
   <script defer>
     (function utilitiesIIFE(global) {
       // jQuery-like syntactic sugar. Only queries for one element. Does not loop over multiple like jQuery
-      function $(query) {
+      const $ = (query, ...args) => {
         if (typeof query === 'undefined') throw 'No query provided to $';
+
+        const $targetEl = args[0];
 
         var el;
         if (typeof query.nodeType === 'string') {
@@ -1146,7 +1103,7 @@
           container.innerHTML = query;
           el = container.firstChild;
         } else if (typeof query === 'string') {
-          el = document.querySelector(query);
+          el = ($targetEl || document).querySelector(query);
         } else {
           el = query;
         }
@@ -1190,7 +1147,7 @@
             }
           };
           el.removeAttr = name => { el.removeAttribute(name); return el; }
-          el.val = () => el.value;
+          el.val = (v) => (!isUndefined(v) ? el.value = v : el.value);
           el.find = q => $(q, el);
           el.html = h => {
             if (isUndefined(h)) {
@@ -1208,8 +1165,8 @@
       }
       global.$ = $;
 
-      function delay(ms, fn) {
-        fn = fn || function(){};
+      const delay = (ms, fn) => {
+        fn = fn || (() => {});
 
         const p = new Promise((resolve) => {
           setTimeout(() => resolve(fn()), ms);
@@ -1219,22 +1176,22 @@
       }
       global.delay = delay;
 
-      function throttle(func, wait, options) {
+      const throttle = (fn, wait, opts) => {
         var context, args, result;
         var timeout = null;
         var previous = 0;
 
-        if (!options) options = {};
-        var later = function() {
-          previous = options.leading === false ? 0 : Date.now();
+        if (!opts) opts = {};
+        var later = () => {
+          previous = opts.leading === false ? 0 : Date.now();
           timeout = null;
-          result = func.apply(context, args);
+          result = fn.apply(context, args);
           if (!timeout) context = args = null;
         };
 
-        return function() {
+        return () => {
           var now = Date.now();
-          if (!previous && options.leading === false) previous = now;
+          if (!previous && opts.leading === false) previous = now;
           var remaining = wait - (now - previous);
           context = this;
           args = arguments;
@@ -1244,9 +1201,9 @@
               timeout = null;
             }
             previous = now;
-            result = func.apply(context, args);
+            result = fn.apply(context, args);
             if (!timeout) context = args = null;
-          } else if (!timeout && options.trailing !== false) {
+          } else if (!timeout && opts.trailing !== false) {
             timeout = setTimeout(later, remaining);
           }
           return result;
@@ -1254,7 +1211,7 @@
       }
       global.throttle = throttle;
 
-      function storageStore(key, val) {
+      const storageStore = (key, val) => {
         try {
           return localStorage.setItem(key, val);
         } catch (e) {
@@ -1264,7 +1221,7 @@
       }
       global.storageStore = storageStore;
 
-      function storageRetrieve(key) {
+      const storageRetrieve = (key) => {
         try {
           return localStorage.getItem(key);
         } catch (e) {
@@ -1274,7 +1231,7 @@
       }
       global.storageRetrieve = storageRetrieve;
 
-      function storageRemove(key) {
+      const storageRemove = (key) => {
         try {
           return localStorage.removeItem(key);
         } catch (e) {
@@ -1284,7 +1241,7 @@
       }
       global.storageRemove = storageRemove;
 
-      function secondsToHMS(totalSecs) {
+      const secondsToHMS = (totalSecs) => {
         if (Number.isNaN(totalSecs)) return { hours: 00, mins: 00, secs: 00 };
 
         const hours = Math.floor(totalSecs / 3600);
@@ -1296,17 +1253,15 @@
       }
       global.secondsToHMS = secondsToHMS;
 
-      function secondsToString(s) {
+      const secondsToString = (s) => {
         const t = secondsToHMS(s);
         return `${pad(t.hours)}:${pad(t.mins)}:${pad(t.secs)}`;
       }
       global.secondsToString = secondsToString;
 
-      function pad(s) {
+      const pad = (s) => {
         s = s.toString();
-        if (s.length < 2) {
-          return `0${s}`;
-        }
+        if (s.length < 2) return `0${s}`;
 
         return s;
       }
@@ -1337,26 +1292,24 @@
       };
       global.addCommas = addCommas;
 
-      function limitPrecision(v, places) {
+      const limitPrecision = (v, places) => {
         const factor = Math.pow(10, places);
         return Math.round(v * factor) / factor;
       }
       global.limitPrecision = limitPrecision;
 
-      function minmax(min, val, max) {
-        return Math.max(min, Math.min(max, val));
-      }
+      const minmax = (min, val, max) => Math.max(min, Math.min(max, val));
       global.minmax = minmax;
 
       // UTF Base64 encode/decode
-      function base64EncodeUTF(str) {
+      const base64EncodeUTF = (str) => {
         return btoa(
           encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1))
         );
       }
       global.base64EncodeUTF = base64EncodeUTF;
 
-      function base64DecodeUTF(str) {
+      const base64DecodeUTF = (str) => {
         return decodeURIComponent(
           atob(str).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
         );
@@ -1364,12 +1317,11 @@
       global.base64DecodeUTF = base64DecodeUTF;
 
       /* Type checking */
-      function is(t) {
-        return (v) => typeof v === t;
-      }
+      const is = (type) => (v) => typeof v === type;
       const isNumber = is('number');
-      const isUndefined = is('undefined');
       const isString = is('string');
+      const isBoolean = is('boolean');
+      const isUndefined = is('undefined');
       global.isNumber = isNumber;
       global.isUndefined = isUndefined;
       global.isString = isString;
@@ -1382,7 +1334,7 @@
       global.setCSSVariableNumber = setCSSVariableNumber;
       global.clearCSSVariable = clearCSSVariable;
 
-      function getCSSVariable(v, optTarget) {
+      const getCSSVariable = (v, optTarget) => {
         const target = (!optTarget ? document.documentElement : optTarget);
         const val = getComputedStyle(target).getPropertyValue(v);
 
@@ -2407,10 +2359,7 @@
       const $subtitles = $('.subtitle-selection');
       const $currentTimestamp = $('.current-timestamp');
 
-      app.options.supportedVideoTypes = getSupportedVideoTypes();
-      console.info(`Supported video mime-types: ${app.options.supportedVideoTypes.mime.join(', ')}`);
-
-      function getSupportedVideoTypes() {
+      const getSupportedVideoTypes = () => {
         const supported = {
           extensions: [],
           mime: []
@@ -2434,12 +2383,8 @@
         return supported;
       }
 
-      function isSupportedMimeType(mime) {
-        return app.options.supportedVideoTypes.mime.includes(mime);
-      }
-
-      function getIdealMimeType(){
-        function supports(format) {
+      const getIdealMimeType = () => {
+        const supports = (format) => {
           const mime = format.type;
           return document.createElement('canvas').toDataURL(mime).indexOf(`data:${mime}`) === 0;
         }
@@ -2468,9 +2413,13 @@
         }
       }
 
+      const isSupportedMimeType = (mime) => app.options.supportedVideoTypes.mime.includes(mime);
+      app.options.supportedVideoTypes = getSupportedVideoTypes();
+      console.info(`Supported video mime-types: ${app.options.supportedVideoTypes.mime.join(', ')}`);
+
       const hashState = { location: '', video: '' };
 
-      function urlToFolder(url){
+      const urlToFolder = (url) => {
         if (isFolder(url)) return url;
         
         var pieces = url.split('/'); // Break the URL into pieces
@@ -2478,7 +2427,7 @@
         return pieces.join('/') + '/'; // Put it back together with a trailing /
       }
 
-      function isFile(url) {
+      const isFile = (url) => {
         const parsed = new URL(url);
         const finalPosition = parsed.pathname.lastIndexOf('/') + 1;
         const finalPart = parsed.pathname.substring(finalPosition);
@@ -2489,13 +2438,13 @@
       const hasPeriod = (s) => s.indexOf('.') >= 0;
       const isFolder = (url) => !isFile(url);
 
-      function urlToFilename(url) {
+      const urlToFilename = (url) => {
         const re = /\/{1}([^\/]+\.[\w\d]{2,4})$/;
         const parts = re.exec(url);
         return (parts && parts.length > 1 ? parts[1] : url);
       }
 
-      function urlToLabel(url) {
+      const urlToLabel = (url) => {
         if (!isString(url)) return;
 
         const fragments = url.split('/');
@@ -2518,20 +2467,7 @@
         }
       }
 
-      function removeFileExtension(s) {
-        const supportedVideoExtensions = app.options.supportedVideoTypes.extensions.join('|');
-        const re = new RegExp(`\\.+(${supportedVideoExtensions})+$`, 'i');
-        return s.replace(re, '');
-      }
-
-      function sortFiles(a, b) {
-        const labelA = urlToLabel(a);
-        const labelB = urlToLabel(b);
-
-        return labelA < labelB ? -1 : 1;
-      }
-
-      function urlType(url) {
+      const urlType = (url) => {
         if (isHiddenFileOrFolder(url)) {
           return 'hidden';
         } else if (url[url.length - 1] === '/') {
@@ -2543,22 +2479,46 @@
         }
       }
 
-      function isVideo(haystack, fileExtensions) {
+      const removeFileExtension = (s) => {
+        const supportedVideoExtensions = app.options.supportedVideoTypes.extensions.join('|');
+        const re = new RegExp(`\\.+(${supportedVideoExtensions})+$`, 'i');
+        return s.replace(re, '');
+      }
+
+      const sortFiles = (a, b) => {
+        const labelA = urlToLabel(a);
+        const labelB = urlToLabel(b);
+
+        return labelA < labelB ? -1 : 1;
+      }
+
+      const isVideo = (haystack, fileExtensions) => {
         const supportedVideoExtensions = app.options.supportedVideoTypes.extensions.join('|');
         const re = new RegExp(`\.+(${supportedVideoExtensions})+$`, 'i');
         return re.test(haystack);
       };
 
-      function isSubtitle(url) {
-        return url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
-      }
+      const isSubtitle = (url) => url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
 
-      function isHiddenFileOrFolder(url) {
+      const isHiddenFileOrFolder = (url) => {
         const reHidden = /\/\..+$/i;
         return url.toString().match(reHidden);
       }
 
-      async function createLinks(url) {
+      const linksHash = (links) => {
+        var output = '';
+        if (links.files && links.files.length > 0) {
+          output += links.files.reduce((acc, link) => acc + link.url, '')
+        }
+
+        if (links.folders && links.folders.length > 0) {
+          output += links.folders.reduce((acc, link) => acc + link.url, '')
+        }
+
+        return output;
+      }
+      
+      const createLinks = async (url) => {
         const targetUrl = url || window.location.href;
         const folder = urlToFolder(targetUrl);
         const links = await folderApiRequest(folder);
@@ -2572,20 +2532,7 @@
         if (oldLinksHash !== newLinksHash) showLinks(links);
       }
 
-      function linksHash(links) {
-        var output = '';
-        if (links.files && links.files.length > 0) {
-          output += links.files.reduce((acc, link) => acc + link.url, '')
-        }
-
-        if (links.folders && links.folders.length > 0) {
-          output += links.folders.reduce((acc, link) => acc + link.url, '')
-        }
-
-        return output;
-      }
-
-      async function showLinks(links) {
+      const showLinks = async (links) => {
         var html = '';
         const folders = links.folders;
         const files = links.files;
@@ -2623,7 +2570,31 @@
         populateThumbnails();
       }
 
-      function createFileTemplate(url, label, optionalClasses = '') {
+      const clickLink = (e) => {
+        e.preventDefault();
+
+        // Find `a.file` or `a.folder` element. `e.target` can be children too instead.
+        const getTargetEl = (e) => {
+          const anchors = [...e.path].filter((el) => el.nodeName === 'A');
+          const $anchors = anchors.map((el) => $(el));
+          const $fileOrFolder = $anchors.filter(($el) => ($el.hasClass('file') || $el.hasClass('folder')));
+
+          return $fileOrFolder[0];
+        }
+
+        const $el = getTargetEl(e);
+
+        if ($el.hasClass('file')) actionPlay($el.href);
+        if ($el.hasClass('folder')) {
+          hashState.location = $el.href;
+          clearThumbnailQueue();
+          createLinks($el.href);
+        }
+
+        updateHash();
+      }
+
+      const createFileTemplate = (url, label, optionalClasses = '') => {
         return `<a href='${url}' class='file ${optionalClasses}' draggable='false'>
                   <div class='title' draggable='false'>${label}</div>
                   <div class='arrow' draggable='false'>
@@ -2632,7 +2603,7 @@
                 </a>`;
       }
 
-      function createFolderTemplate(url, label, optionalClasses = '') {
+      const createFolderTemplate = (url, label, optionalClasses = '') => {
         return `<a href='${url}' class='folder ${optionalClasses}' draggable='false'>
                   <div class='title' draggable='false'>
                     <svg><use xlink:href='#svg-folder-arrow'/></svg>${label}
@@ -2644,36 +2615,9 @@
                 </a>`;
       }
 
-      function clickLink(e) {
-        e.preventDefault();
-
-        // `this` always refers to the parent element. `e.target` can be children too instead.
-        const $el = $(this);
-
-        if ($el.hasClass('file')) actionPlay($el.href);
-
-        if ($el.hasClass('folder')) {
-          hashState.location = $el.href;
-          clearThumbnailQueue();
-          createLinks($el.href);
-        }
-
-        updateHash();
-      }
-
-      function hideElement(el) {
-        const s = el.style;
-        s.width = 0;
-        s.height = 0;
-        s.margin = 0;
-        s.padding = 0;
-        s.border = '0 none';
-      }
-
       var thumbnailPromises = [];
-      async function populateThumbnails(){
+      const populateThumbnails = async () => {
         const $files = [...document.querySelectorAll('.file')];
-        // const promises = [];
         const queue = [];
 
         $files.forEach(($file) => {
@@ -2698,19 +2642,12 @@
         }
       }
 
-      const clearThumbnailQueue = () => {
-        thumbnailPromises = [];
-      }
+      const clearThumbnailQueue = () => { thumbnailPromises = []; }
 
-      function getRelativePosition() {
-        return $player.currentTime / $player.duration || 0;
-      }
+      const getRelativePosition = () => $player.currentTime / $player.duration || 0;
+      const getProgressBarWidth = () => $progressBar.offsetWidth;
 
-      function getProgressBarWidth() {
-        return $progressBar.offsetWidth;
-      }
-
-      function getState() {
+      const getState = () => {
         const location = hashState.location;
         const video = getVideoUrl();
         const time = $player.currentTime;
@@ -2719,15 +2656,12 @@
         return state;
       }
 
-      function getBaseLocation(l) {
-        return l.protocol + '//' + l.host;
-      }
+      const getBaseLocation = (l) => l.protocol + '//' + l.host;
+      const getVideoUrl = () => $player.src;
 
-      function getVideoUrl(){
-        return $player.src;
-      }
-
-      function getHash() {
+      const encodeHash = (hash) => encodeURIComponent(base64EncodeUTF(JSON.stringify(hash)));
+      const decodeHash = (hash) => JSON.parse(base64DecodeUTF(decodeURIComponent(hash)));
+      const getHash = () => {
         const urlHash = window.location.hash.substr(1);
 
         var hash = {};
@@ -2737,22 +2671,14 @@
 
         return hash;
       }
-      
-      function encodeHash(hash) {
-        return encodeURIComponent(base64EncodeUTF(JSON.stringify(hash)));
-      }
 
-      function decodeHash(hash) {
-        return JSON.parse(base64DecodeUTF(decodeURIComponent(hash)));
-      }
-      
-      function updateHash() {
+      const updateHash = () => {
         var url = new URL(location);
         url.hash = encodeHash(getState());
         history.replaceState(null, document.title, url);
       }
 
-      function updateTitle() {
+      const updateTitle = () => {
         const prefix = `player.html`
         const url = $player.src;
 
@@ -2765,8 +2691,8 @@
         return document.title = title;
       }
 
-      function openFromCloud(cloud) {
-        return async function() {
+      const openFromCloud = (cloud) => {
+        return async () => {
           var metadata;
 
           switch (cloud) {
@@ -2782,7 +2708,7 @@
         }
       }
 
-      function actionPasteAndPlay(e) {
+      const actionPasteAndPlay = (e) => {
         e.preventDefault();
 
         const re = /^https?:\/\//i;
@@ -2795,7 +2721,7 @@
         }
       }
 
-      function resetPlayer() {
+      const resetPlayer = () => {
         resetFileinfo();
         $body.removeClass('is-paused');
         $player.playbackRate = 1;
@@ -2804,7 +2730,31 @@
         updateProgress();
       }
 
-      function rangesToGradient(ranges, duration) {
+      const getRanges = () => {
+        if ($player.buffered.length === 0) return [];
+        
+        var ranges = [];
+          for (let i = 0; i < $player.buffered.length; i++) {
+            const start = $player.buffered.start(i);
+            const end   = $player.buffered.end(i);
+            ranges.push({start, end})
+          }
+          return ranges;
+      }
+
+      const updateRanges = () => {
+        const ranges = getRanges();
+        const transparentGradient = 'linear-gradient(to right, transparent, transparent)';
+        const gradient = (ranges.length > 0 ? rangesToGradient(ranges, $player.duration) : transparentGradient);
+        
+        // Only set if the gradient is different
+        if ($progressBar.dataset.gradient !== gradient){
+          $progressBar.dataset.gradient = gradient;
+          $progressBar.style.backgroundImage = gradient;
+        }
+      }
+
+      const rangesToGradient = (ranges, duration) => {
         const color = 'var(--progress-bar-buffer-color)';
         
         const gradient = ranges.reduce((acc, range) => {
@@ -2817,31 +2767,7 @@
         return gradient;
       }
 
-      function getRanges() {
-        if ($player.buffered.length === 0) return [];
-        
-        var ranges = [];
-          for (let i = 0; i < $player.buffered.length; i++) {
-            const start = $player.buffered.start(i);
-            const end   = $player.buffered.end(i);
-            ranges.push({start, end})
-          }
-          return ranges;
-      }
-
-      function updateRanges() {
-        const ranges = getRanges();
-        const transparentGradient = 'linear-gradient(to right, transparent, transparent)';
-        const gradient = (ranges.length > 0 ? rangesToGradient(ranges, $player.duration) : transparentGradient);
-        
-        // Only set if the gradient is different
-        if ($progressBar.dataset.gradient !== gradient){
-          $progressBar.dataset.gradient = gradient;
-          $progressBar.style.backgroundImage = gradient;
-        }
-      }
-
-      function actionPlay(url) {
+      const actionPlay = (url) => {
         // Don't restart playback if it is the currently playing video
         if (url === $player.currentSrc && $player.src.length > 0) return;
 
@@ -2880,143 +2806,7 @@
         setCurrentVideoTile();
       }
 
-      async function getHeaderData(url) {
-        const opts = {
-          method: 'HEAD',
-          mode: 'cors',
-        }
-
-        function responseHeaders(h) {
-          const response = {};
-
-          if (h.has('Content-Length')) response.size =     h.get('Content-Length');
-          if (h.has('Content-Type'))   response.mimeType = h.get('Content-Type');
-          if (h.has('Last-Modified'))  response.date =     h.get('Last-Modified');
-          
-          return response;
-        }
-
-        // Attempt with method = HEAD first
-        try {
-          const f = await fetch(url, opts);
-          return responseHeaders(f.headers);
-        } catch (e) {
-          // Fallback on method = GET
-          try {
-            opts.method = 'GET';
-            const f = await fetch(url, opts);
-            return responseHeaders(f.headers);
-          } catch (e) {
-            console.warn(e);
-            return {};
-          }
-        }
-      }
-
-      async function getFramerate() {
-        const frame1 = await requestVideoFrame();
-
-        // Wait a few extra frames to make estimate more accurate
-        for (var i = 0; i < 10; i++) {
-          const waitFrame = await requestVideoFrame();
-        }
-
-        const frame2 = await requestVideoFrame();
-
-        const frames = frame2.metadata.presentedFrames - frame1.metadata.presentedFrames;
-        const duration = (frame2.metadata.mediaTime - frame1.metadata.mediaTime);
-        const fps = frames / duration;
-
-        return fps;
-      }
-
-      function requestVideoFrame() {
-        if (!supportsVideoFrameCallback()) return;
-
-        const p = new Promise((resolve, reject) => {
-          $player.requestVideoFrameCallback((now, metadata) => {
-            resolve({now, metadata});
-          });
-        });
-
-        return p;
-      }
-
-      function supportsVideoFrameCallback() {
-        return 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
-      }
-
-      async function updateFileinfo() {
-        const url = $player.currentSrc;
-        const subtitles =   ($player.textTracks  && $player.textTracks.length  ? $player.textTracks.length  : 0);
-        const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
-
-        const metadata = {
-          name: urlToFilename(url),
-          url: url,
-          duration: $player.duration,
-          width: $player.videoWidth,
-          height: $player.videoHeight,
-          subtitles: subtitles,
-          audioTracks: audioTracks,
-        };
-
-        const headerData = await getHeaderData(url);
-        if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
-
-        const headerKeys = Object.keys(headerData);
-        headerKeys.forEach((k) => metadata[k] = headerData[k]);
-
-        if (supportsVideoFrameCallback()) metadata.framerate = await getFramerate($player);
-
-        const mapping = {
-          name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
-          url: 'URL',
-          size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
-          mimeType: 'Type',
-          duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
-          bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
-          date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
-          framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
-          width: 'Width',
-          height: 'Height',
-          subtitles: 'Embedded Subtitles',
-          audioTracks: 'Audio Tracks'
-        }
-        app.metadata = metadata;
-
-        // Generate HTML for each fileinfo metadata item
-        var html = '';
-        const metadataKeys = Object.keys(metadata);
-        metadataKeys.forEach((key) => {
-          const map = mapping[key];
-          const label = (typeof map === 'object' ? map.name : map);
-          const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
-          html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
-        });
-
-        $fileinfo.html(html);
-      }
-
-      function dateFormat(d) {
-        const formattedDate = Intl.DateTimeFormat(undefined, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-          second: 'numeric'
-        }).format(d);
-        return formattedDate;
-      }
-
-      const resetFileinfo = () => {
-        $fileinfo.html('<li class="fileinfo-item modal-item">Metadata not yet loaded</li>');
-        app.metadata = {};
-      }
-      $player.on('loadstart', resetFileinfo);
-
-      async function populateSubtitles(subtitles) {
+      const populateSubtitles = async (subtitles) => {
         var html = '';
 
         if (subtitles.length === 0) {
@@ -3053,28 +2843,7 @@
         })
       }
 
-      function clearSubtitles() {
-        const tracks = [...document.querySelectorAll('track')];
-
-        if (tracks) {
-          tracks.forEach((track) => {
-            $(track).remove();
-          });
-        }
-      }
-
-      async function srtToVtt(url) {
-        const re = /(\d{2}:\d{2}:\d{2}),(\d{3})/g;
-
-        const srt = await fetch(url);
-        const text = await srt.text();
-        const converted = `WEBVTT\r\n\r\n${text.replace(re, "$1.$2")}`;
-
-        const blob = new Blob([converted], {type: 'text/vtt'})
-        return URL.createObjectURL(blob);
-      }
-
-      async function loadSubtitle(url) {
+      const loadSubtitle = async (url) => {
         clearSubtitles();
 
         if (isSRT(url)) {
@@ -3089,7 +2858,36 @@
         $player.append($track);
       }
 
-      async function getSubtitleDuration(url) {
+      const clearSubtitles = () => {
+        const tracks = [...document.querySelectorAll('track')];
+
+        if (tracks) {
+          tracks.forEach((track) => {
+            $(track).remove();
+          });
+        }
+      }
+
+      const isSRT = (url) => {
+        try {
+          return url.endsWith('.srt');
+        } catch (e) {
+          return false;
+        }
+      }
+
+      const srtToVtt = async (url) => {
+        const re = /(\d{2}:\d{2}:\d{2}),(\d{3})/g;
+
+        const srt = await fetch(url);
+        const text = await srt.text();
+        const converted = `WEBVTT\r\n\r\n${text.replace(re, "$1.$2")}`;
+
+        const blob = new Blob([converted], {type: 'text/vtt'})
+        return URL.createObjectURL(blob);
+      }
+
+      const getSubtitleDuration = async (url) => {
         const f = await fetch(url);
         const text = await f.text();
 
@@ -3113,7 +2911,7 @@
         return;
       }
 
-      async function urlToObjectUrl(url, type) {
+      const urlToObjectUrl = async (url, type) => {
         const srt = await fetch(url);
         const blob = await srt.blob();
 
@@ -3125,15 +2923,7 @@
 
       }
 
-      function isSRT(url) {
-        try {
-          return url.endsWith('.srt');
-        } catch (e) {
-          return false;
-        }
-      }
-
-      function setCurrentVideoTile() {
+      const setCurrentVideoTile = () => {
         const $former = $('.links .current')
         if ($former && $former.classList) $former.classList.remove('current');
 
@@ -3143,7 +2933,7 @@
 
       const actionPlayPause = () => ($player.paused ? $player.play() : $player.pause());
 
-      function actionVolume() {
+      const actionVolume = () => {
         let volume = +$player.dataset.volume;
         if (volume === 3) {
           volume = 0;
@@ -3156,7 +2946,7 @@
         $player.volume = logVolume;
       }
 
-      function updateVolume() {
+      const updateVolume = () => {
         const $el = $('.primary-buttons');
         const levelPrefix = 'volume-';
         const levels = [0, 1, 2, 3];
@@ -3219,7 +3009,7 @@
         return $player.currentTime = minmax(0, newTime, $player.duration);
       }
 
-      function updateVolumeSupport() {
+      const updateVolumeSupport = () => {
         const volumeValueKey = 0.97846; // Just a random number
         $player.volume = volumeValueKey;
 
@@ -3235,11 +3025,10 @@
         }, 1);
       }
 
-
       /* Fullscreen */
       const actionFullscreenToggle = () => (isFullscreen() ? exitFullscreen() : requestFullscreen());
-
-      function updateFullscreenSupport() {
+      const isFullscreen = () => !!document.fullscreenElement || !!document.webkitFullscreenElement;
+      const updateFullscreenSupport = () => {
         const $el = $playerContainer;
 
         if (
@@ -3251,10 +3040,7 @@
         }
       }
 
-      const isFullscreen = () => !!document.fullscreenElement || !!document.webkitFullscreenElement;
-
-      function requestFullscreen() {
-
+      const requestFullscreen = () => {
         const $el = $playerContainer;
         const requests = ['requestFullscreen', 'webkitRequestFullscreen', 'msRequestFullscreen'];
         if (prefixRun($el, requests)) return true;
@@ -3262,8 +3048,7 @@
         if ($player.webkitEnterFullscreen) return $player.webkitEnterFullscreen();
       }
 
-      function exitFullscreen() {
-
+      const exitFullscreen = () => {
         const $el = document;
         const exits = ['exitFullscreen', 'webkitExitFullscreen', 'msExitFullscreen'];
         if (prefixRun($el, exits)) return true;
@@ -3271,7 +3056,7 @@
         if ($player.webkitExitFullScreen) return $player.webkitExitFullScreen();
       }
 
-      function prefixRun($el, methods) {
+      const prefixRun = ($el, methods) => {
         const supportedMethod = methods.find(method => $el[method]);
         if (typeof $el[supportedMethod] === 'function') return $el[supportedMethod]();
 
@@ -3289,14 +3074,13 @@
         }, 3000);
       });
 
-
       /* Progress bar */
-      function actionProgressBarSeek(e) {
+      const actionProgressBarSeek = (e) => {
         const relative = e.offsetX / getProgressBarWidth();
         $player.currentTime = $player.duration * relative;
       }
 
-      function updateProgress() {
+      const updateProgress = () => {
         const throttledUpdate = throttle(() => {
           updateHash();
           updateTitle();
@@ -3323,7 +3107,7 @@
       const updateRelativePosition      = (p) => setCSSVariableNumber('--relative-position', `${p * 100}%`, relativePositionEl);
       const updateTrickRelativePosition = (p) => setCSSVariableNumber('--trick-position'   , `${p * 100}%`, trickPositionEl);
 
-      function progressBarTrickHover(e) {
+      const progressBarTrickHover = (e) => {
         const relative = e.layerX / getProgressBarWidth();
         const absolute = relative * $player.duration;
 
@@ -3332,28 +3116,23 @@
         if (absolute >= 0) trickSeek(absolute);
       }
 
-      function trickSeek(time) {
+      const trickSeek = (time) => {
+        // Seek to whole seconds if the progress bar width in pixels is less
+        // than the video duration. Improves trick seek performance.
+        const width = getProgressBarWidth();
+        const seekTime = ($trick.duration > width ? Math.floor(time) : time);
+
         if ($trick.readyState === 0) return;
+        if (typeof $trick.fastSeek === 'function') return $trick.fastSeek(seekTime);
 
-        if (typeof $trick.fastSeek === 'function') {
-          return $trick.fastSeek(time);
-        }
-
-        return ($trick.currentTime = time);
+        return ($trick.currentTime = seekTime);
       }
 
-      function playLocal() {
-        const $input = $('.input-local-file');
-      }
+      const syncTrickSrc = () => $trick.src = $player.src;
 
-      function actionDropLocalFile(e) {
-        $playerContainer.removeClass('drop');
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        if (files && files.length > 0) playFile(files[0]);
-      }
+      const playFile = (file) => { if (file) return actionPlay(URL.createObjectURL(file)); };
 
-      function actionOpenLocalFile() {
+      const actionOpenLocalFile = () => {
         const reader = new FileReader();
         const supportedTypes = app.options.supportedVideoTypes.mime.join(',');
         const $input = $(`<input type="file" accept="${supportedTypes}"/>`);
@@ -3361,19 +3140,14 @@
         $input.click();
       }
 
-      function playFile(file) {
-        if (file) return actionPlay(URL.createObjectURL(file));
+      const actionDropLocalFile = (e) => {
+        $playerContainer.removeClass('drop');
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) playFile(files[0]);
       }
 
-      function setupControls() {
-        setupPlayerEvents();
-        setupPrimaryControls();
-        setupModals();
-        setupDragAndDrop();
-        $body.on('paste', actionPasteAndPlay);
-      }
-
-      function setupDragAndDrop() {
+      const setupDragAndDrop = () => {
         $playerContainer.on('dragenter', () => $playerContainer.addClass('drop'));
         $playerContainer.on('dragleave', (e) => {
           // Only remove `drop` class if the target is .player-container
@@ -3386,7 +3160,15 @@
         });
       }
 
-      function setupPrimaryControls() {
+      const setupControls = () => {
+        setupPlayerEvents();
+        setupPrimaryControls();
+        setupModals();
+        setupDragAndDrop();
+        $body.on('paste', actionPasteAndPlay);
+      }
+
+      const setupPrimaryControls = () => {
         $('.btn-subtitles').on('click', () => toggleModal($subtitles));
         $('.btn-fileinfo').on('click', () => toggleModal($fileinfo));
         $('.btn-settings').on('click', () => toggleModal($settings));
@@ -3407,28 +3189,25 @@
         updateVolumeSupport();
       }
 
-      function setupModals() {
+      const setupModals = () => {
         $fileinfo.on('click', (e) => {
           // Only hide the fileinfo if the target element isn't `<span class="value"/>` so that you can copy value text
           const isValue = $(e.target).hasClass('value');
           if (!isValue) hideModals();
         });
         $help.on('click', () => hideModals);
-
-        setupSettingsControls();
       }
 
-      function setupSettingsControls() {
+      const setupSettingsControls = () => {
         const checkBoxes = [...document.querySelectorAll('.settings .modal-item')];
         checkBoxes.forEach((checkbox) => {
           $(checkbox).on('click', (e) => e.stopImmediatePropagation());
         });
 
         $('.modal-background-overlay').on('click', () => hideModals());
-        registerSettingsHandlers();
       }
 
-      function setupPlayerEvents() {
+      const setupPlayerEvents = () => {
         $player.on('loadedmetadata', updateFileinfo);
         $player.on('loadeddata', syncTrickSrc);
         $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
@@ -3444,8 +3223,7 @@
         $progressBar.on('click', actionProgressBarSeek);
       }
 
-      $body.on('keydown', keyboardBroker);
-      function keyboardBroker(e) {
+      const keyboardBroker = (e) => {
         // Don't handle keyboard combinations
         if (e.ctrlKey || e.altKey) return;
 
@@ -3509,8 +3287,9 @@
         // Prevent default when pressing contextmenu key
         $html.on('contextmenu', (e) => e.preventDefault());
       }
-
-      function toggleModal($el) {
+      $body.on('keydown', keyboardBroker);
+      
+      const toggleModal = ($el) => {
         if ($el.hasClass('show')) {
           hideModals();
         } else if ($('.modal.show')) {
@@ -3521,21 +3300,337 @@
         }
       }
 
-      function showModal($el) {
+      const showModal = ($el) => {
         $el.addClass('show');
         $el.once('click', hideModals);
       }
 
-      function hideModals(e) {
+      const hideModals = (e) => {
         if (e && $(e.target).hasClass('value')) return;
 
         const modals = [...document.querySelectorAll('.modal.show')];
         modals.forEach((el) => $(el).removeClass('show'));
       }
 
-      const syncTrickSrc = () => $trick.src = $player.src;
+      const renderSettingsControls = (useDefaults) => {
+        const keys = Object.keys(settings);
+        const html = keys.reduce((acc, key) => {
+          const setting = settings[key];
+          const type = setting.type || 'checkbox';
+          const value = (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
+          const checked = (value === true ? 'checked' : '');
 
-      function getSVGPoster(hue) {
+          var valueAttribute = '';
+
+          if (typeof value !== 'boolean') {
+            if (setting.type === 'button') {
+              valueAttribute = `value="${setting.buttonLabel}"`;
+            } else if (setting.type === 'color') {
+              valueAttribute = `value="${HSLToHex(value, 100, 50)}"`;
+            } else {
+              valueAttribute = `value="${value}"`;
+            }
+          }
+
+          return `${acc}
+            <li class='modal-item setting-item' title='${setting.desc}'><span class='key'>${setting.label}</span>
+              <span class='desc'>
+                <label><input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}><span class="metadata"></span></label>
+              </span>
+            </li>`;
+        }, '');
+
+        const $modal = $('.modal.settings')
+        $modal.html(html);
+
+        keys.forEach((key) => {
+          const setting = settings[key];
+          const $el = $(`.setting-${key}`);
+          
+          const changeEvent = setting.event || 'click';
+          
+          $el.on(changeEvent, () => {
+            if ($el.attr('type') === 'button') {
+              setting.set();
+            } else {
+              setting.update();
+            }
+          });
+          
+          $el.on('click', (e) => e.stopImmediatePropagation()); // Don't close the modal for clicks on a settings control
+          setting.update();
+        });
+
+        return html;
+      }
+
+      const retrieveSetting = (key) => {
+        const val = storageRetrieve(`setting-${key}`);
+
+        if (+val == val) { // number
+          return +val;
+        } else if (val === 'true') { // Boolean true
+          return true;
+        } else if (val === 'false') { // Boolean false
+          return false;
+        } else { // Fallback to string
+          return val;
+        }
+      };
+      const persistSetting = (key, value) => storageStore(`setting-${key}`, value);
+      const clearSetting = (key) => storageRemove(`setting-${key}`);
+      const resetSettings = () => {
+        const settings = enumerateSettings();
+            settings.forEach((setting) => {
+              clearSetting(setting);
+            });
+      }
+      const enumerateSettings = () => Object.keys(localStorage).filter((key) => key.startsWith('setting-')).map((key) => key.replace('setting-', ''));
+
+      const settings = {
+        hue: {
+          label: 'Theme color',
+          desc: 'Set the theme color for player.html',
+          event: 'input',
+          type: 'color',
+          default: getCSSVariable('--default-hue'),
+          get: () => (typeof retrieveSetting('hue') !== 'undefined' ? retrieveSetting('hue') : settings.hue.default),
+          set: async (val) => {
+            updateHue(val);
+            persistSetting('hue', val);
+          },
+          update: async () => {
+            const $el = $('.setting-hue');
+            const hex = $el.value;
+            const hsl = hexToHSL(hex);
+            await settings.hue.set(hsl.h);
+          }
+        },
+        blur: {
+          label: 'UI Blur Effects',
+          desc: 'Enable/diable blur effects in the UI',
+          event: 'change',
+          default: true,
+          get: () => typeof retrieveSetting('blur') !== 'undefined' ? retrieveSetting('blur') : settings.blur.default,
+          set: (val) => persistSetting('blur', val),
+          update: () => {
+            const $el = $('.setting-blur');
+            const val = $el.checked;
+            settings.blur.set(val);
+          }
+        },
+        transitions: {
+          label: 'UI Transitions',
+          desc: 'Enable/disable animated transitions in the UI',
+          event: 'change',
+          default: true,
+          get: () => typeof retrieveSetting('transitions') !== 'undefined' ? retrieveSetting('transitions') : settings.transitions.default,
+          set: (val) => persistSetting('transitions', val),
+          update: () => {
+            const $el = $('.setting-transitions');
+            const val = $el.checked;
+            settings.transitions.set(val);
+          }
+        },
+        thumbnailing: {
+          label: 'Generate Thumbnails',
+          desc: 'Generate thumbnails for video listings. It may use a lot of bandwidth, especially in large folders of videos. Turn off if it causes playback problems.',
+          event: 'change',
+          default: true,
+          get: () => typeof retrieveSetting('thumbnailing') !== 'undefined' ? retrieveSetting('thumbnailing') : settings.thumbnailing.default,
+          set: (val) => persistSetting('thumbnailing', val),
+          update: () => {
+            const $el = $('.setting-thumbnailing');
+            const val = $el.checked;
+            settings.thumbnailing.set(val);
+          }
+        },
+        animate: {
+          label: 'Animate Thumbnails',
+          desc: 'Generate animated thumbnails. Disable this to save bandwidth and localStorage space.',
+          event: 'change',
+          default: true,
+          get: () => typeof retrieveSetting('animate') !== 'undefined' ? retrieveSetting('animate') : settings.animate.default,
+          set: (val) => persistSetting('animate', val),
+          update: () => {
+            const $el = $('.setting-animate');
+            const val = $el.checked;
+            settings.animate.set(val);
+
+            if (val) {
+              $html.removeClass('no-thumbnail-animation');
+            } else {
+              $html.addClass('no-thumbnail-animation');
+            }
+          }
+        },
+        cache: {
+          label: 'Thumbnail cache',
+          buttonLabel: 'Clear',
+          desc: 'Amount of localStorage space in your browser that is being used to cache thumbnails',
+          event: 'click',
+          type: 'button',
+          get: () => Math.floor(videoThumbnail.cacheSize() / 1024),
+          set: () => {
+            videoThumbnail.clearCache();
+            settings.cache.update();
+          },
+          update: () => {
+            const size = settings.cache.get();
+            const formattedSize = addCommas(size);
+            $('.setting-cache + .metadata').html(formattedSize);
+          }
+        },
+        reset: {
+          label: 'Reset to defaults',
+          buttonLabel: 'Reset',
+          desc: 'Reset all settings to their defaults',
+          event: 'click',
+          type: 'button',
+          get: () => {},
+          set: () => {
+            resetSettings();
+            renderSettingsControls(true);
+          },
+          update: () => {}
+        },
+      }
+
+      const getHeaderData = async (url) => {
+        const opts = {
+          method: 'HEAD',
+          mode: 'cors',
+        }
+
+        const responseHeaders = (h) => {
+          const response = {};
+
+          if (h.has('Content-Length')) response.size =     h.get('Content-Length');
+          if (h.has('Content-Type'))   response.mimeType = h.get('Content-Type');
+          if (h.has('Last-Modified'))  response.date =     h.get('Last-Modified');
+          
+          return response;
+        }
+
+        // Attempt with method = HEAD first
+        try {
+          const f = await fetch(url, opts);
+          return responseHeaders(f.headers);
+        } catch (e) {
+          // Fallback on method = GET
+          try {
+            opts.method = 'GET';
+            const f = await fetch(url, opts);
+            return responseHeaders(f.headers);
+          } catch (e) {
+            console.warn(e);
+            return {};
+          }
+        }
+      }
+
+      const getFramerate = async () => {
+        const frame1 = await requestVideoFrame();
+
+        // Wait a few extra frames to make estimate more accurate
+        for (var i = 0; i < 10; i++) {
+          const waitFrame = await requestVideoFrame();
+        }
+
+        const frame2 = await requestVideoFrame();
+
+        const frames = frame2.metadata.presentedFrames - frame1.metadata.presentedFrames;
+        const duration = (frame2.metadata.mediaTime - frame1.metadata.mediaTime);
+        const fps = frames / duration;
+
+        return fps;
+      }
+
+      const requestVideoFrame = () => {
+        if (!supportsVideoFrameCallback()) return;
+
+        const p = new Promise((resolve, reject) => {
+          $player.requestVideoFrameCallback((now, metadata) => {
+            resolve({now, metadata});
+          });
+        });
+
+        return p;
+      }
+
+      const supportsVideoFrameCallback = () => 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+
+      const updateFileinfo = async () => {
+        const url = $player.currentSrc;
+        const subtitles =   ($player.textTracks  && $player.textTracks.length  ? $player.textTracks.length  : 0);
+        const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
+
+        const metadata = {
+          name: urlToFilename(url),
+          url: url,
+          duration: $player.duration,
+          width: $player.videoWidth,
+          height: $player.videoHeight,
+          subtitles: subtitles,
+          audioTracks: audioTracks,
+        };
+
+        const headerData = await getHeaderData(url);
+        if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
+
+        const headerKeys = Object.keys(headerData);
+        headerKeys.forEach((k) => metadata[k] = headerData[k]);
+
+        if (supportsVideoFrameCallback()) metadata.framerate = await getFramerate($player);
+
+        const mapping = {
+          name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
+          url: 'URL',
+          size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
+          mimeType: 'Type',
+          duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
+          bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
+          date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
+          framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
+          width: 'Width',
+          height: 'Height',
+          subtitles: 'Embedded Subtitles',
+          audioTracks: 'Audio Tracks'
+        }
+        app.metadata = metadata;
+
+        // Generate HTML for each fileinfo metadata item
+        var html = '';
+        const metadataKeys = Object.keys(metadata);
+        metadataKeys.forEach((key) => {
+          const map = mapping[key];
+          const label = (typeof map === 'object' ? map.name : map);
+          const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
+          html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
+        });
+
+        $fileinfo.html(html);
+      }
+
+      const dateFormat = (d) => {
+        const formattedDate = Intl.DateTimeFormat(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric'
+        }).format(d);
+        return formattedDate;
+      }
+
+      const resetFileinfo = () => {
+        $fileinfo.html('<li class="fileinfo-item modal-item">Metadata not yet loaded</li>');
+        app.metadata = {};
+      }
+      $player.on('loadstart', resetFileinfo);
+
+      const getSVGPoster = (hue) => {
         const h = (typeof hue === 'number' ? hue : getCSSVariable('--theme-hue'))
         const color = `hsl(${h}, 100%, 50%)`;
 
@@ -3550,10 +3645,17 @@
         return `data:image/svg+xml;base64,${base64}`;
       }
 
-      function updatePlayerBackground(hue) {
-        hue = (typeof hue === 'number' ? hue : getSetting('theme-hue'));
+      const updatePlayerBackground = (hue) => {
+        hue = (typeof hue === 'number' ? hue : retrieveSetting('hue'));
         const dataUri = getSVGPoster(hue);
         $player.style.backgroundImage = `url('${dataUri}')`;
+      }
+
+      const updateHue = async (val) => {
+        if (isUndefined(val)) val = retrieveSetting('hue');
+        await setCSSVariableNumber('--theme-hue', val, $html);
+
+        updatePlayerBackground();
       }
 
       const isPlaying = () => (
@@ -3562,17 +3664,20 @@
         !$player.ended
       );
 
-      async function setThumbnail(node, url) {
+      const setThumbnail = async (node, url) => {
         const thumbnailOpts = app.options.thumbnails;
+
+        const timestamps = (retrieveSetting('animate') ? [...thumbnailOpts.timestamps] : [thumbnailOpts.timestamps[0]]);
 
         const opts = {
           size: thumbnailOpts.size,
           mime: {...thumbnailOpts.mime},
           shouldCache: thumbnailOpts.cache,
-          timestamps: [...thumbnailOpts.timestamps],
-          cacheReadOnly: !thumbnailOpts.enabled || isPlaying()
+          timestamps: timestamps,
+          cacheReadOnly: !thumbnailOpts.cache || isPlaying()
         }
         const thumbnails = await videoThumbnail(url, opts);
+        settings.cache.update();
         
         if (thumbnails && thumbnails.length > 0) {          
           thumbnails.forEach((thumbnail, i) => {
@@ -3585,7 +3690,7 @@
         }
       }
 
-      function createAnimationCSS() {
+      const createAnimationCSS = () => {
         const timestamps = [...app.options.thumbnails.timestamps];
         const n = (Array.isArray(timestamps) ? timestamps.length : 1); 
 
@@ -3604,7 +3709,7 @@
         setCSSVariableNumber('--thumbnail-timestamps', timestamps.length, $('html'));
       }
 
-      function getTransitionDuration() {
+      const getTransitionDuration = () => {
         const styles = getComputedStyle($html);
         const rawDuration = styles.transitionDuration.toLowerCase();
         const reDuration = /([\d\.]+)(s|ms)+/;
@@ -3616,195 +3721,9 @@
         return (durationUnit === 's' ? durationValue * 1000 : durationValue);
       }
 
-      function getSetting(setting) {
-        switch (setting){
-          case 'theme-hue':
-            const hue = storageRetrieve('setting-theme-hue');
-            return (hue ? +hue : getCSSVariable('--theme-hue'));
-            break;
-          case 'blur':
-            const blur = storageRetrieve('setting-blur');
-            return (blur ? blur : $html.dataset.blur) !== 'disabled';
-            break;
-          case 'transitions':
-            const transitions = storageRetrieve('setting-transitions');
-            return (transitions ? transitions : $html.dataset.transitions) !== 'disabled';
-            break;
-          case 'color-scheme':
-            // Load user's saved color scheme preference
-            const colorScheme = storageRetrieve('setting-color-scheme');
-            if (colorScheme) return colorScheme;
-
-            // Fallback to browser preference
-            return (window.matchMedia("(prefers-color-scheme: dark)").matches ? 'dark' : 'light');
-            break;
-          case 'thumbnailing':
-            const enabled = storageRetrieve('setting-thumbnailing') === 'true';
-            return enabled;
-            break;
-          default:
-            throw SyntaxError('Invalid setting type provided');
-        }
-      }
-      window.getSetting = getSetting;
-
-      function setSetting(setting, ...args) {
-        const firstArg = args[0];
-
-        switch (setting){
-          case 'transitions':
-            $html.dataset.transitions = (firstArg === true ? 'enabled' : 'disabled');
-            storageStore('setting-transitions', $html.dataset.transitions);
-            break;
-          case 'theme-hue':
-            const hue = firstArg;
-            if (!isNumber(hue)) throw SyntaxError('Hue value not a number');
-
-            setCSSVariableNumber('--theme-hue', hue, $html);
-            updatePlayerBackground(hue);
-            storageStore('setting-theme-hue', hue);
-            break;
-          case 'blur':
-            $html.dataset.blur = (firstArg === true ? 'enabled' : 'disabled');
-            storageStore('setting-blur', $html.dataset.blur);
-            break;
-          case 'color-scheme':
-            $html.addClass('color-scheme-change-transition');
-
-            const transitionDuration = getTransitionDuration();
-
-            $html.dataset.colorScheme = (firstArg === 'light' ? 'light' : 'dark');
-            storageStore('setting-color-scheme', $html.dataset.colorScheme);
-
-            setTimeout(() => $html.removeClass('color-scheme-change-transition'), transitionDuration);
-            break;
-          case 'thumbnailing':
-            const shouldEnable = !!args[0];
-
-            app.options.thumbnails.enabled = shouldEnable;
-            storageStore('setting-thumbnailing', shouldEnable);
-            break;
-          default:
-            throw SyntaxError('Invalid setting type provided');
-        }
-
-        refreshSettings();
-      }
-
-      function registerSettingsHandlers() {
-        const settings = [...document.querySelectorAll('.settings [data-setting]')];
-        settings.forEach(settingsHandler);
-      }
-
-      function settingsHandler(el) {
-        const setting = el.dataset.setting;
-        const changeEvent = el.dataset.changeEvent;
-        var handler;
-
-        switch (setting) {
-            case 'theme-hue':
-              handler = () => {
-                const hex = el.value;
-                const hsl = hexToHSL(hex);
-
-                const val = hsl.h;
-                setSetting(setting, val);
-              };
-              break;
-            case 'color-scheme':
-              handler = () => {
-                const val = (el.checked ? 'dark' : 'light');
-                setSetting(setting, val);
-              }
-              break;
-            case 'reset':
-              handler = async () => {
-                const settings = [
-                  'setting-transitions',
-                  'setting-theme-hue',
-                  'setting-blur',
-                  'setting-color-scheme'
-                ];
-
-                settings.forEach(storageRemove);
-                await clearCSSVariable('--theme-hue', $html);
-                // Refresh settings with next frame to avoid race condition with CSS variables
-                requestAnimationFrame(refreshSettings);
-              }
-              break;
-            case 'thumbnailing':
-              handler = () => {
-                setSetting(setting, !app.options.thumbnails.enabled);
-              }
-              break;
-            case 'clear-cache':
-              handler = () => {
-                videoThumbnail.clearCache();
-                const size = Math.floor(videoThumbnail.cacheSize() / 1024);
-                $('.cache-size').innerText = addCommas(size);
-              }
-              break;
-            case 'cache-size':
-              handler = () => {
-                const size = Math.floor(videoThumbnail.cacheSize() / 1024);
-                $('.cache-size').innerText = addCommas(size);
-              }
-
-              var i = 0;
-              const duration = 5000;
-              const initUpdateInterval = setInterval(() => {
-                if (i > 4) clearInterval(initUpdateInterval);
-                handler(); 
-              }, duration);
-              handler(); // Immediately invoke it 
-              break;
-            default:
-              handler = () => {
-                const val = (el.type === 'checkbox' ? el.checked : el.value)
-                setSetting(setting, val);
-              }
-              break;
-          }
-
-        $(el).on(changeEvent, handler);
-      }
-
-      // Update UI to match system state
-      function refreshSettings() {
-        const blur = getSetting('blur');
-        const transitions = getSetting('transitions');
-        const darkMode = getSetting('color-scheme') === 'dark';
-        const thumbnailing = getSetting('thumbnailing');
-        app.options.thumbnails.enabled = thumbnailing;
-
-        const themeHue = getSetting('theme-hue');
-        setCSSVariableNumber('--theme-hue', themeHue, $html);
-        updatePlayerBackground(themeHue);
-        const themeColor = HSLToHex(themeHue, 100, 50);
-
-        const elementSettingMap = [
-          { el: '.setting-theme-color', val: themeColor },
-          { el: '.setting-blur', val: blur },
-          // Hide user mode dark mode - for now
-          // { el: '.setting-dark-mode', val: darkMode },
-          { el: '.setting-transitions', val: transitions },
-          { el: '.setting-thumbnailing', val: thumbnailing }
-        ];
-
-        elementSettingMap.forEach((setting) => {
-          if (typeof setting.val === 'boolean') {
-            $(setting.el).checked = setting.val;
-          } else {
-            $(setting.el).value = setting.val;
-          }
-        });
-
-        return elementSettingMap;
-      }
-
       // Third-party scripts
       // From: https://css-tricks.com/converting-color-spaces-in-javascript/
-      function hexToHSL(H) {
+      const hexToHSL = (H) => {
           // Convert hex to RGB first
           let r = 0, g = 0, b = 0;
           if (H.length == 4) {
@@ -3850,7 +3769,7 @@
         }
 
         // From: https://css-tricks.com/converting-color-spaces-in-javascript/
-        function HSLToHex(h,s,l) {
+        const HSLToHex = (h, s, l) => {
           s /= 100;
           l /= 100;
 
@@ -3891,10 +3810,10 @@
         }
 
       // main()
-      async function main() {
+      const main = async () => {
+        updateHue();
         setupControls();
-        updatePlayerBackground();
-        refreshSettings();
+        renderSettingsControls();
         createAnimationCSS();
 
         const hash = getHash();
