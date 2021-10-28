@@ -364,6 +364,7 @@
       background-color: var(--theme-color);
       border: 0 none;
       color: #FFF;
+      text-shadow: black 0 0 2px;
     }
 
     /* Checkbox background */
@@ -2029,7 +2030,6 @@
         const parentUrl = new URL(url + append).toString();
         return parentUrl;
       }
-      window.parentFolder = parentFolder;
 
       function urlToFoldername(url) {
         var pieces = url.split('/');
@@ -2318,7 +2318,7 @@
         $frame.style.overflow = 'hidden';
         $frame.style.width = 0;
         $frame.style.height = 0;        
-        $('footer').appendChild($frame); // `<iframe>` must be appended before setting `src` or iOS calls load on `appendChild` as well
+        document.querySelector('body').appendChild($frame); // `<iframe>` must be appended before setting `src` or iOS calls load on `appendChild` as well
 
         const promise = new Promise((resolve, reject) => {
           $frame.addEventListener('error', reject, false);
@@ -2337,6 +2337,7 @@
 
       const toNumber = (d) => +d;
       const toInteger = (d) => parseInt(d, 10);
+      const isUndefined = (v) => typeof v === 'undefined';
 
       global.folderApiRequest = folderApiRequest;
     })(this);
