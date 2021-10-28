@@ -1182,15 +1182,15 @@
         var timeout = null;
         var previous = 0;
 
-        if (!opts) opts = {};
-        var later = () => {
+        opts = opts || {};
+        const later = () => {
           previous = opts.leading === false ? 0 : Date.now();
           timeout = null;
           result = fn.apply(context, args);
           if (!timeout) context = args = null;
         };
 
-        return () => {
+        return function() {
           var now = Date.now();
           if (!previous && opts.leading === false) previous = now;
           var remaining = wait - (now - previous);
