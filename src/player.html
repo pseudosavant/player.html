@@ -386,21 +386,22 @@
       content: 'off';
       background-color: white;
       border-radius: 50%;
-      height: 1.67rem;
-      width: 1.67rem;
+      height: 1.5rem;
+      width: 1.5rem;
       position: absolute;
       top: 2px;
-      left: 2px;
+      left: 3px;
       transition: transform var(--transition-base);
       will-change: transform;
 
       display: flex;
       justify-content: center;
       align-items: center;
+      filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
     }
     .modal input[type='checkbox']:checked:after {
       content: 'on';
-      transform: translateX(calc(100% - 0.2rem));
+      transform: translateX(100%);
     }
 
     .color-scheme-change-transition, .color-scheme-change-transition * {
