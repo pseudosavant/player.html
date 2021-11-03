@@ -227,7 +227,7 @@
       height: 100%;
       min-width: 150px;
       max-width: 100vw;
-      overflow-x: hidden;
+      overflow-x: auto;
 
       color: var(--modal-font-color);
 
@@ -275,7 +275,7 @@
       border-bottom-left-radius: 0.75rem;
       border-bottom-right-radius: 0.75rem;
     }
-    .modal-item .desc { overflow: none; }
+    .modal-item .desc { overflow: hidden; }
 
     .subtitle-item { cursor: pointer; }
     .help-item { max-width: 320px; }
@@ -311,6 +311,7 @@
 
     .modal input, .modal button {
       position: relative;
+      -webkit-appearance: none;
       appearance: none;
       display: inline-flex;
       align-items: center;
@@ -360,6 +361,12 @@
       text-shadow: black 0 0 2px;
     }
 
+    .modal input[type='checkbox'] {
+      --width: 3.5rem;
+      --diameter: 2rem;
+      --spacing: 2px;
+    }
+
     /* Checkbox background */
     .modal input[type='checkbox']:before {
       content: '';
@@ -367,7 +374,7 @@
       width: 100%;
       height: 100%;
 
-      border-radius: 2rem;
+      border-radius: var(--diameter);
       background-color: var(--input-background-color);
       transition:
         left var(--transition-base),
@@ -381,11 +388,12 @@
       content: 'off';
       background-color: white;
       border-radius: 50%;
-      height: 1.5rem;
-      width: 1.5rem;
+      height: calc(var(--diameter) - (var(--spacing) * 2));
+      width:  calc(var(--diameter) - (var(--spacing) * 2));
       position: absolute;
-      top: 2px;
-      left: 3px;
+      top: var(--spacing);
+      left: var(--spacing);
+      padding: 1px;
       transition: transform var(--transition-base);
       will-change: transform;
 
@@ -396,7 +404,7 @@
     }
     .modal input[type='checkbox']:checked:after {
       content: 'on';
-      transform: translateX(100%);
+      transform: translateX(calc(var(--width) - var(--diameter)));
     }
 
     .color-scheme-change-transition, .color-scheme-change-transition * {
@@ -3100,6 +3108,7 @@
 
         return false;
       };
+     
 
       var timeoutFadeout;
       $playerContainer.on('mousemove', async () => {
