@@ -253,11 +253,6 @@
     }
     .modal.show { transform: translateX(0); }
 
-    .modal:before {
-      display: block;
-      font-size: 1.1em;
-      margin: 0.5rem;
-    }
     .subtitle-selection:before { content: "Select a subtitle below"; }
     .fileinfo:before { content: "File metadata"; }
     .help:before { content: "Keyboard Shortcuts" }
@@ -3240,7 +3235,9 @@
           const isValue = $(e.target).hasClass('value');
           if (!isValue) hideModals();
         });
-        $help.on('click', () => hideModals);
+        $help.on('click', hideModals);
+
+        setupSettingsControls();
       }
 
       const setupSettingsControls = () => {
