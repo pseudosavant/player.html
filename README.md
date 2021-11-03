@@ -1,8 +1,8 @@
 # player.html
 One file drop-in video player web app for using MP4 video files served using basic directory listing.
 
-![player.html in action](https://user-images.githubusercontent.com/455424/117031360-5b8da680-acb5-11eb-8273-d7db2c8132a8.jpg)
-![player.html on all of your devices](https://user-images.githubusercontent.com/455424/117031348-56c8f280-acb5-11eb-961f-3dcfe00d5f0a.jpg)
+![player.html in action](https://user-images.githubusercontent.com/455424/140204106-eff3504d-64f0-4038-977b-52555dd96358.png)
+![player.html on all of your devices](https://user-images.githubusercontent.com/455424/140200711-7a414217-63db-41b7-8f6e-8d00d7e9eb27.png)
 
 ## Usage
 `player.html` is designed to be a drop-in video player that does not require any configuration or other files.
@@ -44,7 +44,7 @@ The latest version of these browsers is supported:
 * Safari (Mac, iPadOS, iOS)
 * Chrome
 
-† EdgeHTML is only supported on Xbox as it has been replaced on Windows 10. It will still probably work with the Windows 10 EdgeHTML but it is untested.
+† Deprecated: EdgeHTML is only supported on Xbox as it has been replaced on Windows 10.
 
 ## Supported Web Servers
 
