@@ -814,9 +814,21 @@
     .folder svg { fill: var(--folder-color); }
 
     .current { background-blend-mode: luminosity; }
+    .current::before {
+      content: "";
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: hsla(var(--theme-hue), 50%, 20%, 0.25);
+    }
 
     .file:hover     svg { fill: var(--theme-color); }
-    .current .arrow svg { fill: var(--playing-color); }
+    .current .arrow svg { 
+      fill: var(--playing-color);
+      filter: drop-shadow(0px 0px 3px var(--playing-color));
+    }
 
     .folder .arrow .closed,
     .folder:first-of-type .arrow .open { display: block; }
@@ -1076,7 +1088,7 @@
           }
         },
         thumbnails: {
-          timestamps: [0.01, 0.02, 0.03, 0.04, 0.05], // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
+          timestamps: [0.005, 0.01, 0.015], // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
           size: 320, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
           mime: {
             type: 'image/webp',
