@@ -56,8 +56,8 @@ The latest version of these web servers (others may work as well):
 
 ## Other
 
-* `player.html` uses [`folder.api](https://github.com/pseudosavant/folder.api) to consume HTTP directory listings like an API
-* `player.html` uses [`video-thumbnail.js](https://github.com/pseudosavant/video-thumbnail.js) to render thumbnails from video file URLs
+* `player.html` uses [folder.api](https://github.com/pseudosavant/folder.api) to consume HTTP directory listings like an API
+* `player.html` uses [video-thumbnail.js](https://github.com/pseudosavant/video-thumbnail.js) to render thumbnails from video file URLs
 
 ## License
 
