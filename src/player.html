@@ -2600,7 +2600,8 @@
 
         // Find `a.file` or `a.folder` element. `e.target` can be children too instead.
         const getTargetEl = (e) => {
-          const anchors = [...e.path].filter((el) => el.nodeName === 'A');
+          const epath = e.path || (e.composedPath && e.composedPath());
+          const anchors = [...epath].filter((el) => el.nodeName === 'A');
           const $anchors = anchors.map((el) => $(el));
           const $fileOrFolder = $anchors.filter(($el) => ($el.hasClass('file') || $el.hasClass('folder')));
 
