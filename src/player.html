@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang='en'>
 <head>
   <title>player.html</title>
@@ -579,6 +579,19 @@
       background-color: var(--progress-bar-background-color);
     }
 
+    .progress-bar::after, .progress-bar::before {
+      --duration: 250ms;
+      
+      transition: all var(--duration) linear;
+      transition-property: left, transfor, width;
+    }
+    .is-paused .progress-bar::after, .is-paused .progress-bar::before {
+      transition-duration: calc((1000/60) * 5); /* 3 frames */
+      transition-timing-function: ease-in-out;
+    }
+
+
+    /* Bar */
     .progress-bar:before {
       display: block;
       content: '';
@@ -592,6 +605,7 @@
       margin-bottom: calc(0.4rem + var(--progress-bar-height));
     }
 
+    /* Indicator */
     .progress-bar:after {
       content: '';
       display: block;
@@ -606,7 +620,6 @@
       width: var(--indicator-size);
       height: var(--indicator-size);
 
-      /* margin-top: -0.25rem; */
       margin-left: calc(var(--indicator-size) * -0.5);
 
       background: hsl(var(--theme-hue), 100%, 95%);
@@ -3906,12 +3919,10 @@
           const hash = getHash();
           if (hash && hash.location && hash.location.length > 1) createLinks(hash.location)
         });
-
       }
 
       main();
     })(this);
   </script>
 </body>
-
 </html>
