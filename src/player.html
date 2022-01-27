@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='2.2.5'>
+  <meta name='version' content='2.2.6'>
   <meta name='Copyright' content='©2021 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='apple-mobile-web-app-status-bar-style' content='black'>
@@ -3437,8 +3437,8 @@
           return true;
         } else if (val === 'false') { // Boolean false
           return false;
-        } else { // Fallback to string
-          return val;
+        } else { // Fallback to value if present, undefined otherwise
+          return val || undefined;
         }
       };
       const persistSetting = (key, value) => storageStore(`setting-${key}`, value);
@@ -3446,15 +3446,13 @@
       const enumerateSettings = () => Object.keys(localStorage).filter((key) => key.startsWith('setting-')).map((key) => key.replace('setting-', ''));
       const resetSettings = () => {
         const settings = enumerateSettings();
-            settings.forEach((setting) => {
-              clearSetting(setting);
-            });
+        settings.forEach((setting) => clearSetting(setting));
       }
       const checkIncorrectDefaultHue = () => {
         const settings = {};
         Object.keys(localStorage)
           .filter((key) => key.startsWith('setting-'))
-          .forEach((key) => settings[key] = localStorage.getItem(key));
+          .forEach((key) => settings[key] = storageRetrieve(key));
 
         if (settings['setting-blur'] === 'false' &&
             settings['setting-thumbnailing'] === 'false' &&
@@ -3466,7 +3464,6 @@
         }
       };
       checkIncorrectDefaultHue();
-
 
       const settings = {
         hue: {
