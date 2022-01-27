@@ -3436,6 +3436,23 @@
               clearSetting(setting);
             });
       }
+      const checkIncorrectDefaultHue = () => {
+        const settings = {};
+        Object.keys(localStorage)
+          .filter((key) => key.startsWith('setting-'))
+          .forEach((key) => settings[key] = localStorage.getItem(key));
+
+        if (settings['setting-blur'] === 'false' &&
+            settings['setting-thumbnailing'] === 'false' &&
+            settings['setting-animate'] === 'false' &&
+            settings['setting-transitions'] === 'false' &&
+            settings['setting-hue'] == '0'
+        ) {
+          resetSettings();
+        }
+      };
+      checkIncorrectDefaultHue();
+
       const enumerateSettings = () => Object.keys(localStorage).filter((key) => key.startsWith('setting-')).map((key) => key.replace('setting-', ''));
 
       const settings = {
