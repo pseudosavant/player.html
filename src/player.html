@@ -1787,6 +1787,8 @@
               // Generate fresh thumbnail if not found in cache
               const $player = await getVideo(url);
               const thumbnail = await videoToDataURI($player, timestamp, size, mime, type);
+              unloadVideoSrc($player);
+              
               thumbnail.sizeKB = round(thumbnail.URI.length / 1024, 2);
               thumbnail.seekTime = round(thumbnail.seekTime, 2);
               thumbnails.push(thumbnail);
@@ -1809,8 +1811,6 @@
                   console.info(`[${defaults.cacheKeyPrefix}] Purged from cache: ${key}`);
                 }
               }
-
-              $player.removeAttribute('src'); // Unset video, use `removeAttribute` instead of `src = undefined` to prevent 404s for `/video-thumbnail.js/src/undefined`
             }
           }
 
@@ -1818,6 +1818,11 @@
         } catch (e) {
           console.info(`[${defaults.cacheKeyPrefix}] Unable to create thumbnail(s) for: ${url}`, e);
         }
+      }
+
+      const unloadVideoSrc = (el) => {
+        el.removeAttribute('src'); // Unset video, use `removeAttribute` instead of `src = undefined` to prevent 404s for `/video-thumbnail.js/src/undefined`
+        el.load(); // Must invoke `load` to complete the `src` change
       }
 
       const cacheKeyParser = (key) => {
@@ -2821,19 +2826,20 @@
           $player.once('play', console.info(`Playback started: ${url}`));
           $player.once('loadedmetadata', () => updateDuration($player.duration));
           $player.src = $trick.src = hashState.video = url;
+          $player.load();
           $body.dataset.loaded = true;
-
+          
           const scrollOpts = {
             behavior: 'smooth',
             block: 'center'
           }
           setTimeout(() => $player.scrollIntoView(scrollOpts), 16);
-
+          
         } else { // Reset the player if no URL supplied
           updateDuration(0);
-
-          $player.removeAttribute('src');
-          $trick.removeAttribute('src');
+          
+          unloadVideoSrc($player);
+          unloadVideoSrc($trick);
 
           hashState.video = undefined;
           delete $body.dataset.loaded;
@@ -2841,8 +2847,12 @@
           console.info(`Playback stopped`);
         }
 
-        $player.load();
         setCurrentVideoTile();
+      }
+
+      const unloadVideoSrc = (el) => {
+        el.removeAttribute('src'); // Unset video, use `removeAttribute` instead of `src = undefined` to prevent 404s for `/video-thumbnail.js/src/undefined`
+        el.load(); // Must invoke `load` to complete the `src` change
       }
 
       const populateSubtitles = async (subtitles) => {
