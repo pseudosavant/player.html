@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='2.2.6'>
+  <meta name='version' content='2.2.7'>
   <meta name='Copyright' content='©2021 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='apple-mobile-web-app-status-bar-style' content='black'>
@@ -2036,11 +2036,11 @@
   
   <!-- folder.api -->
   <script defer>
-    // folder.api (https://github.com/pseudosavant/folder.api): v1.0.2
-    (function folderApiIIFE(global) {
-      'use strict';
+    // folder.api: version 1.0.3
+  (function folderApiIIFE(global) {
+    'use strict';
 
-      function urlType(url) {
+      const urlType = (url) => {
         if (isHiddenFileOrFolder(url)) {
           return 'hidden';
         } else if (isFolder(url)) {
@@ -2052,7 +2052,7 @@
         }
       }
 
-      function isFile(url) {
+      const isFile = (url) => {
         const parsed = new URL(url);
         const finalPosition = parsed.pathname.lastIndexOf('/') + 1;
         const finalPart = parsed.pathname.substring(finalPosition);
@@ -2063,31 +2063,31 @@
       const hasPeriod = (s) => s.indexOf('.') >= 0;
       const isFolder = (url) => !isFile(url);
 
-      function isHiddenFileOrFolder(url) {
+      const isHiddenFileOrFolder = (url) => {
         const reHidden = /\/\..+$/i;
         return url.toString().match(reHidden);
       }
 
-      function parentFolder(url) {
+      const parentFolder = (url) => {
         // Only add the first slash if the URL doesn't have it at the end
         const append = (url.endsWith('/') ? '../' : '/../');
         const parentUrl = new URL(url + append).toString();
         return parentUrl;
       }
 
-      function urlToFoldername(url) {
+      const urlToFoldername = (url) => {
         var pieces = url.split('/');
         return pieces[pieces.length - 2]; // Return piece before final `/`
       }
 
-      function urlToFilename(url) {
+      const urlToFilename = (url) => {
         const re = /\/([^/]+)$/;
         const parts = re.exec(url);
         return (parts && parts.length > 1 ? parts[1] : url);
       }
 
       // Parses each node's metadata by running a function on each entry
-      async function linkToMetadata(node, server) {
+      const linkToMetadata = async (node, server) => {
         return (
           typeof servers[server] === 'function' ?
             servers[server](node) :
@@ -2095,7 +2095,7 @@
         );
       }
 
-      async function getHeaderData(url) {
+      const getHeaderData = async (url) => {
         if (!url) return {};
 
         try {
@@ -2108,7 +2108,7 @@
         }
       }
 
-      async function getServer(url) {
+      const getServer = async (url) => {
         const headers = await getHeaderData(url);
 
         if (isNginx(headers)) {
@@ -2154,11 +2154,11 @@
             const dateResults = dateRe.exec(dateNode.textContent);
 
             if (dateResults) {
-              const y = toInteger(dateResults[1]) || undefined;
-              const m = toInteger(dateResults[2]) || undefined;
-              const d = toInteger(dateResults[3]) || undefined;
-              const hours = toInteger(dateResults[4]) || undefined;
-              const mins = toInteger(dateResults[5]) || undefined;
+              const d =     (toInteger(dateResults[1]) >= 0 ? toInteger(dateResults[1]) : undefined);
+              const m =     (isString(dateResults[2])       ? dateResults[2] : undefined);
+              const y =     (toInteger(dateResults[3]) >= 0 ? toInteger(dateResults[3]) : undefined);
+              const hours = (toInteger(dateResults[4]) >= 0 ? toInteger(dateResults[4]) : undefined);
+              const mins =  (toInteger(dateResults[5]) >= 0 ? toInteger(dateResults[5]) : undefined);
               metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
             }
           }
@@ -2196,14 +2196,14 @@
           const results = re.exec(text);
 
           if (!results) return metadata;
-          const d = toInteger(results[1]) || undefined;
-          const m = results[2] || undefined;
-          const y = toInteger(results[3]) || undefined;
-          const hours = toInteger(results[4]) || undefined;
-          const mins = toInteger(results[5]) || undefined;
+          const d =     (toInteger(results[1]) >= 0 ? toInteger(results[1]) : undefined);
+          const m =     (isString(results[2])       ? results[2] : undefined);
+          const y =     (toInteger(results[3]) >= 0 ? toInteger(results[3]) : undefined);
+          const hours = (toInteger(results[4]) >= 0 ? toInteger(results[4]) : undefined);
+          const mins =  (toInteger(results[5]) >= 0 ? toInteger(results[5]) : undefined);
           metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
 
-          metadata.size = toInteger(results[6]) || undefined;
+          metadata.size = (isNumber(toInteger(results[6])) ? toInteger(results[6]) : undefined);
 
           return metadata;
         },
@@ -2218,14 +2218,14 @@
           const results = re.exec(text);
           if (!results) return metadata;
 
-          const m = toInteger(results[1]) || undefined;
-          const d = toInteger(results[2]) || undefined;
-          const y = toInteger(results[3]) || undefined;
-          const hours = toInteger(results[4]) || undefined;
-          const mins = toInteger(results[5]);
+          const d =     (toInteger(results[1]) >= 0 ? toInteger(results[1]) : undefined);
+          const m =     (isString(results[2])       ? results[2] : undefined);
+          const y =     (toInteger(results[3]) >= 0 ? toInteger(results[3]) : undefined);
+          const hours = (toInteger(results[4]) >= 0 ? toInteger(results[4]) : undefined);
+          const mins =  (toInteger(results[5]) >= 0 ? toInteger(results[5]) : undefined);
           metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
 
-          metadata.size = toInteger(results[7]) || undefined;
+          metadata.size = (isNumber(toInteger(results[7])) ? toInteger(results[7]) : undefined);
 
           return metadata;
         },
@@ -2265,20 +2265,20 @@
           const results = re.exec(text);
 
           if (!results) return metadata;
-          const d = toInteger(results[1]) || undefined;
-          const m = results[2] || undefined;
-          const y = toInteger(results[3]) || undefined;
-          const hours = toInteger(results[4]) || undefined;
-          const mins = toInteger(results[5]) || undefined;
+          const d =     (toInteger(results[1]) >= 0 ? toInteger(results[1]) : undefined);
+          const m =     (isString(results[2])       ? results[2] : undefined);
+          const y =     (toInteger(results[3]) >= 0 ? toInteger(results[3]) : undefined);
+          const hours = (toInteger(results[4]) >= 0 ? toInteger(results[4]) : undefined);
+          const mins =  (toInteger(results[5]) >= 0 ? toInteger(results[5]) : undefined);
           metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
 
-          metadata.size = toInteger(results[6]) || undefined;
+          metadata.size = (isNumber(toInteger(results[6])) ? toInteger(results[6]) : undefined);
 
           return metadata;
         },
       }
 
-      async function getLinksFromFrame(frame, baseUrl) {
+      const getLinksFromFrame = async (frame, baseUrl) => {
         const server = await getServer(baseUrl) || 'generic';
 
         var query;
@@ -2356,7 +2356,7 @@
         return { server, folders, files };
       }
 
-      async function folderApiRequest(url) {
+      const folderApiRequest = async (url) => {
         const $frame = document.createElement('iframe');
         $frame.style.visibility = 'hidden';
         $frame.style.overflow = 'hidden';
@@ -2381,7 +2381,10 @@
 
       const toNumber = (d) => +d;
       const toInteger = (d) => parseInt(d, 10);
-      const isUndefined = (v) => typeof v === 'undefined';
+      const is = (type) => (v) => typeof v === type;
+      const isNumber = is('number');
+      const isString = is('string');
+      const isUndefined = is('undefined');
 
       global.folderApiRequest = folderApiRequest;
     })(this);
@@ -2543,6 +2546,11 @@
         return re.test(haystack);
       };
 
+      const isImage = (url) => {
+        const re = /(?:\/)((?:[^/])+\.(?:png|jpeg|jpg|gif|webp))/gi
+        return re.test(url);
+      }
+
       const isHiddenFileOrFolder = (url) => {
         const reHidden = /\/\..+$/i;
         return url.toString().match(reHidden);
@@ -2589,6 +2597,28 @@
           html += createFolderTemplate(rawUrl, label);
         });
 
+        const removeUrlExtension = (url) => {
+          const re = /^(.*)(?:\.\w+)$/i;
+          const results = re.exec(url);
+
+          if (results.length > 0) return results[1];
+
+          return undefined;
+        }
+
+        const findThumbnail = (videoUrl, files) => {
+          if (!Array.isArray(files)) return undefined;
+          
+          const videoPrefix = removeUrlExtension(videoUrl);
+          
+          const thumbnails = files.filter((file) => isImage(file.url));
+          const thumb = thumbnails.find((file) => {
+            const filePrefix = removeUrlExtension(file.url);
+            return videoPrefix === filePrefix;
+          });
+          return thumb;
+        }
+
         const subtitles = files.filter((file) => isSubtitle(file.url));
         populateSubtitles(subtitles);
 
@@ -2601,8 +2631,10 @@
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
           const cssClasses = (rawUrl === $player.src ? 'current' : '');
-
-          html += createFileTemplate(rawUrl, label, cssClasses);
+          const preRenderedThumbnail = findThumbnail(file.url, links.files);
+          const thumbnailUrl = (preRenderedThumbnail && preRenderedThumbnail.url ? preRenderedThumbnail.url : '');
+          
+          html += createFileTemplate(rawUrl, label, cssClasses, thumbnailUrl);
         });
 
         $('.links').innerHTML = html;
@@ -2637,8 +2669,8 @@
         updateHash();
       }
 
-      const createFileTemplate = (url, label, optionalClasses = '') => {
-        return `<a href='${url}' class='file ${optionalClasses}' draggable='false'>
+      const createFileTemplate = (url, label, optionalClasses = '', preRenderedThumbnailUrl = '' ) => {
+        return `<a href='${url}' class='file ${optionalClasses}' style='${(preRenderedThumbnailUrl ? '--image-url-0: url(' + preRenderedThumbnailUrl + ')': '')}' draggable='false'>
                   <div class='title' draggable='false'>${label}</div>
                   <div class='arrow' draggable='false'>
                     <svg><use xlink:href='#svg-play'/></svg>
@@ -3752,7 +3784,10 @@
         !$player.ended
       );
 
+      const hasPreRenderedThumbnail = (node) => node.style.getPropertyValue('--image-url-0').length > ('url(http://)').length;
+
       const setThumbnail = async (node, url) => {
+        if (hasPreRenderedThumbnail(node)) return;
         const thumbnailOpts = app.options.thumbnails;
 
         const timestamps = (retrieveSetting('animate') ? [...thumbnailOpts.timestamps] : [thumbnailOpts.timestamps[0]]);

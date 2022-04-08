@@ -20,7 +20,7 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 * Custom video playback controls (fullscreen, play, pause, mute, etc, volume, playback rate)
 * Picture-in-picture support
 * Progress bar with timestamp preview thumbnail on hover
-* Video thumbnail generation, with concurrency configuration (default 1)*
+* Video thumbnails: [using prerendered thumbnail files](#thumbnails), or rendered on-the-fly in-browser
 * Animated thumbnails**
 * Thumbnail caching using `localStorage`, check cache size, clear cache
 * Select your own custom theme color
@@ -34,19 +34,37 @@ To use it, copy the [`./src/player.html`](src/player.html) file into a folder th
 
 \** Animated thumbnails can consume a lot of data. The experience may degrade on slower network connections
 
-## Supported Browsers
+<a name="thumbnails"></a>
+## Pre-rendered server-side thumbnails
+
+`player.html` can use server-side thumbnails for any video that has one available. It will fall back to generating thumbnails in the browser otherwise. The server-side thumbnail files must follow the common filename convention of using the video file name, with the extension replaced with an image extension, in the same folder as the video. Note: The image files must be shown by your web server's directory browsing (may require mime-type adjustments on some servers) feature to show up in `player.html`.
+
+### Naming example:
+
+* Video filename: `myVideo.mp4`
+* Matching thumbnail filename: `myVideo.jpg` 
+
+### How to pre-render thumbnails
+
+The easiest way to create thumbnails from video files is on the command-line with [`ffmpeg`](https://ffmpeg.org/). The following command will create a JPEG thumbnail (`myVideo.jpg`) from the video frame 5 seconds into `myVideo.mp4`: `ffmpeg -i myVideo.mp4 -ss 00:00:05.000 -vframes 1 myVideo.jpg`. Loop over folders of video files using your preferred shell (bash, cmd, powershell, etc) to process many videos.
+
+### Supported thumbnail image formats/extensions
+* GIF
+* JPEG
+* JPG
+* PNG
+* WEBP
+
+## Supported browsers
 
 The latest version of these browsers is supported:
 
 * Edge (Chromium)
-* Edge (Xbox EdgeHTML)†
 * Firefox
 * Safari (Mac, iPadOS, iOS)
 * Chrome
 
-† Deprecated: EdgeHTML is only supported on Xbox as it has been replaced on Windows 10.
-
-## Supported Web Servers
+## Supported web servers
 
 The latest version of these web servers (others may work as well):
 
@@ -63,4 +81,4 @@ The latest version of these web servers (others may work as well):
 
 * [MIT](./LICENSE)
 
-&copy; 2021 Paul Ellis
+&copy; 2022 Paul Ellis
