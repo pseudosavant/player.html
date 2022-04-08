@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='2.2.7'>
+  <meta name='version' content='2.2.8'>
   <meta name='Copyright' content='©2021 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='apple-mobile-web-app-status-bar-style' content='black'>
@@ -757,13 +757,9 @@
       animation: animateThumbnail 1000ms infinite;
       animation-play-state: paused;
     }
-    .no-thumbnail-animation .links a {
-      animation: unset;
-    }
-
-    .links a:hover {
-      animation-play-state: running;
-    }
+    .links a.prerendered { animation: none; }
+    .links a:hover { animation-play-state: running; }
+    .no-thumbnail-animation .links a { animation: unset; }
 
     .links a .title {
       /* Title */
@@ -2623,18 +2619,22 @@
         populateSubtitles(subtitles);
 
         const videos = files.filter((file) => isVideo(file.url));
-
         videos.sort(sortFiles);
 
         videos.forEach((file) => {
           const rawUrl = file.url;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
-          const cssClasses = (rawUrl === $player.src ? 'current' : '');
+          const cssClasses = [];
+
           const preRenderedThumbnail = findThumbnail(file.url, links.files);
-          const thumbnailUrl = (preRenderedThumbnail && preRenderedThumbnail.url ? preRenderedThumbnail.url : '');
+          const preRenderedThumbnailAvailable = preRenderedThumbnail && preRenderedThumbnail.url;
+          const thumbnailUrl = (preRenderedThumbnailAvailable ? preRenderedThumbnail.url : '');
           
-          html += createFileTemplate(rawUrl, label, cssClasses, thumbnailUrl);
+          if (preRenderedThumbnailAvailable) cssClasses.push('prerendered');
+          if (rawUrl === $player.src) cssClasses.push('current');
+          
+          html += createFileTemplate(rawUrl, label, cssClasses.join(' '), thumbnailUrl);
         });
 
         $('.links').innerHTML = html;
