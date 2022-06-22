@@ -4,10 +4,9 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='2.2.8'>
-  <meta name='Copyright' content='©2021 Paul Ellis'>
+  <meta name='version' content='2.2.9'>
+  <meta name='Copyright' content='©2022 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
-  <meta name='apple-mobile-web-app-status-bar-style' content='black'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
   <link rel='shortcut icon'
     href='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAACQBAMAAAAVaP+LAAAAMFBMVEX////+8vn+4fP+zuz+tuL+n9r+l9f+gc7+bMb+XcD+Rbj+MK/+Hqj+D6P+BZ/+AJ2hzeniAAABZ0lEQVR42u3UO3HDQABF0QdhISgMdiYEBEEAMokgWBBEQRAiCBYE2xAsCJLzmdTWZ1/KtClu5dkL4JRXuVwul8vl/tmzoF5bMb3tNQR5LSHISwFBngME+UJBHijop4MgpwaCvFUQ5DVCkO8FBHkMEJTOEOTUQ5BTB0H+PkBQ+ioZyF4iBHkOEOQrBXmgIL9TkBsK2msISmsEoL+nEJCnAEE+U1A6QpDdUdDeQJC3EoK8RAjyLUCQRwpKJwiyewpKLQR5ryHIawlB/iggKE2BgewLBfkIQamFoF4MNIiBrmKgOTDQEoVAWykE2hsxUCcG6sVAZzHQFBjoXgiB1igE2iohUGrEQJ0YaBADXcVAc2CgJQqBtlIItB+EQKkVA/VioJMYaAwMdC+EQJ9RCLRVQqDUiIE6MdBRDHQRA02BgZZCCLSWQqC9FgKlVgzUi4FOYqBRDHQrGGiJQnqpxPSkXC6Xy+VyD9ovn971FIU9/uIAAAAASUVORK5CYII=' />
@@ -70,6 +69,14 @@
       font-size: 12px;
       background-color: var(--base-background-color);
       color: var(--primary-font-color);
+    }
+
+    @media (prefers-reduced-motion) {
+      * {
+        --transition-base: 0;
+        transition: none !important;
+        animation: none !important;
+      }
     }
 
     html {
@@ -345,7 +352,7 @@
       background-color: hsl(var(--theme-hue), 50%, 40%);
       padding-top: 0.25rem;
     }
-    
+
     .modal .setting-cache + .metadata {
       margin-left: 1rem;
     }
@@ -528,8 +535,21 @@
       font-family: Arial, Helvetica, sans-serif;
     }
 
-    .is-paused .btn-play-pause .paused, .btn-play-pause .playing { display: inline-block; }
-    .is-paused .btn-play-pause .playing, .btn-play-pause .paused { display: none; }
+    /* Reset to show none */
+    .btn-play-pause .pause, .btn-play-pause .play {
+      display: none;
+    }
+
+    /* Show play button by default */
+    .btn-play-pause .play {
+      display: inline-block;
+    }
+
+    /* Loaded AND Playing */
+    /* Hide play button */
+    .is-loaded.is-playing .btn-play-pause .play { display: none; }
+    /* Show pause button */
+    .is-loaded.is-playing .btn-play-pause .pause { display: inline-block; }
 
     button.btn-fullscreen { display: none; }
     button.btn-fullscreen.enabled { display: inline-block; }
@@ -541,7 +561,7 @@
     :fullscreen          .btn-fullscreen .expand { display: none; }
 
     button.btn-pip { display: none; }
-    [data-loaded="true"] button.btn-pip.enabled { display: inline-block; }
+    button.btn-pip.enabled { display: inline-block; }
     .btn-pip .exit { display: none; } /* Hide `.exit` by default */
     .btn-pip .enter { display: block; } /* Show `.enter` by default */
     .is-pip .btn-pip .exit { display: block; }
@@ -581,15 +601,17 @@
 
     .progress-bar::after, .progress-bar::before {
       --duration: 250ms;
-      
+
       transition: all var(--duration) linear;
       transition-property: left, transfor, width;
     }
-    .is-paused .progress-bar::after, .is-paused .progress-bar::before {
+    .is-paused .progress-bar::after,
+    .is-paused .progress-bar::before,
+    .is-stopped .progress-bar::after,
+    .is-stopped .progress-bar::before {
       transition-duration: calc((1000/60) * 5); /* 3 frames */
       transition-timing-function: ease-in-out;
     }
-
 
     /* Bar */
     .progress-bar:before {
@@ -674,7 +696,7 @@
       object-fit: cover;
     }
 
-    [data-loaded="true"] .progress-bar:hover + .trick-container {
+    .is-loaded .progress-bar:hover + .trick-container {
       border: 1px solid transparent;
       height: calc(var(--trick-preview-width) * var(--player-aspect-ratio));
       max-height: 100%;
@@ -690,13 +712,16 @@
     .controls .btn-local-file { margin: 0 -0.15rem; }
     .controls .btn-onedrive { padding: 0 0.1rem; }
 
+    .controls .btn-fileinfo { display: none; }
+    .is-loaded .controls .btn-fileinfo { display: initial; }
+
     .primary-buttons {
       grid-area: primary-controls;
       display: flex;
       width: 100%;
       position: relative;
       justify-content: center;
-      align-items: center;
+      align-items: end;
     }
 
     .controls-settings {
@@ -707,7 +732,7 @@
       align-items: center;
     }
 
-    .controls-sources{
+    .controls-sources {
       grid-area: secondary-controls;
       display: flex;
       justify-content: flex-start;
@@ -783,6 +808,22 @@
       backdrop-filter: blur(var(--blur-base) / 4);
     }
 
+    .links a.parent .title::after {
+      content: '[Parent Folder]';
+    }
+    .links a.parent .title .label {
+      display: none;
+    }
+
+
+    .links a .title .icon {
+      display: none;
+    }
+
+    .links a.parent .title .icon {
+      display: initial;
+    }
+
     .folder .title svg {
       height: 1em;
       width: 1em;
@@ -838,7 +879,7 @@
     }
 
     .file:hover     svg { fill: var(--theme-color); }
-    .current .arrow svg { 
+    .current .arrow svg {
       fill: var(--playing-color);
       filter: drop-shadow(0px 0px 3px var(--playing-color));
     }
@@ -934,7 +975,7 @@
     }
   </style>
 </head>
-<body class='no-subtitles'>
+<body class='no-subtitles is-stopped'>
   <div class='player-container'>
     <div class='video-container'>
       <video class='player' data-volume="3" crossorigin="anonymous" playsinline></video>
@@ -963,22 +1004,22 @@
         <video class='trick'></video>
       </div>
       <section class='controls-settings'>
-        <button class='btn-fileinfo' type='button' title='Video file information'><svg><use xlink:href='#svg-info'/></svg></button>
-        <button class='btn-settings' type='button' title='Settings'><svg><use xlink:href='#svg-settings'/></svg></button>
+        <button class='btn-fileinfo' type='button' title='Show video file information'><svg><use xlink:href='#svg-info'/></svg></button>
+        <button class='btn-settings' type='button' title='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
-        <button class='btn-play-pause' type='button' title='Play/Pause [Spacebar]'><svg class='playing'><use xlink:href='#svg-play'/></svg><svg class='paused'><use xlink:href='#svg-pause'/></svg></button>
+        <button class='btn-play-pause' type='button' title='Toggle Play/Pause [Spacebar]'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
         <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]'><svg><use xlink:href='#svg-replay'/></svg></button>
         <button class='btn-fast-forward' type='button' title='Go forward 30 seconds [Right Arrow]'><svg><use xlink:href='#svg-skip'/></svg></button>
-        <button class='btn-stop' type='button' title='Stop'><svg><use xlink:href='#svg-stop'/></svg></button>
+        <button class='btn-stop' type='button' title='Stop video playback'><svg><use xlink:href='#svg-stop'/></svg></button>
         <button class='btn-volume' type='button' title='Adjust audio volume'>
           <svg class='level-0' title="Muted"><use xlink:href='#svg-speaker-volume-0'/></svg>
           <svg class='level-1' title="Volume 33%"><use xlink:href='#svg-speaker-volume-1'/></svg>
           <svg class='level-2' title="Volume 66%"><use xlink:href='#svg-speaker-volume-2'/></svg>
           <svg class='level-3' title="Volume 100%"><use xlink:href='#svg-speaker-volume-3'/></svg>
         </button>
-        <button class='btn-fullscreen' type='button' title='Fullscreen'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
-        <button class='btn-pip' type='button' title='Picture-in-Picture'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
+        <button class='btn-fullscreen' type='button' title='Toogle fullscreen mode'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
+        <button class='btn-pip' type='button' title='Toggle picture-in-picture mode'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
         <button class='btn-subtitles' type='button' title='Toggle Subtitles'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
         <button class='btn-playback-rate' type='button' title='Alter video playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
       </section>
@@ -991,7 +1032,7 @@
     </section>
   </div>
   <section class='links'></section>
-  <footer><a href='https://github.com/pseudosavant/player.html' target='_blank'>player.html &copy; Paul Ellis</a></footer>
+  <footer><a href='https://github.com/pseudosavant/player.html' target='_blank'>player.html <span class='version'></span> &copy; Paul Ellis</a></footer>
   <section class='xlinks' style='display: none'>
     <!-- https://github.com/microsoft/fluentui-system-icons -->
     <!-- ic_fluent_settings_24_filled.svg -->
@@ -1075,7 +1116,7 @@
   </section>
   <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>
   <script type='text/javascript' src='https://js.live.net/v7.2/OneDrive.js' defer></script>
-  
+
   <!-- Global Config -->
   <script defer>
     /* IMPORTANT!!!
@@ -1105,7 +1146,7 @@
           size: 320, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
           mime: {
             type: 'image/webp',
-            quality: 0.25
+            quality: 0.2
           },
           cache: true, // Should thumbnails be written and read from localStorage cache
           resizeQuality: 'high', // `<canvas>` resize quality
@@ -1316,7 +1357,7 @@
           } else {
             formatted.push(c);
           }
-        }); 
+        });
 
         if (decimal) {
           const output = `${formatted.reverse().join('')}.${decimal}`;
@@ -1363,8 +1404,14 @@
       global.isString = isString;
 
       /* CSS Variables */
-      const setCSSVariableString = async (k, v, target) => requestAnimationFrame(() => target.style.setProperty(k, `'${v}'`));
-      const setCSSVariableNumber = async (k, v, target) => requestAnimationFrame(() => target.style.setProperty(k, v));
+      const setCSSVariableString = (k, v, target) => {
+        const el = target || document.documentElement;
+        el.style.setProperty(k, `'${v}'`);
+      };
+      const setCSSVariableNumber = (k, v, target) => {
+        const el = target || document.documentElement;
+        el.style.setProperty(k, v);
+      };
       const clearCSSVariable = (k, target) => setCSSVariableNumber(k, null, target);
       global.setCSSVariableString = setCSSVariableString;
       global.setCSSVariableNumber = setCSSVariableNumber;
@@ -1379,7 +1426,7 @@
       global.getCSSVariable = getCSSVariable;
     })(this);
   </script>
-  
+
   <!-- PWA -->
   <script defer>
     (async function pwaIIFE() {
@@ -1443,7 +1490,7 @@
       }
     })();
   </script>
-  
+
   <!-- Social Media metadata -->
   <script defer>
     (function socialMetadataIIFE(){
@@ -1576,7 +1623,7 @@
       }
     })();
   </script>
-  
+
   <!-- Video Thumbnail -->
   <script defer>
     (function videoThumbnailIIFE(global) {
@@ -1611,7 +1658,7 @@
           return null;
         }
       }
-      
+
       function retrieve(key) {
         try {
           return localStorage.getItem(key);
@@ -1624,7 +1671,7 @@
       function keyEndsWith(partialKey) {
         const keys = Object.keys(localStorage);
         const fullKey = keys.find((key) => key.endsWith(partialKey));
-        return fullKey;    
+        return fullKey;
       }
 
       const betweenZeroAndOne = (n) => (n > 0 && n < 1);
@@ -1663,13 +1710,13 @@
         $player.autoplay = true; // Must be set to `true` for iOS
         $player.playsInline = true; // Must be set to `true` to prevent automatic fullscreen on iOS
 
-        const promise = new Promise((resolve, reject) => {      
+        const promise = new Promise((resolve, reject) => {
           // Pause the video once it is available
           $player.addEventListener('canplay', () => {
             $player.pause();
             resolve($player);
           }, { once: true });
-          
+
           // Reject the promise on error
           $player.addEventListener('error', reject, { once: true});
         });
@@ -1683,16 +1730,16 @@
       async function videoToDataURI(videoElement, timestamp, size, mime, type) {
         const start = Date.now();
         const $player = videoElement;
-          
+
         const aspectRatio = $player.videoHeight / $player.videoWidth;
         const w = size;
         const h = w * aspectRatio;
 
-        const c = document.createElement('canvas');    
+        const c = document.createElement('canvas');
         c.width = w;
         c.height = h;
         const ctx = c.getContext('2d');
-        
+
         const relativeSeekTimestamp = timestamp * $player.duration;
 
         // Relative seek if `0 < time < 1`, absolute otherwise
@@ -1701,14 +1748,14 @@
 
         $player.pause();
         ctx.drawImage($player, 0, 0, w, h);
-        
+
         const URI = (type === 'objectURL' ? await canvasToBlob(c, mime.type, mime.quality) : c.toDataURL(mime.type, mime.quality));
         const duration = Date.now() - start;
         const response = { URI, timestamp, duration, seekTime, mime };
-        
+
         return response;
       }
-      
+
       function canvasToBlob(canvas, type, quality) {
         const promise = new Promise((resolve, reject) => {
           try {
@@ -1720,7 +1767,7 @@
 
         return promise;
       }
-      
+
       function seek($player, time) {
         const promise = new Promise((resolve, reject) => {
           const errorHandler = (e) => reject('Error while seeking video', e);
@@ -1731,9 +1778,9 @@
             resolve($player.currentTime);
           }, { once: true});
         });
-        
+
         $player.currentTime = time;
-        
+
         return promise;
       }
 
@@ -1762,17 +1809,17 @@
           const thumbnails = []; // Used to hold the thumbnails for each timestamp
           for (let i = 0; i < timestamps.length; i++) {
             const timestamp = timestamps[i];
-            
+
             // Find localStorage full key that ends with cacheKeySuffix
             const cacheKeySuffix = `${size}|${imageFormat(mime)}|${timestamp}|${url}`;
             const cachedKey = keyEndsWith(cacheKeySuffix);
             const cachedURI = retrieve(cachedKey);
-            
+
             // Retrieve from cache if available
             if (canCache && shouldCache && isDataURI(cachedURI)) {
               const metadata = cacheKeyParser(cachedKey);
               const {timestamp, seekTime, mime} = metadata;
-              
+
               const sizeKB = round(cachedURI.length / 1024, 2);
               const URI = cachedURI;
               const duration = 0;
@@ -1784,11 +1831,11 @@
               const $player = await getVideo(url);
               const thumbnail = await videoToDataURI($player, timestamp, size, mime, type);
               unloadVideoSrc($player);
-              
+
               thumbnail.sizeKB = round(thumbnail.URI.length / 1024, 2);
               thumbnail.seekTime = round(thumbnail.seekTime, 2);
               thumbnails.push(thumbnail);
-              
+
               // Create full cache key
               const cacheKeyPrefix = (isString(opts.cacheKeyPrefix) ? opts.cacheKeyPrefix : defaults.cacheKeyPrefix);
               const cacheTimestamp = Date.now();
@@ -1799,7 +1846,7 @@
                 const keys = Object.keys(localStorage) // Retrieve all localStorage keys
                 .filter((key) => key.startsWith(cacheKeyPrefix)) // Filter out non-video-thumbnail.js keys
                 .sort(); // Sort keys. Timestamp in key makes oldest entries show up first
-                
+
                 // While the thumbnail can't be cached remove 1 entry at a time until successful
                 while (!store(cacheKey, thumbnail.URI) && keys.length > 0) {
                   const key = keys.shift(); // Select oldest cached thumbnail
@@ -1832,7 +1879,7 @@
           timestamp: +parts[5],
           URL: parts[6]
         }
-        
+
         return res;
       };
       const imageFormat = (mime) => mime.type.split('/')[1];
@@ -1858,7 +1905,7 @@
       global.videoThumbnail = getThumbnailDataURI;
     })(this);
   </script>
-  
+
   <!-- File Pickers -->
   <script defer>
     (function filePickersIIFE(global) {
@@ -2029,7 +2076,7 @@
       main();
     })(this);
   </script>
-  
+
   <!-- folder.api -->
   <script defer>
     // folder.api: version 1.0.3
@@ -2235,7 +2282,7 @@
 
           const value = toNumber(parsed[1]);
           if (!isNumber(value)) return {};
-          
+
           const unit = parsed[2].trim();
           const units = {
             B: 1,
@@ -2357,7 +2404,7 @@
         $frame.style.visibility = 'hidden';
         $frame.style.overflow = 'hidden';
         $frame.style.width = 0;
-        $frame.style.height = 0;        
+        $frame.style.height = 0;
         document.querySelector('body').appendChild($frame); // `<iframe>` must be appended before setting `src` or iOS calls load on `appendChild` as well
 
         const promise = new Promise((resolve, reject) => {
@@ -2427,36 +2474,6 @@
         return supported;
       }
 
-      const getIdealMimeType = () => {
-        const supports = (format) => {
-          const mime = format.type;
-          return document.createElement('canvas').toDataURL(mime).indexOf(`data:${mime}`) === 0;
-        }
-
-        const formats = {
-          avif: {
-            type: 'image/avif',
-            quality: 0.2
-          },
-          webp: {
-            type: 'image/webp',
-            quality: 0.2
-          },
-          jpeg: {
-            type: 'image/jpeg',
-            quality: 0.4
-          }
-        }
-
-        if (supports(formats['avif'])) {
-          return formats['avif'];
-        } else if (supports(formats['webp'])) {
-          return formats['webp'];
-        } else {
-          return formats['jpeg'];
-        }
-      }
-
       const isSupportedMimeType = (mime) => app.options.supportedVideoTypes.mime.includes(mime);
       app.options.supportedVideoTypes = getSupportedVideoTypes();
       console.info(`Supported video mime-types: ${app.options.supportedVideoTypes.mime.join(', ')}`);
@@ -2465,7 +2482,7 @@
 
       const urlToFolder = (url) => {
         if (isFolder(url)) return url;
-        
+
         var pieces = url.split('/'); // Break the URL into pieces
         pieces.pop(); // Remove the last piece (the filename)
         return pieces.join('/') + '/'; // Put it back together with a trailing /
@@ -2564,7 +2581,7 @@
 
         return output;
       }
-      
+
       const createLinks = async (url) => {
         const targetUrl = url || window.location.href;
         const folder = urlToFolder(targetUrl);
@@ -2589,8 +2606,9 @@
           const rawUrl = folder.url;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = url;
+          const optClasses = (folder.type === 'parent' ? 'parent' : '');
 
-          html += createFolderTemplate(rawUrl, label);
+          html += createFolderTemplate(rawUrl, label, optClasses);
         });
 
         const removeUrlExtension = (url) => {
@@ -2604,9 +2622,9 @@
 
         const findThumbnail = (videoUrl, files) => {
           if (!Array.isArray(files)) return undefined;
-          
+
           const videoPrefix = removeUrlExtension(videoUrl);
-          
+
           const thumbnails = files.filter((file) => isImage(file.url));
           const thumb = thumbnails.find((file) => {
             const filePrefix = removeUrlExtension(file.url);
@@ -2630,10 +2648,10 @@
           const preRenderedThumbnail = findThumbnail(file.url, links.files);
           const preRenderedThumbnailAvailable = preRenderedThumbnail && preRenderedThumbnail.url;
           const thumbnailUrl = (preRenderedThumbnailAvailable ? preRenderedThumbnail.url : '');
-          
+
           if (preRenderedThumbnailAvailable) cssClasses.push('prerendered');
           if (rawUrl === $player.src) cssClasses.push('current');
-          
+
           html += createFileTemplate(rawUrl, label, cssClasses.join(' '), thumbnailUrl);
         });
 
@@ -2670,7 +2688,10 @@
       }
 
       const createFileTemplate = (url, label, optionalClasses = '', preRenderedThumbnailUrl = '' ) => {
-        return `<a href='${url}' class='file ${optionalClasses}' style='${(preRenderedThumbnailUrl ? '--image-url-0: url(' + preRenderedThumbnailUrl + ')': '')}' draggable='false'>
+        const singleQuoteEscapeCode = '%27';
+        const escapedUrl = url.replace(`'`, singleQuoteEscapeCode);
+
+        return `<a href='${escapedUrl}' class='file ${optionalClasses}' title='Play ${escapedUrl}' style='${(preRenderedThumbnailUrl ? '--image-url-0: url(' + preRenderedThumbnailUrl + ')': '')}' draggable='false'>
                   <div class='title' draggable='false'>${label}</div>
                   <div class='arrow' draggable='false'>
                     <svg><use xlink:href='#svg-play'/></svg>
@@ -2679,9 +2700,12 @@
       }
 
       const createFolderTemplate = (url, label, optionalClasses = '') => {
-        return `<a href='${url}' class='folder ${optionalClasses}' draggable='false'>
+        const singleQuoteEscapeCode = '%27';
+        const escapedUrl = url.replace(`'`, singleQuoteEscapeCode);
+
+        return `<a href='${escapedUrl}' class='folder ${optionalClasses}' draggable='false' title='Navigate to ${escapedUrl}'>
                   <div class='title' draggable='false'>
-                    <svg><use xlink:href='#svg-folder-arrow'/></svg>${label}
+                    <svg class='icon'><use xlink:href='#svg-folder-arrow'/></svg><span class="label">${label}</span>
                   </div>
                   <div class='arrow' draggable='false'>
                     <svg class='open'><use xlink:href='#svg-folder-open'/></svg>
@@ -2766,6 +2790,12 @@
         return document.title = title;
       }
 
+      const updateVersionNumber = () => {
+        const version = document.querySelector('meta[name="version"]').getAttribute('content');
+        const els = [...document.querySelectorAll('.version')];
+        els.forEach((el) => el.innerText = `v${version}`);
+      }
+
       const openFromCloud = (cloud) => {
         return async () => {
           var metadata;
@@ -2799,16 +2829,36 @@
       const resetPlayer = () => {
         resetFileinfo();
         clearSubtitles();
-        $body.removeClass('is-paused');
+        updatePlaybackState('stop');
         $player.playbackRate = 1;
         $player.onerror = undefined;
         updatePlaybackRate();
         updateProgress();
       }
 
+      const updatePlaybackState = (state) => {
+        const states = {
+          play: 'is-playing',
+          pause: 'is-paused',
+          stop: 'is-stopped'
+        }
+
+        const $el = $('body');
+
+        Object.keys(states).forEach((key) => {
+          if (state === key) {
+            if (!$el.hasClass(states[key])) {
+              $el.addClass(states[key]);
+            }
+          } else {
+            $el.removeClass(states[key]);
+          }
+        });
+      }
+
       const getRanges = () => {
         if ($player.buffered.length === 0) return [];
-        
+
         var ranges = [];
           for (let i = 0; i < $player.buffered.length; i++) {
             const start = $player.buffered.start(i);
@@ -2822,7 +2872,7 @@
         const ranges = getRanges();
         const transparentGradient = 'linear-gradient(to right, transparent, transparent)';
         const gradient = (ranges.length > 0 ? rangesToGradient(ranges, $player.duration) : transparentGradient);
-        
+
         // Only set if the gradient is different
         if ($progressBar.dataset.gradient !== gradient){
           $progressBar.dataset.gradient = gradient;
@@ -2832,7 +2882,7 @@
 
       const rangesToGradient = (ranges, duration) => {
         const color = 'var(--progress-bar-buffer-color)';
-        
+
         const gradient = ranges.reduce((acc, range) => {
           const relativeStart = `${(range.start / duration) * 100}%`;
           const relativeEnd   = `${(range.end   / duration) * 100}%`;
@@ -2848,7 +2898,7 @@
         if (url === $player.currentSrc && $player.src.length > 0) return;
 
         resetPlayer();
- 
+
         // Being playback if there is a URL
         if (!!url) {
           console.info(`Loading video: ${url}`);
@@ -2859,22 +2909,22 @@
           $player.once('loadedmetadata', () => updateDuration($player.duration));
           $player.src = $trick.src = hashState.video = url;
           $player.load();
-          $body.dataset.loaded = true;
-          
+          $body.addClass('is-loaded');
+
           const scrollOpts = {
             behavior: 'smooth',
             block: 'center'
           }
           setTimeout(() => $player.scrollIntoView(scrollOpts), 16);
-          
+
         } else { // Reset the player if no URL supplied
           updateDuration(0);
-          
+
           unloadVideoSrc($player);
           unloadVideoSrc($trick);
 
           hashState.video = undefined;
-          delete $body.dataset.loaded;
+          $body.removeClass('is-loaded');
 
           console.info(`Playback stopped`);
         }
@@ -3014,7 +3064,17 @@
         if ($current && $current.classList) $current.classList.add('current');
       }
 
-      const actionPlayPause = () => ($player.paused ? $player.play() : $player.pause());
+      const actionPlayPause = () => {
+        if ($player.src && $player.paused) {
+          $player.play();
+          updatePlaybackState('play');
+        } else if (!$player.src) {
+          updatePlaybackState('stop');
+        } else {
+          $player.pause();
+          updatePlaybackState('pause');
+        }
+      }
 
       const actionVolume = () => {
         let volume = +$player.dataset.volume;
@@ -3060,7 +3120,10 @@
         $('.btn-rewind').title       = `Go back ${rewindTitle} [Left Arrow]`;
       }
 
-      const actionStop = () => actionPlay(); // Calling `actionPlay` with no source unsets the video
+      const actionStop = () => {
+        actionPlay(); // Calling `actionPlay` with no source unsets the video
+        updatePlaybackState('stop');
+      }
 
       const getReplayDuration = () => {
         const framerate = (app.metadata.framerate ? app.metadata.framerate : 30);
@@ -3069,7 +3132,7 @@
         const delta = 15;
 
         const val = -1 * (playbackRate === 0 ? frameDuration : delta * playbackRate);
-        
+
         return val;
       }
 
@@ -3163,7 +3226,7 @@
 
         return false;
       };
-     
+
 
       var timeoutFadeout;
       $playerContainer.on('mousemove', async () => {
@@ -3317,9 +3380,9 @@
         $player.on('loadedmetadata', updateFileinfo);
         $player.on('loadeddata', syncTrickSrc);
         $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
-        $player.on('pause', () => $body.addClass('is-paused'));
-        $player.on('play',  () => $body.removeClass('is-paused'));
-        $player.on('ended', () => $body.removeClass('is-paused'));
+        $player.on('pause', () => updatePlaybackState('pause'));
+        $player.on('play',  () => updatePlaybackState('play'));
+        $player.on('ended', () => updatePlaybackState('stop'));
         $player.on('click', () => { if ($player.src.length > 0) actionPlayPause(); });
         $player.on('dblclick', actionFullscreenToggle);
         $player.on('volumechange', updateVolume);
@@ -3394,7 +3457,7 @@
         $html.on('contextmenu', (e) => e.preventDefault());
       }
       $body.on('keydown', keyboardBroker);
-      
+
       const toggleModal = ($el) => {
         if ($el.hasClass('show')) {
           hideModals();
@@ -3452,9 +3515,9 @@
         keys.forEach((key) => {
           const setting = settings[key];
           const $el = $(`.setting-${key}`);
-          
+
           const changeEvent = setting.event || 'click';
-          
+
           $el.on(changeEvent, () => {
             if ($el.attr('type') === 'button') {
               setting.set();
@@ -3462,7 +3525,7 @@
               setting.update();
             }
           });
-          
+
           $el.on('click', (e) => e.stopImmediatePropagation()); // Don't close the modal for clicks on a settings control
           setting.update();
         });
@@ -3516,8 +3579,8 @@
           default: getCSSVariable('--default-hue'),
           get: () => (typeof retrieveSetting('hue') !== 'undefined' ? retrieveSetting('hue') : settings.hue.default),
           set: async (val) => {
-            updateHue(val);
             persistSetting('hue', val);
+            await updateHue(val);
           },
           update: async () => {
             const $el = $('.setting-hue');
@@ -3550,6 +3613,14 @@
             const $el = $('.setting-transitions');
             const val = $el.checked;
             settings.transitions.set(val);
+
+            if (val) {
+              try {
+                delete $('html').dataset.transitions;
+              } catch (e) {}
+            } else {
+              $('html').dataset['transitions'] = 'disabled';
+            }
           }
         },
         thumbnailing: {
@@ -3628,7 +3699,7 @@
           if (h.has('Content-Length')) response.size =     h.get('Content-Length');
           if (h.has('Content-Type'))   response.mimeType = h.get('Content-Type');
           if (h.has('Last-Modified'))  response.date =     h.get('Last-Modified');
-          
+
           return response;
         }
 
@@ -3771,9 +3842,31 @@
         $player.style.backgroundImage = `url('${dataUri}')`;
       }
 
+      const getThemeColorBaseHSL = () => {
+        const themeColorBase = getCSSVariable('--theme-color-base')
+          .split(',')
+          .map((s) => s.replace('%', '').trim());
+        const h = +themeColorBase[0];
+        const s = +themeColorBase[1];
+        const l = +themeColorBase[2];
+
+        return {h,s,l};
+      }
+
       const updateHue = async (val) => {
-        if (isUndefined(val)) val = retrieveSetting('hue');
-        await setCSSVariableNumber('--theme-hue', val, $html);
+        const hue = (isUndefined(val) ? retrieveSetting('hue') : val);
+        setCSSVariableNumber('--theme-hue', hue, $html);
+
+        const baseColor = getThemeColorBaseHSL();
+        const hex = HSLToHex(hue, baseColor.s, baseColor.l);
+
+        const meta = $('meta[name="theme-color"]');
+
+        if (meta) {
+          meta.attr('content', hex);
+        } else {
+          $('head').append(`<meta name="theme-color" content="${hex}">`);
+        }
 
         updatePlayerBackground();
       }
@@ -3801,21 +3894,21 @@
         }
         const thumbnails = await videoThumbnail(url, opts);
         settings.cache.update();
-        
-        if (thumbnails && thumbnails.length > 0) {          
+
+        if (thumbnails && thumbnails.length > 0) {
           thumbnails.forEach((thumbnail, i) => {
             if (thumbnail && thumbnail.URI && thumbnail.URI.length > 30) {
               node.style.setProperty(`--image-url-${i}`,`url('${thumbnail.URI}')`);
             }
           });
-          
+
           return thumbnails[0];
         }
       }
 
       const createAnimationCSS = () => {
         const timestamps = [...app.options.thumbnails.timestamps];
-        const n = (Array.isArray(timestamps) ? timestamps.length : 1); 
+        const n = (Array.isArray(timestamps) ? timestamps.length : 1);
 
         var animationRule = '@keyframes animateThumbnail {\r\n';
         const unit = (1 / (n - 1)) * 100;
@@ -3934,10 +4027,10 @@
 
       // main()
       const main = async () => {
-        updateHue();
         setupControls();
         renderSettingsControls();
         createAnimationCSS();
+        updateVersionNumber();
 
         const hash = getHash();
 
@@ -3948,7 +4041,7 @@
           }
 
           if (hash.time && hash.time > 0) $player.currentTime = hash.time;
-          
+
           if (hash.location && hash.location.length > 1) {
             hashState.location = hash.location;
             createLinks(hash.location);
