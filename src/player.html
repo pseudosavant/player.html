@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='2.2.9'>
+  <meta name='version' content='2.2.10'>
   <meta name='Copyright' content='©2022 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -2079,9 +2079,9 @@
 
   <!-- folder.api -->
   <script defer>
-    // folder.api: version 1.0.3
-  (function folderApiIIFE(global) {
-    'use strict';
+    // folder.api: version 1.1.0
+    (function folderApiIIFE(global) {
+      'use strict';
 
       const urlType = (url) => {
         if (isHiddenFileOrFolder(url)) {
@@ -2282,7 +2282,7 @@
 
           const value = toNumber(parsed[1]);
           if (!isNumber(value)) return {};
-
+          
           const unit = parsed[2].trim();
           const units = {
             B: 1,
@@ -2321,6 +2321,17 @@
         },
       }
 
+      const removeDuplicates = (items) => {
+        const o = {};
+
+        items.forEach((item) => {
+          const key = item.href;
+          o[key] = item;
+        });
+
+        return Object.values(o);
+      }
+
       const getLinksFromFrame = async (frame, baseUrl) => {
         const server = await getServer(baseUrl) || 'generic';
 
@@ -2343,7 +2354,7 @@
             break;
         }
 
-        const links = [...frame.contentDocument.querySelectorAll(query)];
+        const links = removeDuplicates([...frame.contentDocument.querySelectorAll(query)]);
         const folders = [];
         const files = [];
 
@@ -2404,7 +2415,7 @@
         $frame.style.visibility = 'hidden';
         $frame.style.overflow = 'hidden';
         $frame.style.width = 0;
-        $frame.style.height = 0;
+        $frame.style.height = 0;        
         document.querySelector('body').appendChild($frame); // `<iframe>` must be appended before setting `src` or iOS calls load on `appendChild` as well
 
         const promise = new Promise((resolve, reject) => {
