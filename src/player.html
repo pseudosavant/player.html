@@ -2468,14 +2468,26 @@
         };
 
         const types = [
-          { mime: 'video/mp4', extensions: ['mp4', 'm4v', 'mov'] },
-          { mime: 'video/webm', extensions: ['webm'] },
-          { mime: 'video/x-matroska', extensions: ['mkv'] },
-          { mime: 'video/ogg', extensions: ['ogg'] }
+          { mime: 'video/webm; codecs="av01.0.04M.08.0.110,opus"', extensions: ['webm'] },
+          { mime: 'video/webm; codecs="vp9,vorbis"', extensions: ['webm'] },
+          { mime: 'video/webm; codecs="vp8,vorbis"', extensions: ['webm'] },
+          { mime: 'video/mp4; codecs="av01.0.00M.08"', extensions: ['mp4', 'm4v', 'mkv'] },
+          { mime: 'video/mp4; codecs="avc1.42c015,mp4a.40.2"', extensions: ['mp4', 'm4v', 'mkv'] },
+          { mime: 'video/mp4; codecs="avc1.4d001f,mp4a.40.2"', extensions: ['mp4', 'm4v', 'mkv'] },
+          { mime: 'video/mp4; codecs="avc1.42c01e,mp4a.40.2"', extensions: ['mp4', 'm4v', 'mkv'] },
+          { mime: 'video/mp4; codecs="avc1.4d401f"', extensions: ['mp4', 'm4v', 'mkv'] },
+          { mime: 'video/mp4; codecs="hvc1.1.6.L120.90,mp4a.40.2"', extensions: ['mp4', 'm4v', 'mkv'] },
+          { mime: 'video/mp4; codecs="hvc1.1.6.L93.90,mp4a.40.2"', extensions: ['mp4', 'm4v', 'mkv'] },
+          { mime: 'video/mp2t; codecs="avc1.640028,mp4a.40.2"', extensions: ['mp2'] },
+          { mime: 'video/ogg codecs="theora,vorbis"', extensions: ['ogg'] },
+          { mime: 'video/3gpp', extensions: ['3gp'] },
+          { mime: 'video\/x-msvideo', extensions: ['wmv'] },
+          { mime: 'video\/quicktime', extensions: ['mov'] }
         ];
 
         const v = document.createElement('video');
         types.forEach(type => {
+          console.log(v.canPlayType(type.mime));
           if (v.canPlayType(type.mime) !== '') {
             supported.extensions.push(...type.extensions);
             supported.mime.push(type.mime);
