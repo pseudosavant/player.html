@@ -2487,7 +2487,6 @@
 
         const v = document.createElement('video');
         types.forEach(type => {
-          console.log(v.canPlayType(type.mime));
           if (v.canPlayType(type.mime) !== '') {
             supported.extensions.push(...type.extensions);
             supported.mime.push(type.mime);
