@@ -2918,6 +2918,7 @@
           $player.once('error', console.warn(`Unable to begin playback: ${url}`));
           $player.once('play', console.info(`Playback started: ${url}`));
           $player.once('loadedmetadata', () => updateDuration($player.duration));
+          $player.once('ended', () => playNext($player));
           $player.src = $trick.src = hashState.video = url;
           $player.load();
           $body.addClass('is-loaded');
@@ -3308,6 +3309,17 @@
 
       const playFile = (file) => { if (file) return actionPlay(URL.createObjectURL(file)); };
 
+      const playNext = (p) => {
+        if (!retrieveSetting('autoplay')) return;
+
+        const $links = [...document.querySelectorAll('.file')];
+        const playedIndex = $links.findIndex(l => l.href == p.src);
+        const nextIndex = playedIndex == $links.length - 1 ? 0 : playedIndex + 1;
+        const nextLink = $links[nextIndex];
+
+        if (nextLink) nextLink.trigger("click");
+      }
+
       const actionOpenLocalFile = () => {
         const reader = new FileReader();
         const supportedTypes = app.options.supportedVideoTypes.mime.join(',');
@@ -3664,6 +3676,20 @@
             } else {
               $html.addClass('no-thumbnail-animation');
             }
+          }
+        },
+        autoplay: {
+          label: 'Autoplay',
+          buttonLabel: 'Autoplay',
+          desc: 'When a video ends, automatically play the next video in the directory',
+          event: 'change',
+          default: false,
+          get: () => typeof retrieveSetting('autoplay') !== 'undefined' ? retrieveSetting('autoplay') : settings.autoplay.default,
+          set: (val) => persistSetting('autoplay', val),
+          update: () => {
+            const $el = $('.setting-autoplay');
+            const val = $el.checked;
+            settings.autoplay.set(val);
           }
         },
         cache: {
