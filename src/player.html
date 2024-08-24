@@ -3,9 +3,9 @@
 <head>
   <title>player.html</title>
   <meta charset='utf-8'>
-  <meta name='description' content='Drop player.html in a folder of videos and play them on the web' />
-  <meta name='version' content='2.2.10'>
-  <meta name='Copyright' content='©2022 Paul Ellis'>
+  <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
+  <meta name='version' content='2.3.0'>
+  <meta name='Copyright' content='©2024 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
   <link rel='shortcut icon'
@@ -136,6 +136,10 @@
       z-index: 1000;
     }
 
+    .is-audio .player-container {
+      min-height: unset;
+    }
+
     /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
     .player-container:-webkit-full-screen {
       display: flex;
@@ -181,11 +185,29 @@
     :-webkit-full-screen.fadeout { cursor: none; }
     :fullscreen.fadeout { cursor: none; }
 
-    .video-container {
+    .media-container {
       position: relative;
       width: 100%;
       background: black;
       overflow: hidden;
+    }
+
+    .is-audio .media-container {
+      margin-top: 1rem;
+    }
+
+    .media-title {
+      position: absolute;
+      top: 0;
+      left: 0;
+      margin: 1rem 0 0 1.5rem;
+      font-size: 1.5em;
+      color: rgba(255,255,255,0);
+      transition: color var(--transition-base);
+    }
+    
+    .player:hover + .media-title {
+      color: rgba(255,255,255,1);
     }
 
     .player {
@@ -201,6 +223,12 @@
       transition: filter calc(0.5 * var(--transition-base));
       will-change: filter;
     }
+
+    .is-audio .player {
+      max-height: 20vh;
+      background-size: contain;
+    }
+
     /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
     /* There should *not* be a space between `:fullscreen` and `.player` as webkit makes the `<video>` element full screen */
     :-webkit-full-screen.player {
@@ -510,6 +538,7 @@
     }
 
     .no-subtitles .btn-subtitles svg { fill: hsl(var(--theme-hue), 0%, 50%); }
+    .is-audio .btn-subtitles         { display: none !important; }
     .controls button:hover       svg { fill: hsl(var(--theme-hue), 70%, 75%); }
     .controls button:active      svg { fill: hsl(var(--theme-hue), 100%, 33%); }
     .controls .stop svg { margin: 0 0.5rem; }
@@ -551,21 +580,23 @@
     /* Show pause button */
     .is-loaded.is-playing .btn-play-pause .pause { display: inline-block; }
 
-    button.btn-fullscreen { display: none; }
-    button.btn-fullscreen.enabled { display: inline-block; }
-    .btn-fullscreen .collapse { display: none; } /* Hide `.collapse` by default */
-    .btn-fullscreen .expand { display: block; } /* Show `.expand` by default */
+    button.btn-fullscreen                          { display: none; }
+    button.btn-fullscreen.enabled                  { display: inline-block; }
+    .btn-fullscreen .collapse                      { display: none; } /* Hide `.collapse` by default */
+    .btn-fullscreen .expand                        { display: block; } /* Show `.expand` by default */
     :-webkit-full-screen .btn-fullscreen .collapse { display: block; } /* Show collapse in fullscreen mode */
     :fullscreen          .btn-fullscreen .collapse { display: block; }
-    :-webkit-full-screen .btn-fullscreen .expand { display: none; } /* Hide collapse in fullscreen mode */
-    :fullscreen          .btn-fullscreen .expand { display: none; }
-
-    button.btn-pip { display: none; }
-    button.btn-pip.enabled { display: inline-block; }
-    .btn-pip .exit { display: none; } /* Hide `.exit` by default */
-    .btn-pip .enter { display: block; } /* Show `.enter` by default */
-    .is-pip .btn-pip .exit { display: block; }
+    :-webkit-full-screen .btn-fullscreen .expand   { display: none; } /* Hide collapse in fullscreen mode */
+    :fullscreen          .btn-fullscreen .expand   { display: none; }
+    .is-audio .btn-fullscreen                      { display: none !important; }
+    
+    button.btn-pip          { display: none; }
+    button.btn-pip.enabled  { display: inline-block; }
+    .btn-pip .exit          { display: none; } /* Hide `.exit` by default */
+    .btn-pip .enter         { display: block; } /* Show `.enter` by default */
+    .is-pip .btn-pip .exit  { display: block; }
     .is-pip .btn-pip .enter { display: none; }
+    .is-audio .btn-pip      { display: none !important; }
 
     .current-timestamp {
       grid-area: progress-bar;
@@ -675,6 +706,10 @@
       z-index: 1000;
     }
 
+    .is-audio .trick-container {
+      display: none;
+    }
+
     .trick-container:after {
       content: '';
       width: 100%;
@@ -683,8 +718,8 @@
       top: 0;
       left: 0;
       background-image: linear-gradient(to bottom, black, transparent);
-    }
-
+    }  
+    
     .trick {
       display: block;
       min-width: 102%;
@@ -694,7 +729,7 @@
       border: 0 none;
       filter: blur(0.5px);
       object-fit: cover;
-    }
+    }  
 
     .is-loaded .progress-bar:hover + .trick-container {
       border: 1px solid transparent;
@@ -828,6 +863,10 @@
       height: 1em;
       width: 1em;
       margin-bottom: -0.18em;
+    }
+
+    .file.audio-file {
+      background-size: contain;
     }
 
     .folder .arrow,
@@ -977,15 +1016,16 @@
 </head>
 <body class='no-subtitles is-stopped'>
   <div class='player-container'>
-    <div class='video-container'>
+    <div class='media-container'>
       <video class='player' data-volume="3" crossorigin="anonymous" playsinline></video>
+      <div class="media-title"></div>
       <ul class='fileinfo modal'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
       <ul class='help modal'>
         <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
         <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
         <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
-        <li class='help-item modal-item'><span class='key'>I</span><span class='desc'>Video file information</span></li>
-        <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of video</span></li>
+        <li class='help-item modal-item'><span class='key'>I</span><span class='desc'>Media file information</span></li>
+        <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of media</span></li>
         <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 10 seconds</span></li>
         <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 30 seconds</span></li>
         <li class='help-item modal-item'><span class='key'>R</span><span class='desc'>Alter playback rate</span></li>
@@ -1004,14 +1044,14 @@
         <video class='trick'></video>
       </div>
       <section class='controls-settings'>
-        <button class='btn-fileinfo' type='button' title='Show video file information'><svg><use xlink:href='#svg-info'/></svg></button>
+        <button class='btn-fileinfo' type='button' title='Show media file information'><svg><use xlink:href='#svg-info'/></svg></button>
         <button class='btn-settings' type='button' title='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
         <button class='btn-play-pause' type='button' title='Toggle Play/Pause [Spacebar]'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
         <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]'><svg><use xlink:href='#svg-replay'/></svg></button>
         <button class='btn-fast-forward' type='button' title='Go forward 30 seconds [Right Arrow]'><svg><use xlink:href='#svg-skip'/></svg></button>
-        <button class='btn-stop' type='button' title='Stop video playback'><svg><use xlink:href='#svg-stop'/></svg></button>
+        <button class='btn-stop' type='button' title='Stop media playback'><svg><use xlink:href='#svg-stop'/></svg></button>
         <button class='btn-volume' type='button' title='Adjust audio volume'>
           <svg class='level-0' title="Muted"><use xlink:href='#svg-speaker-volume-0'/></svg>
           <svg class='level-1' title="Volume 33%"><use xlink:href='#svg-speaker-volume-1'/></svg>
@@ -1021,12 +1061,12 @@
         <button class='btn-fullscreen' type='button' title='Toogle fullscreen mode'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
         <button class='btn-pip' type='button' title='Toggle picture-in-picture mode'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
         <button class='btn-subtitles' type='button' title='Toggle Subtitles'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
-        <button class='btn-playback-rate' type='button' title='Alter video playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
+        <button class='btn-playback-rate' type='button' title='Alter media playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
       </section>
       <section class='controls-sources'>
         <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
         <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
-        <button class='btn-local-file' type='button' title='Open local video file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
+        <button class='btn-local-file' type='button' title='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
       </section>
     <div class='current-timestamp' style='--duration: "0:00"; --absolute-position: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
@@ -1113,6 +1153,10 @@
       <path style='fill:#089156' d='M8.998060248538135,7.835050681542867 L7.7478835437197695,10.001455087618574 L6.112017465007343,2.85274083196329 z'/>
       <path style='fill:#296ad9' d='m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z'/>
     </svg>
+    <!-- ic_fluent_music_note_2_play_20_filled.svg -->
+    <svg id='svg-music-icon' viewBox="0 0 20 20">
+      <path d="M15.9867 3.01576C15.8908 2.43018 15.2919 2.04148 14.7017 2.2259L7.70173 4.4134C7.28425 4.54387 7 4.9305 7 5.36788V13.5001C6.58217 13.1863 6.0628 13.0003 5.5 13.0003C4.11929 13.0003 3 14.1196 3 15.5003C3 16.881 4.11929 18.0003 5.5 18.0003C6.88071 18.0003 8 16.881 8 15.5003V8.36793L15 6.18043V9.02273C15.3434 9.05367 15.6777 9.11618 16 9.20734V3.18043C16 3.12411 15.9954 3.06909 15.9867 3.01576ZM19 14.5002C19 16.9855 16.9853 19.0002 14.5 19.0002C12.0147 19.0002 10 16.9855 10 14.5002C10 12.015 12.0147 10.0002 14.5 10.0002C16.9853 10.0002 19 12.015 19 14.5002ZM16.7367 14.0645L13.7426 12.4144C13.4094 12.2308 13.0013 12.4718 13.0013 12.8523L13.0013 16.1524C13.0013 16.5329 13.4093 16.7739 13.7426 16.5903L16.7366 14.9404C17.0815 14.7503 17.0816 14.2546 16.7367 14.0645Z" fill="#212121"/>
+    </svg>
   </section>
   <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>
   <script type='text/javascript' src='https://js.live.net/v7.2/OneDrive.js' defer></script>
@@ -1153,7 +1197,7 @@
           concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
         },
         updateRate: { // Limit UI update rates in ms
-          timeupdate: 1000/5, // video playback `timeupdate` events
+          timeupdate: 1000/5, // media playback `timeupdate` events
           trickHover: 1000/10 // Seeking on trickplay hover overlay
         }
       },
@@ -1450,11 +1494,16 @@
         display: 'standalone',
         start_url: `${window.location.origin}${window.location.pathname}`,
         scope: window.pathname,
-        screenshots : [
-          { src: `https://cdn.statically.io/screenshot/mobile/${location.host}${location.pathname}` }
+        file_handlers: [
+          {
+            action: location.href.split('#')[0],
+            accept: {
+              "audio/*": [".mp3", ".wav", ".aac", ".m4a", ".ogg"],
+              "video/*": [".mp4", ".mov", ".webm", ".mkv"]
+            }
+          }
         ]
       }
-
       setPWAManifest(manifest);
 
       function setPWAManifest(manifest) {
@@ -1958,7 +2007,7 @@
               mimeType: file.file.mimeType,
               duration:
                 file.video && file.video.duration ? file.video.duration : undefined,
-              video: file.video || {}
+              media: file.video || {}
             };
             resolve(metadata);
           }
@@ -1969,8 +2018,8 @@
             multiSelect: false,
             advanced: {
               queryParameters:
-                'select=id,name,size,file,video,@microsoft.graph.downloadUrl',
-              filter: 'mp4,webm,mkv',
+                'select=id,name,size,file,audio,video,@microsoft.graph.downloadUrl',
+              filter: 'mp4,webm,mkv,wav,mp3,aac,m4a,ogg',
               navigation: {
                 sourceTypes: ['OneDrive', 'Sites', 'Recent']
               },
@@ -2461,17 +2510,30 @@
       const $subtitles = $('.subtitle-selection');
       const $currentTimestamp = $('.current-timestamp');
 
-      const getSupportedVideoTypes = () => {
+      const getSupportedTypes = () => {
         const supported = {
           extensions: [],
           mime: []
         };
 
         const types = [
-          { mime: 'video/mp4', extensions: ['mp4', 'm4v', 'mov'] },
-          { mime: 'video/webm', extensions: ['webm'] },
+          { mime: 'video/mp4',        extensions: ['mp4', 'm4v', 'mov', '3gp'] },
+          { mime: 'video/webm',       extensions: ['webm'] },
           { mime: 'video/x-matroska', extensions: ['mkv'] },
-          { mime: 'video/ogg', extensions: ['ogg'] }
+          { mime: 'video/matroska',   extensions: ['mkv'] },
+          { mime: 'video/mp2t',       extensions: ['ts', 'mp2'] },
+          { mime: 'video/x-msvideo',  extensions: ['avi'] },
+          { mime: 'video/msvideo',    extensions: ['avi'] },
+          { mime: 'video/avi',        extensions: ['avi'] },
+          { mime: 'video/vnd.avi',    extensions: ['avi'] },
+          { mime: 'video/x-ms-wmv',   extensions: ['wmv'] },
+          { mime: 'video/x-ms-asf',   extensions: ['wmv'] },
+          { mime: 'video/x-flv',      extensions: ['flv'] },
+          { mime: 'audio/wav',        extensions: ['wav'] },
+          { mime: 'audio/mpeg',       extensions: ['mp3'] },
+          { mime: 'audio/aac',        extensions: ['aac'] },
+          { mime: 'audio/m4a',        extensions: ['m4a'] },
+          { mime: 'audio/ogg',        extensions: ['ogg'] }
         ];
 
         const v = document.createElement('video');
@@ -2485,11 +2547,11 @@
         return supported;
       }
 
-      const isSupportedMimeType = (mime) => app.options.supportedVideoTypes.mime.includes(mime);
-      app.options.supportedVideoTypes = getSupportedVideoTypes();
-      console.info(`Supported video mime-types: ${app.options.supportedVideoTypes.mime.join(', ')}`);
+      const isSupportedMimeType = (mime) => app.options.supportedTypes.mime.includes(mime);
+      app.options.supportedTypes = getSupportedTypes();
+      console.info(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
-      const hashState = { location: '', video: '' };
+      const hashState = { location: '', media: '' };
 
       const urlToFolder = (url) => {
         if (isFolder(url)) return url;
@@ -2544,7 +2606,7 @@
           return 'hidden';
         } else if (url[url.length - 1] === '/') {
           return 'folder';
-        } else if (isVideo(url) || isSubtitle(url)) {
+        } else if (isMedia(url) || isSubtitle(url)) {
           return 'file';
         } else {
           return 'unknown';
@@ -2552,8 +2614,8 @@
       }
 
       const removeFileExtension = (s) => {
-        const supportedVideoExtensions = app.options.supportedVideoTypes.extensions.join('|');
-        const re = new RegExp(`\\.+(${supportedVideoExtensions})+$`, 'i');
+        const supportedMediaExtensions = app.options.supportedTypes.extensions.join('|');
+        const re = new RegExp(`\\.+(${supportedMediaExtensions})+$`, 'i');
         return s.replace(re, '');
       }
 
@@ -2564,11 +2626,16 @@
         return labelA < labelB ? -1 : 1;
       }
 
-      const isVideo = (haystack, fileExtensions) => {
-        const supportedVideoExtensions = app.options.supportedVideoTypes.extensions.join('|');
-        const re = new RegExp(`\.+(${supportedVideoExtensions})+$`, 'i');
+      const isMedia = (haystack, fileExtensions) => {
+        const supportedMediaExtensions = app.options.supportedTypes.extensions.join('|');
+        const re = new RegExp(`\.+(${supportedMediaExtensions})+$`, 'i');
         return re.test(haystack);
       };
+
+      const isAudio = (url) => {
+        const re = /(?:\/)((?:[^/])+\.(?:wav|mp3|aac|m4a|ogg))/gi
+        return re.test(url);
+      }
 
       const isImage = (url) => {
         const re = /(?:\/)((?:[^/])+\.(?:png|jpeg|jpg|gif|webp))/gi
@@ -2631,15 +2698,20 @@
           return undefined;
         }
 
-        const findThumbnail = (videoUrl, files) => {
+        const findThumbnail = (mediaUrl, files) => {
           if (!Array.isArray(files)) return undefined;
 
-          const videoPrefix = removeUrlExtension(videoUrl);
+          if (isAudio(mediaUrl)) {
+            const audioIconUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1Ljk4NjcgMy4wMTU3NkMxNS44OTA4IDIuNDMwMTggMTUuMjkxOSAyLjA0MTQ4IDE0LjcwMTcgMi4yMjU5TDcuNzAxNzMgNC40MTM0QzcuMjg0MjUgNC41NDM4NyA3IDQuOTMwNSA3IDUuMzY3ODhWMTMuNTAwMUM2LjU4MjE3IDEzLjE4NjMgNi4wNjI4IDEzLjAwMDMgNS41IDEzLjAwMDNDNC4xMTkyOSAxMy4wMDAzIDMgMTQuMTE5NiAzIDE1LjUwMDNDMyAxNi44ODEgNC4xMTkyOSAxOC4wMDAzIDUuNSAxOC4wMDAzQzYuODgwNzEgMTguMDAwMyA4IDE2Ljg4MSA4IDE1LjUwMDNWOC4zNjc5M0wxNSA2LjE4MDQzVjkuMDIyNzNDMTUuMzQzNCA5LjA1MzY3IDE1LjY3NzcgOS4xMTYxOCAxNiA5LjIwNzM0VjMuMTgwNDNDMTYgMy4xMjQxMSAxNS45OTU0IDMuMDY5MDkgMTUuOTg2NyAzLjAxNTc2Wk0xOSAxNC41MDAyQzE5IDE2Ljk4NTUgMTYuOTg1MyAxOS4wMDAyIDE0LjUgMTkuMDAwMkMxMi4wMTQ3IDE5LjAwMDIgMTAgMTYuOTg1NSAxMCAxNC41MDAyQzEwIDEyLjAxNSAxMi4wMTQ3IDEwLjAwMDIgMTQuNSAxMC4wMDAyQzE2Ljk4NTMgMTAuMDAwMiAxOSAxMi4wMTUgMTkgMTQuNTAwMlpNMTYuNzM2NyAxNC4wNjQ1TDEzLjc0MjYgMTIuNDE0NEMxMy40MDk0IDEyLjIzMDggMTMuMDAxMyAxMi40NzE4IDEzLjAwMTMgMTIuODUyM0wxMy4wMDEzIDE2LjE1MjRDMTMuMDAxMyAxNi41MzI5IDEzLjQwOTMgMTYuNzczOSAxMy43NDI2IDE2LjU5MDNMMTYuNzM2NiAxNC45NDA0QzE3LjA4MTUgMTQuNzUwMyAxNy4wODE2IDE0LjI1NDYgMTYuNzM2NyAxNC4wNjQ1WiIgZmlsbD0iIzQ0NDQ0NCIvPgo8L3N2Zz4K';
+            return {url: audioIconUrl};
+          }
+
+          const mediaPrefix = removeUrlExtension(mediaUrl);
 
           const thumbnails = files.filter((file) => isImage(file.url));
           const thumb = thumbnails.find((file) => {
             const filePrefix = removeUrlExtension(file.url);
-            return videoPrefix === filePrefix;
+            return mediaPrefix === filePrefix;
           });
           return thumb;
         }
@@ -2647,10 +2719,10 @@
         const subtitles = files.filter((file) => isSubtitle(file.url));
         populateSubtitles(subtitles);
 
-        const videos = files.filter((file) => isVideo(file.url));
-        videos.sort(sortFiles);
+        const medias = files.filter((file) => isMedia(file.url));
+        medias.sort(sortFiles);
 
-        videos.forEach((file) => {
+        medias.forEach((file) => {
           const rawUrl = file.url;
           const url = decodeURI(rawUrl).replace(base, '');
           const label = urlToLabel(url);
@@ -2701,8 +2773,9 @@
       const createFileTemplate = (url, label, optionalClasses = '', preRenderedThumbnailUrl = '' ) => {
         const singleQuoteEscapeCode = '%27';
         const escapedUrl = url.replace(`'`, singleQuoteEscapeCode);
+        const isAudioClass = (isAudio(url) ? 'audio-file' : '');
 
-        return `<a href='${escapedUrl}' class='file ${optionalClasses}' title='Play ${escapedUrl}' style='${(preRenderedThumbnailUrl ? '--image-url-0: url(' + preRenderedThumbnailUrl + ')': '')}' draggable='false'>
+        return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='Play ${escapedUrl}' style='${(preRenderedThumbnailUrl ? '--image-url-0: url(' + preRenderedThumbnailUrl + ')': '')}' draggable='false'>
                   <div class='title' draggable='false'>${label}</div>
                   <div class='arrow' draggable='false'>
                     <svg><use xlink:href='#svg-play'/></svg>
@@ -2759,15 +2832,15 @@
 
       const getState = () => {
         const location = hashState.location;
-        const video = getVideoUrl();
+        const media = getMediaUrl();
         const time = $player.currentTime;
-        const state = { location, video, time }
+        const state = { location, media, time }
 
         return state;
       }
 
       const getBaseLocation = (l) => l.protocol + '//' + l.host;
-      const getVideoUrl = () => $player.src;
+      const getMediaUrl = () => $player.src;
 
       const encodeHash = (hash) => encodeURIComponent(base64EncodeUTF(JSON.stringify(hash)));
       const decodeHash = (hash) => JSON.parse(base64DecodeUTF(decodeURIComponent(hash)));
@@ -2832,7 +2905,7 @@
 
         if (clipboard && re.test(clipboard)) {
           const url = clipboard;
-          console.info(`Playing video from clipboard: ${clipboard}`);
+          console.info(`Playing media from clipboard: ${clipboard}`);
           actionPlay(url);
         }
       }
@@ -2905,22 +2978,32 @@
       }
 
       const actionPlay = (url) => {
-        // Don't restart playback if it is the currently playing video
+        // Don't restart playback if it is the currently playing media
         if (url === $player.currentSrc && $player.src.length > 0) return;
 
         resetPlayer();
 
         // Being playback if there is a URL
         if (!!url) {
-          console.info(`Loading video: ${url}`);
+          console.info(`Loading media: ${url}`);
           $player.autoplay = true;
 
           $player.once('error', console.warn(`Unable to begin playback: ${url}`));
           $player.once('play', console.info(`Playback started: ${url}`));
           $player.once('loadedmetadata', () => updateDuration($player.duration));
-          $player.src = $trick.src = hashState.video = url;
+          $player.src = $trick.src = hashState.media = url;
           $player.load();
           $body.addClass('is-loaded');
+
+          $player.once('loadedmetadata', () => {
+            if ($player.videoWidth === 0 && $player.videoHeight === 0) {
+              $body.addClass('is-audio');
+            } else {
+              $body.removeClass('is-audio');
+            }
+          });
+
+          document.querySelector('.media-title').innerText = urlToLabel(url);
 
           const scrollOpts = {
             behavior: 'smooth',
@@ -2931,19 +3014,33 @@
         } else { // Reset the player if no URL supplied
           updateDuration(0);
 
-          unloadVideoSrc($player);
-          unloadVideoSrc($trick);
+          unloadMediaSrc($player);
+          unloadMediaSrc($trick);
 
-          hashState.video = undefined;
+          hashState.media = undefined;
           $body.removeClass('is-loaded');
 
           console.info(`Playback stopped`);
         }
 
-        setCurrentVideoTile();
+        setCurrentMediaTile();
       }
 
-      const unloadVideoSrc = (el) => {
+      const checkFileHandlerOpen = () => {
+        if ('launchQueue' in window) {
+          window.launchQueue.setConsumer(async (launchParams) => {
+            if (launchParams.files.length > 0) {
+              const fileHandle = launchParams.files[0];
+              const file = await fileHandle.getFile();
+              const url = URL.createObjectURL(file);
+
+              actionPlay(url);
+            }
+          });
+        }
+      };
+
+      const unloadMediaSrc = (el) => {
         el.removeAttribute('src'); // Unset video, use `removeAttribute` instead of `src = undefined` to prevent 404s for `/video-thumbnail.js/src/undefined`
         el.load(); // Must invoke `load` to complete the `src` change
       }
@@ -3067,7 +3164,7 @@
 
       }
 
-      const setCurrentVideoTile = () => {
+      const setCurrentMediaTile = () => {
         const $former = $('.links .current')
         if ($former && $former.classList) $former.classList.remove('current');
 
@@ -3294,7 +3391,7 @@
 
       const trickSeek = (time) => {
         // Seek to whole seconds if the progress bar width in pixels is less
-        // than the video duration. Improves trick seek performance.
+        // than the media duration. Improves trick seek performance.
         const width = getProgressBarWidth();
         const seekTime = ($trick.duration > width ? Math.floor(time) : time);
 
@@ -3310,7 +3407,7 @@
 
       const actionOpenLocalFile = () => {
         const reader = new FileReader();
-        const supportedTypes = app.options.supportedVideoTypes.mime.join(',');
+        const supportedTypes = app.options.supportedTypes.mime.join(',');
         const $input = $(`<input type="file" accept="${supportedTypes}"/>`);
         $input.on('change', () => playFile($input.files[0]));
         $input.click();
@@ -3783,7 +3880,7 @@
         const headerKeys = Object.keys(headerData);
         headerKeys.forEach((k) => metadata[k] = headerData[k]);
 
-        if (supportsVideoFrameCallback()) metadata.framerate = await getFramerate($player);
+        if (!isAudio(url) && supportsVideoFrameCallback()) metadata.framerate = await getFramerate($player);
 
         const mapping = {
           name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
@@ -4042,13 +4139,14 @@
         renderSettingsControls();
         createAnimationCSS();
         updateVersionNumber();
+        checkFileHandlerOpen();
 
         const hash = getHash();
 
         if (hash) {
-          if (hash.video && hash.video.length > 1 && !hash.video.startsWith('blob:')) {
+          if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
             $player.muted = true; /* Autoplay on load only works if it is muted */
-            actionPlay(hash.video);
+            actionPlay(hash.media);
           }
 
           if (hash.time && hash.time > 0) $player.currentTime = hash.time;
