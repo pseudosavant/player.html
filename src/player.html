@@ -3121,23 +3121,23 @@
       const text = await f.text();
 
       const lines = text.split('--> ');
-      const lastLinePosition = lines.length - 1
+      const lastLinePosition = lines.length - 1;
       const lastLine = lines[lastLinePosition];
 
-      const re = /(\d{2}):(\d{2}):(\d{2}).(\d{3})/g;
-
+      const re = /(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
       const results = re.exec(lastLine);
 
       if (results) {
-        const h = parseInt(results[1]);
-        const m = parseInt(results[2]);
-        const s = parseInt(results[3]) + parseInt(results[4]);
+        const h = parseInt(results[1], 10);
+        const m = parseInt(results[2], 10);
+        const s = parseInt(results[3], 10);
+        const ms = parseInt(results[4], 10);
 
-        const seconds = h * 60 * 60 + m * 60 + s;
+        const seconds = h * 3600 + m * 60 + s + ms / 1000;
         return seconds;
       }
 
-      return;
+      return 0;
     }
 
     const urlToObjectUrl = async (url, type) => {
