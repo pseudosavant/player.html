@@ -1,0 +1,1002 @@
+    *,
+    *:before,
+    *:after {
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+
+      user-select: none;
+
+      line-height: 1em;
+
+      touch-action: manipulation;
+    }
+
+    html {
+      --player-aspect-ratio: calc(9/16);
+      --tile-aspect-ratio: var(--player-aspect-ratio);
+      --tile-width: 24rem;
+      --tile-height: calc(var(--tile-width) * var(--tile-aspect-ratio));
+      --tile-border-radius: 0.6rem / 0.5rem;
+      --tile-font-color: var(--tile-font-color-dark);
+      --tile-title-background-color: var(--tile-title-background-color-dark);
+      --tile-background-color: var(--tile-background-color-dark);
+      --inter-tile-margin: 1rem;
+
+      --modal-font-color: var(--tile-font-color);
+
+      --progress-bar-background-color: hsl(var(--theme-hue), 100%, 95%);
+      --progress-bar-position-color: var(--theme-color);
+      --progress-bar-height: 1rem;
+      --progress-bar-buffer-color: hsl(var(--theme-hue), 40%, 80%);
+      --trick-preview-width: max(10vw, 100px);
+
+      --base-background-color: var(--base-background-color-dark);
+      --base-overlay-color: 128,128,128;
+
+      --default-hue: 323;
+      --theme-hue: var(--default-hue);
+      --theme-color-base: var(--theme-hue), 100%, 50%;
+      --theme-color: hsl(var(--theme-color-base));
+
+      --folder-color: hsl(44,100%,68%);
+      --file-color: #FFF;
+      --playing-color: hsl(var(--theme-hue), 100%, 85%);
+
+      --primary-font-color: var(--primary-font-color-dark);
+      --secondary-font-color: var(--secondary-font-color-dark);
+
+      --modal-background-color: var(--modal-background-color-dark);
+      --thumbnail-overlay-color: rgba(64,64,64,0.2);
+
+      --transition-base: 300ms;
+      --blur-base: 1rem;
+
+      font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      background-color: var(--base-background-color);
+      color: var(--primary-font-color);
+    }
+
+    @media (prefers-reduced-motion) {
+      * {
+        --transition-base: 0;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    html {
+      /* Light mode colors */
+      --base-background-color-light: white;
+      --primary-font-color-light: hsl(var(--theme-hue), 10%, 40%);
+      --secondary-font-color-light: hsl(var(--theme-hue), 25%, 75%);
+      --tile-font-color-light: white;
+      --tile-title-background-color-light: hsla(var(--theme-hue), 15%, 50%, 80%);
+      --tile-background-color-light: hsl(var(--theme-hue), 50%, 97%);
+      --modal-background-color-light: hsla(var(--theme-hue), 100%, 95%, 0.5);
+
+      /* Dark mode colors */
+      --base-background-color-dark: black;
+      --primary-font-color-dark: hsl(var(--theme-hue), 50%, 90%);
+      --secondary-font-color-dark: hsl(var(--theme-hue), 10%, 40%);
+      --tile-font-color-dark: hsl(var(--theme-hue), 50%, 95%);
+      --tile-title-background-color-dark: hsla(var(--theme-hue), 15%, 20%, 80%);
+      --tile-background-color-dark: hsl(var(--theme-hue), 10%, 12.5%);
+      --modal-background-color-dark: hsla(var(--theme-hue), 30%, 15%, 0.5);
+    }
+
+    :fullscreen html      { --base-background-color: hsl(var(--theme-hue), 100%, 4%); }
+
+    :fullscreen, :fullscreen * {
+      --modal-background-color: hsla(var(--theme-hue), 30%, 15%, 0.5);
+    }
+
+    body {
+      display: grid;
+      grid-template-areas:
+        "player-container"
+        "controls"
+        "links"
+        "footer";
+      grid-template-rows: min-content min-content minmax(calc(var(--tile-height) * 2), auto) min-content;
+      grid-template-columns: 1fr;
+
+      padding: 0;
+      margin: 0 auto;
+    }
+
+    .player-container {
+      grid-area: player-container;
+      display: grid;
+      grid-template-areas:
+        "player"
+        "controls";
+      grid-template-rows: min-content min-content;
+      grid-template-columns: 1fr;
+
+
+      position: relative;
+      width: 100%;
+      min-height: 30vw;
+
+      z-index: 1000;
+    }
+
+    .is-audio .player-container {
+      min-height: unset;
+    }
+
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    .player-container:-webkit-full-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%; /* webkit doesn't do this automatically */
+      height: 100%; /* webkit doesn't do this automatically */
+    }
+    .player-container:fullscreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .player-container.drop:before {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      content: "Drop Here";
+      font-size: 5rem;
+      text-shadow: 0px 0px 1.5rem #000;
+      background-color: rgba(64,64,64,0.5);
+      background-image: url('./assets/drop-target.svg');
+      background-size: 25%;
+      background-position: center;
+      background-repeat: no-repeat;
+      animation: pulse calc(2 * var(--transition-base)) ease-in-out alternate infinite;
+      z-index: 2000;    }
+
+    @keyframes pulse {
+      0%   { opacity: 100%; }
+      100% { opacity: 50% }
+    }
+
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    :-webkit-full-screen.fadeout { cursor: none; }
+    :fullscreen.fadeout { cursor: none; }
+
+    .media-container {
+      position: relative;
+      width: 100%;
+      background: black;
+      overflow: hidden;
+    }
+
+    .is-audio .media-container {
+      margin-top: 1rem;
+    }
+
+    .media-title {
+      position: absolute;
+      top: 0;
+      left: 0;
+      margin: 1rem 0 0 1.5rem;
+      font-size: 1.5em;
+      color: rgba(255,255,255,0);
+      transition: color var(--transition-base);
+    }
+    
+    .player:hover + .media-title {
+      color: rgba(255,255,255,1);
+    }
+
+    .player {
+      grid-area: player;
+      width: 100%;
+      max-height: 75vh;
+      margin: auto;
+      background-image: url('./assets/player-poster.svg');
+      background-size: 56.25vw; /* 9/16 - icon will never be taller than a 16x9 video */
+      background-repeat: no-repeat;
+      background-position: center;
+
+      transition: filter calc(0.5 * var(--transition-base));
+      will-change: filter;
+    }
+
+    .is-audio .player {
+      max-height: 20vh;
+      background-size: contain;
+    }
+
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    /* There should *not* be a space between `:fullscreen` and `.player` as webkit makes the `<video>` element full screen */
+    :-webkit-full-screen.player {
+      margin: 0;
+      max-height: 100%;
+      background: black !important; /* `!important` must be used to override inline styles */
+    }
+    /* There *must* be a space between `:fullscreen` and `.player` as other browsers allow non-<video> elements to be the fullscreen root */
+    :fullscreen .player {
+      margin: 0;
+      max-height: 100%;
+      background: black !important; /* `!important` must be used to override inline styles */
+    }
+
+    .modal.show ~ .modal-background-overlay {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    .modal {
+      z-index: 100;
+      display: flex;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      min-width: 150px;
+      max-width: 100vw;
+      overflow-x: auto;
+
+      color: var(--modal-font-color);
+
+      margin: 0;
+      transform: translateX(-100vw);
+      transition:
+        transform var(--transition-base) ease,
+        backdrop-filter var(--transition-base) ease;
+      will-change: transform, backdrop-filter;
+      padding: 1rem;
+
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: column;
+      gap: 0.1rem;
+
+      list-style: none;
+
+      background-color: var(--modal-background-color);
+      background-image: linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0));
+      -webkit-backdrop-filter: blur(var(--blur-base));
+      backdrop-filter: blur(var(--blur-base));
+    }
+    .modal.show { transform: translateX(0); }
+
+    .subtitle-selection:before { content: "Select a subtitle below"; }
+    .fileinfo:before { content: "File metadata"; }
+    .help:before { content: "Keyboard Shortcuts" }
+
+    .modal-item {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 1rem;
+      width: 100%;
+      position: relative;
+      margin: 0;
+      background-color: rgba(0,0,0,0.25);
+    }
+    .modal-item:first-of-type {
+      border-top-left-radius: 0.75rem;
+      border-top-right-radius: 0.75rem;
+    }
+    .modal-item:last-of-type {
+      border-bottom-left-radius: 0.75rem;
+      border-bottom-right-radius: 0.75rem;
+    }
+    .modal-item .desc { overflow: hidden; }
+
+    .subtitle-item { cursor: pointer; }
+    .help-item { max-width: 320px; }
+
+    .fileinfo-item .key, .help-item .key, .setting-item .key {
+      display: inline-block;
+      width: 10rem;
+      margin-right: 1rem;
+      font-weight: bold;
+    }
+
+    .fileinfo-item .value, .setting-item .value {
+      display: inline-block;
+      width: calc(100% - 11rem);
+      user-select: text;
+    }
+
+    .help-item .key {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 12ch;
+      padding: 0.75em;
+      border-radius: var(--tile-border-radius);
+      background-color: #333;
+      text-align: center;
+      gap: 1rem;
+      font-weight: normal;
+      font-family: Consolas, 'Courier New', Courier, monospace;
+    }
+
+    .help-item .desc { display: inline-block; }
+
+    .modal input, .modal button {
+      position: relative;
+      -webkit-appearance: none;
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.5rem;
+      height: 2rem;
+      z-index: 50;
+      cursor: pointer;
+      font-size: 0.9rem;
+      overflow: hidden;
+      color: black;
+      border-radius: 2rem;
+      outline: none;
+
+      --input-background-color: #999;
+      --input-slider-color: #FFF;
+    }
+    .modal input:checked {
+      --input-background-color: var(--theme-color);
+    }
+
+    .modal .reset-defaults {
+      border: 0 none;
+      background-color: var(--theme-color);
+      color: #FFF;
+    }
+    .modal .reset-defaults:hover {
+      background-color: hsl(var(--theme-hue), 50%, 60%);
+    }
+    .modal .reset-defaults:active {
+      background-color: hsl(var(--theme-hue), 50%, 40%);
+      padding-top: 0.25rem;
+    }
+
+    .modal .setting-cache + .metadata {
+      margin-left: 1rem;
+    }
+
+    .modal .setting-cache + .metadata::after {
+      content: 'KB';
+    }
+
+    .modal input[type=button] {
+      background-color: var(--theme-color);
+      border: 0 none;
+      color: #FFF;
+      text-shadow: black 0 0 2px;
+    }
+
+    .modal input[type='checkbox'] {
+      --width: 3.5rem;
+      --diameter: 2rem;
+      --spacing: 2px;
+    }
+
+    /* Checkbox background */
+    .modal input[type='checkbox']:before {
+      content: '';
+      display: flex;
+      width: 100%;
+      height: 100%;
+
+      border-radius: var(--diameter);
+      background-color: var(--input-background-color);
+      transition:
+        left var(--transition-base),
+        background-color var(--transition-base);
+      will-change: left, background-color;
+      color: hsl(var(--theme-hue), 100%, 4%);
+    }
+
+    /* Checkbox slider */
+    .modal input[type='checkbox']:after {
+      content: 'off';
+      background-color: white;
+      border-radius: 50%;
+      height: calc(var(--diameter) - (var(--spacing) * 2));
+      width:  calc(var(--diameter) - (var(--spacing) * 2));
+      position: absolute;
+      top: var(--spacing);
+      left: var(--spacing);
+      padding: 1px;
+      transition: transform var(--transition-base);
+      will-change: transform;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+    }
+    .modal input[type='checkbox']:checked:after {
+      content: 'on';
+      transform: translateX(calc(var(--width) - var(--diameter)));
+    }
+
+    .color-scheme-change-transition, .color-scheme-change-transition * {
+      --transition-args: calc(var(--transition-base) * 3) ease;
+      transition:
+        background-color var(--transition-base),
+        background-image var(--transition-base),
+        color            var(--transition-base),
+        fill             var(--transition-base);
+    }
+
+    /* Must be declared twice. A bad selector invalids the entire declartion. */
+    /* input[type='color']:-webkit-color-swatch, */
+    input[type='color']::-webkit-color-swatch-wrapper {
+      display: none;
+    }
+    input[type='color'] {
+      background: var(--theme-color);
+      border-radius: 50%;
+      width: 2rem;
+      height: 2rem;
+      border: 0 none;
+      padding: 0;
+    }
+    input[type='color']:before {
+      content: '';
+      width: 1.5rem;
+      background-color: hsl(var(--theme-hue), 100%, 50%);
+    }
+
+    .controls {
+      grid-area: controls;
+
+      display: grid;
+      grid-template-areas:
+        "progress-bar       progress-bar     progress-bar"
+        "secondary-controls primary-controls settings-controls";
+      grid-template-rows: calc(1rem + var(--progress-bar-height)) min-content;
+      grid-template-columns: 1fr auto 1fr;
+      row-gap: 1.25rem;
+
+      position: relative;
+      padding: 1rem;
+      width: 100%;
+      text-align: center;
+
+      color: var(--primary-font-color);
+
+      transition: transform var(--transition-base);
+      will-change: transform;
+      transform: none;
+    }
+    /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
+    :-webkit-full-screen .controls {
+      position: absolute;
+      bottom: 0;
+      background-color: rgba(var(--base-overlay-color), 1);
+      --base-overlay-color: 0,0,0;
+
+      transform: none;
+    }
+    :fullscreen .controls  {
+      position: absolute;
+      bottom: 0;
+      background-color: rgba(var(--base-overlay-color), 1);
+      --base-overlay-color: 0,0,0;
+
+      transform: none;
+    }
+    :-webkit-full-screen.fadeout .controls { transform: translateY(100%); }
+    :fullscreen.fadeout .controls  { transform: translateY(100%); }
+
+    .controls button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      border: 0 none;
+      outline: none;
+
+      width: min(10vw, 3rem);
+      height: min(10vw, 3rem);
+
+      margin: 0rem 0.1rem;
+      padding: 0;
+
+      background: none;
+      cursor: pointer;
+    }
+
+    .controls button svg {
+      fill: var(--theme-color);
+      min-width: 100%;
+      min-height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .no-subtitles .btn-subtitles svg { fill: hsl(var(--theme-hue), 0%, 50%); }
+    .is-audio .btn-subtitles         { display: none !important; }
+    .controls button:hover       svg { fill: hsl(var(--theme-hue), 70%, 75%); }
+    .controls button:active      svg { fill: hsl(var(--theme-hue), 100%, 33%); }
+    .controls .stop svg { margin: 0 0.5rem; }
+
+    .primary-buttons .level-0, .primary-buttons .level-1, .primary-buttons .level-2, .primary-buttons .level-3 {
+      display: none;
+    }
+
+    .primary-buttons.volume-0 .level-0, .primary-buttons.volume-1 .level-1, .primary-buttons.volume-2 .level-2, .primary-buttons.volume-3 .level-3 {
+      display: inline-block;
+    }
+
+    .controls .btn-playback-rate:after {
+      display: block;
+
+      color: var(--base-background-color);
+      content: var(--playback-rate) 'x';
+      position: absolute;
+      text-align: center;
+
+      font-weight: bold;
+      font-size: min(2vw, 0.75rem);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /* Reset to show none */
+    .btn-play-pause .pause, .btn-play-pause .play {
+      display: none;
+    }
+
+    /* Show play button by default */
+    .btn-play-pause .play {
+      display: inline-block;
+    }
+
+    /* Loaded AND Playing */
+    /* Hide play button */
+    .is-loaded.is-playing .btn-play-pause .play { display: none; }
+    /* Show pause button */
+    .is-loaded.is-playing .btn-play-pause .pause { display: inline-block; }
+
+    button.btn-fullscreen                          { display: none; }
+    button.btn-fullscreen.enabled                  { display: inline-block; }
+    .btn-fullscreen .collapse                      { display: none; } /* Hide `.collapse` by default */
+    .btn-fullscreen .expand                        { display: block; } /* Show `.expand` by default */
+    :-webkit-full-screen .btn-fullscreen .collapse { display: block; } /* Show collapse in fullscreen mode */
+    :fullscreen          .btn-fullscreen .collapse { display: block; }
+    :-webkit-full-screen .btn-fullscreen .expand   { display: none; } /* Hide collapse in fullscreen mode */
+    :fullscreen          .btn-fullscreen .expand   { display: none; }
+    .is-audio .btn-fullscreen                      { display: none !important; }
+    
+    button.btn-pip          { display: none; }
+    button.btn-pip.enabled  { display: inline-block; }
+    .btn-pip .exit          { display: none; } /* Hide `.exit` by default */
+    .btn-pip .enter         { display: block; } /* Show `.enter` by default */
+    .is-pip .btn-pip .exit  { display: block; }
+    .is-pip .btn-pip .enter { display: none; }
+    .is-audio .btn-pip      { display: none !important; }
+
+    .current-timestamp {
+      grid-area: progress-bar;
+      display: block;
+      position: absolute;
+      right: 0;
+      top: 0;
+      margin-top: calc(0.6rem + var(--progress-bar-height));
+    }
+
+    .current-timestamp .position:before { content: var(--absolute-position); }
+    .current-timestamp .duration:before { content: var(--duration); }
+    .current-timestamp .divider:before  { content: ' / '; }
+
+    .progress-bar {
+      grid-area: progress-bar;
+      display: flex;
+      align-items: center;
+
+      z-index: 2000;
+      cursor: pointer;
+
+      position: relative;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: var(--progress-bar-height);
+
+      border-radius: 10rem;
+
+      background-color: var(--progress-bar-background-color);
+    }
+
+    .progress-bar::after, .progress-bar::before {
+      --duration: 250ms;
+
+      transition: all var(--duration) linear;
+      transition-property: left, transfor, width;
+    }
+    .is-paused .progress-bar::after,
+    .is-paused .progress-bar::before,
+    .is-stopped .progress-bar::after,
+    .is-stopped .progress-bar::before {
+      transition-duration: calc((1000/60) * 5); /* 3 frames */
+      transition-timing-function: ease-in-out;
+    }
+
+    /* Bar */
+    .progress-bar:before {
+      display: block;
+      content: '';
+      border-radius: 1rem 0 0 1rem;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: var(--relative-position);
+      background-color: var(--progress-bar-position-color);
+      margin-bottom: calc(0.4rem + var(--progress-bar-height));
+    }
+
+    /* Indicator */
+    .progress-bar:after {
+      content: '';
+      display: block;
+      position: absolute;
+
+      --indicator-position: clamp(0.45rem, var(--relative-position), calc(100% - 0.45rem));
+      --indicator-size: calc(var(--progress-bar-height) + 0.4rem);
+      left: clamp(
+        calc(var(--indicator-size) / 2),
+        var(--indicator-position),
+        calc(100% - (var(--indicator-size) / 2)));
+      width: var(--indicator-size);
+      height: var(--indicator-size);
+
+      margin-left: calc(var(--indicator-size) * -0.5);
+
+      background: hsl(var(--theme-hue), 100%, 95%);
+      border: calc(var(--indicator-size) / 4) solid var(--theme-color);
+      border-radius: 50%;
+      filter: drop-shadow(0px 0px 1px black);
+    }
+
+    .trick-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      top: calc(1rem + var(--progress-bar-height));
+      left: clamp(
+        calc(var(--trick-preview-width)/2 + 1rem),
+        var(--trick-position),
+        calc(100% - var(--trick-preview-width)/2 - 1rem)
+      );
+      width: var(--trick-preview-width);
+      margin-left: calc(var(--trick-preview-width) * -0.5);
+
+      position: absolute;
+      max-height: 0%;
+      overflow: hidden;
+      border-radius: 0 0 0.5rem 0.5rem;
+      background: rgb(32,32,32);
+      transition: max-height var(--transition-base);
+      will-change: max-height;
+      border: 0 none;
+      box-shadow: 0 0 10px black;
+      z-index: 1000;
+    }
+
+    .is-audio .trick-container {
+      display: none;
+    }
+
+    .trick-container:after {
+      content: '';
+      width: 100%;
+      height: 1rem;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-image: linear-gradient(to bottom, black, transparent);
+    }  
+    
+    .trick {
+      display: block;
+      min-width: 102%;
+      min-height: 102%;
+      margin-left: -1%;
+      margin-top: -1%;
+      border: 0 none;
+      filter: blur(0.5px);
+      object-fit: cover;
+    }  
+
+    .is-loaded .progress-bar:hover + .trick-container {
+      border: 1px solid transparent;
+      height: calc(var(--trick-preview-width) * var(--player-aspect-ratio));
+      max-height: 100%;
+    }
+
+      /* Only show this button if cloud streaming is enabled/possible */
+    .controls .btn-cloud {
+       display: none;
+       padding: 0.25rem;
+       max-height: 2.5rem;
+    }
+    .controls .btn-cloud:hover { filter: brightness(1.25); }
+    .controls .btn-local-file { margin: 0 -0.15rem; }
+    .controls .btn-onedrive { padding: 0 0.1rem; }
+
+    .controls .btn-fileinfo { display: none; }
+    .is-loaded .controls .btn-fileinfo { display: initial; }
+
+    .primary-buttons {
+      grid-area: primary-controls;
+      display: flex;
+      width: 100%;
+      position: relative;
+      justify-content: center;
+      align-items: end;
+    }
+
+    .controls-settings {
+      grid-area: settings-controls;
+
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .controls-sources {
+      grid-area: secondary-controls;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .links {
+      z-index: 500;
+      grid-area: links;
+
+      display: grid;
+      gap: var(--inter-tile-margin);
+      grid-template-columns: repeat(auto-fill, var(--tile-width));
+      justify-content: center;
+
+      max-width: 100vw;
+      margin-top: 1rem;
+
+      padding-bottom: 2rem;
+    }
+
+    .links a {
+      /* background */
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+
+      width: var(--tile-width);
+      height: var(--tile-height);
+
+      padding: 0;
+      border-radius: var(--tile-border-radius);
+
+      background-color: var(--tile-background-color);
+      color: var(--tile-font-color);
+      text-decoration: none;
+
+      /* Oversize the background to crop off bad video edges */
+      background-size: cover;
+      background-position: center;
+      background-origin: border-box;
+      background-repeat: no-repeat;
+
+      background-image: var(--image-url-0);
+      animation: animateThumbnail 1000ms infinite;
+      animation-play-state: paused;
+    }
+    .links a.prerendered { animation: none; }
+    .links a:hover { animation-play-state: running; }
+    .no-thumbnail-animation .links a { animation: unset; }
+
+    .links a .title {
+      /* Title */
+      position: absolute;
+      display: block;
+      bottom: 0;
+      left: 0;
+
+      width: 100%;
+
+      overflow-wrap: break-word;
+      font-size: 1.25rem;
+      line-height: 1.5rem;
+      text-align: left;
+      padding: 1rem;
+
+      background-color: var(--tile-title-background-color);
+      border-radius: 0 0 var(--tile-border-radius) var(--tile-border-radius);
+
+      -webkit-backdrop-filter: blur(var(--blur-base) / 4);
+      backdrop-filter: blur(var(--blur-base) / 4);
+    }
+
+    .links a.parent .title::after {
+      content: '[Parent Folder]';
+    }
+    .links a.parent .title .label {
+      display: none;
+    }
+
+
+    .links a .title .icon {
+      display: none;
+    }
+
+    .links a.parent .title .icon {
+      display: initial;
+    }
+
+    .folder .title svg {
+      height: 1em;
+      width: 1em;
+      margin-bottom: -0.18em;
+    }
+
+    .file.audio-file {
+      background-size: contain;
+    }
+
+    .folder .arrow,
+    .file .arrow {
+      /* Arrow */
+      font-size: 3rem;
+
+      display: block;
+      text-align: center;
+      padding: 0;
+    }
+
+    .file .arrow { filter: drop-shadow(0 0 0.1rem rgba(0, 0, 0, 0.5)); }
+
+    .file:hover .arrow svg,
+    .folder:hover .arrow svg,
+    .file.current .arrow svg {
+      transform: rotate(360deg);
+      width: calc(var(--tile-width) / 3);
+    }
+
+    .file .arrow svg, .folder .arrow svg {
+      width: calc(var(--tile-width) / 5);
+      will-change: width, transform;
+    }
+
+    .file svg, .folder svg {
+      --transition-options: calc(2 * var(--transition-base)) ease;
+      transition:
+        fill var(--transition-options),
+        background-blend-mode var(--transition-options),
+        transform  var(--transition-options),
+        width var(--transition-options),
+        height var(--transition-options);
+      will-change: fill, background-blend-mode, transform, width, height;
+    }
+    .file svg { fill: var(--file-color); }
+    .folder svg { fill: var(--folder-color); }
+
+    .current { background-blend-mode: luminosity; }
+    .current::before {
+      content: "";
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: hsla(var(--theme-hue), 50%, 20%, 0.25);
+    }
+
+    .file:hover     svg { fill: var(--theme-color); }
+    .current .arrow svg {
+      fill: var(--playing-color);
+      filter: drop-shadow(0px 0px 3px var(--playing-color));
+    }
+
+    .folder .arrow .closed,
+    .folder:first-of-type .arrow .open { display: block; }
+    .folder .arrow .open,
+    .folder:first-of-type .arrow .closed { display: none; }
+
+    footer {
+      grid-area: footer;
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+
+    footer a {
+      text-decoration: none;
+      color: var(--secondary-font-color);
+    }
+
+    html[data-blur="disabled"] { --blur-base: 0rem; }
+    html[data-transitions="disabled"] * { transition: none !important; will-change: none; }
+    .no-volume .btn-volume { display: none; }
+
+    @media (min-width: 1024px) { html { --tile-width: 24vw; } }
+    @media (max-width: 1024px) { html { --tile-width: 32vw; } }
+    @media (max-width: 768px)  { html { --tile-width: 48vw; } }
+    @media (max-width: 500px) {
+      html {
+        --tile-width: 96vw;
+        --progress-bar-height: 1.25rem;
+      }
+      .controls {
+        grid-template-areas:
+          "progress-bar       progress-bar"
+          "primary-controls   primary-controls"
+          "secondary-controls settings-controls";
+        grid-template-rows: min-content min-content min-content;
+        grid-template-columns: auto;
+      }
+
+      .controls-sources   { justify-content: flex-end; }
+      .controls-settings  { justify-content: flex-start; }
+      .progress-bar       { margin-bottom: 1rem; }
+      .trick-container    { display: none; }
+    }
+
+    @media (prefers-color-scheme: light) {
+      html {
+        --base-background-color: var(--base-background-color-light);
+        --primary-font-color: var(--primary-font-color-light);
+        --secondary-font-color-light: var(--secondary-font-color);
+        --tile-font-color: var(--tile-font-color-light);
+        --tile-title-background-color: var(--tile-title-background-color-light);
+        --tile-background-color: var(--tile-background-color-light);
+      }
+
+      .modal {
+        --modal-background-color: var(--modal-background-color-light);
+      }
+    }
+
+    /* @media (prefers-color-scheme: dark) {
+    } */
+
+    /* Light mode override */
+    html[data-color-scheme="light"] {
+      --base-background-color: var(--base-background-color-light);
+      --primary-font-color: var(--primary-font-color-light);
+      --secondary-font-color: var(--secondary-font-color-light);
+      --tile-font-color: var(--tile-font-color-light);
+      --tile-title-background-color: var(--tile-title-background-color-light);
+      --tile-background-color: var(--tile-background-color-light);
+    }
+
+    [data-color-scheme="light"] .modal {
+      --modal-background-color: var(--modal-background-color-light);
+    }
+
+    /* Dark mode override */
+    html[data-color-scheme="dark"] {
+      --base-background-color: var(--base-background-color-dark);
+      --primary-font-color: var(--primary-font-color-dark);
+      --secondary-font-color: var(--secondary-font-color-dark);
+      --tile-font-color: var(--tile-font-color-dark);
+      --tile-title-background-color: var(--tile-title-background-color-dark);
+      --tile-background-color: var(--tile-background-color-dark);
+    }
+
+    [data-color-scheme="dark"] .modal {
+      --modal-background-color: var(--modal-background-color-dark);
+    }
+  

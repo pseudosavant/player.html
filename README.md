@@ -7,7 +7,24 @@ One file drop-in audio and video player web app for using media files served usi
 ## Usage
 `player.html` is designed to be a drop-in audio and video player that does not require any configuration or other files.
 
-To use it, copy the [`./src/player.html`](src/player.html) file into a folder that is served over HTTP using the web server's folder listing functionality. `player.html` basically uses the folder listing as an API for enumerating the files and folders. It should work with almost any web server, but it has only been tested against NGINX, Apache, and IIS.
+To use it, build the single-file distributable and copy `./dist/player.html` into a folder that is served over HTTP using the web server's folder listing functionality. `player.html` uses the folder listing as an API for enumerating the files and folders. It should work with almost any web server, but it has only been tested against NGINX, Apache, and IIS.
+
+### Build
+The build inlines CSS, JS, SVGs, and assets into a single portable file.
+
+```
+uv run scripts/build.py
+```
+
+For continuous rebuilds while editing:
+
+```
+uv run scripts/build.py --watch
+```
+
+### Development
+- `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
+- `dist/player.html` is generated output; do not edit it by hand.
 
 ### Supported features
 

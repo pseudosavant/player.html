@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repo is a single-file web app. The "source of truth" is `src/player.html`. There is no build step and no bundler.
+This repo ships a single-file web app. Source is split under `src/` and assembled into `dist/player.html` by a tiny build script (no bundler).
 
 ## Project summary
 - `player.html` is a drop-in audio/video player for HTTP directory listings.
@@ -8,7 +8,13 @@ This repo is a single-file web app. The "source of truth" is `src/player.html`. 
 - Everything (HTML, CSS, JS, SVG icons, PWA manifest) is inlined.
 
 ## Key files and folders
-- `src/player.html`: The app. All HTML, CSS, JS, SVG icons live here.
+- `src/player.html`: Dev template (references CSS/JS/SVG sources).
+- `src/styles.css`: All styles (inlined at build time).
+- `src/js/*.js`: JS modules, inlined in order by the build.
+- `src/svg/*.svg`: SVG sprite pieces, concatenated into `.xlinks`.
+- `src/assets/*`: Binary assets inlined as data URIs at build time.
+- `dist/player.html`: Generated single-file distributable.
+- `scripts/build.py`: Build + `--watch`.
 - `README.md`: Usage and features overview.
 - `assets/`: Only for docs/screenshots; not used at runtime.
 - `videos/`: Sample media files.
@@ -36,7 +42,7 @@ This repo is a single-file web app. The "source of truth" is `src/player.html`. 
 - `.xlinks` (inline SVG sprite sheet)
 
 ## CSS architecture
-- Large `<style primary>` block at top of file.
+- Source lives in `src/styles.css`; build inlines it into `<style primary>`.
 - Heavy use of CSS custom properties for theme and sizing:
   - `--theme-hue`, `--theme-color`, `--tile-*`, `--progress-bar-*`, etc.
   - Light/dark values set via `data-color-scheme` and `prefers-color-scheme`.
@@ -48,8 +54,8 @@ This repo is a single-file web app. The "source of truth" is `src/player.html`. 
   - UX: `no-thumbnail-animation`, `fadeout` (controls autohide)
 - SVG icons are embedded and referenced with `<use xlink:href="#svg-...">`.
 
-## JavaScript modules (inline, in order)
-Each `<script type="module">` sets `const global = window` and exports to `global` when needed.
+## JavaScript modules (in order)
+Each module sets `const global = window` and exports to `global` when needed. Build inlines modules in template order.
 
 1) Global config
    - Defines `window.app`:
@@ -132,8 +138,8 @@ Thumbnail cache:
 
 
 ## Conventions and patterns
-- Single file only: new features should remain inside `src/player.html`.
-- Avoid external dependencies; embed assets (SVG, manifest) inline.
+- Source lives under `src/`; do not hand-edit `dist/player.html`.
+- Avoid external dependencies; embed assets (SVG, manifest) inline at build time.
 - Reuse `$()` helper and existing utility functions instead of new helpers.
 - Keep UI state in CSS classes (`is-*`, `no-*`) and CSS variables.
 - Prefer `setCSSVariableString/Number` for UI text/metrics shown via CSS.
@@ -146,8 +152,8 @@ Thumbnail cache:
 - Cloud pickers require HTTPS and valid app keys in `app.options.cloud`.
 
 ## Common edit locations
-- New controls or modals: edit HTML in `src/player.html` body and CSS in the primary style block.
-- New settings: add entry to `settings` object in the app module, and update CSS/behavior accordingly.
+- New controls or modals: edit HTML in `src/player.html` body and CSS in `src/styles.css`.
+- New settings: add entry to `settings` object in `src/js/app.js`, and update CSS/behavior accordingly.
 - Media support: adjust supported types in `getSupportedTypes()` and related regexes.
 - Hash/share behavior: update `getState()`, `updateHash()`, `getHash()`.
 
