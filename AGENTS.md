@@ -14,7 +14,7 @@ This repo ships a single-file web app. Source is split under `src/` and assemble
 - `src/svg/*.svg`: SVG sprite pieces, concatenated into `.xlinks`.
 - `src/assets/*`: Binary assets inlined as data URIs at build time.
 - `dist/player.html`: Generated single-file distributable.
-- `scripts/build.py`: Build + `--watch`.
+- `build.py`: Build + `--watch`.
 - `README.md`: Usage and features overview.
 - `assets/`: Only for docs/screenshots; not used at runtime.
 - `videos/`: Sample media files.

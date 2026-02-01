@@ -13,13 +13,13 @@ To use it, build the single-file distributable and copy `./dist/player.html` int
 The build inlines CSS, JS, SVGs, and assets into a single portable file.
 
 ```
-uv run scripts/build.py
+uv run build.py
 ```
 
 For continuous rebuilds while editing:
 
 ```
-uv run scripts/build.py --watch
+uv run build.py --watch
 ```
 
 ### Development
