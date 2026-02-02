@@ -203,12 +203,16 @@
       max-height: 75vh;
       margin: auto;
       background-image: url('./assets/player-poster.svg');
-      background-size: 56.25vw; /* 9/16 - icon will never be taller than a 16x9 video */
+      background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
 
       transition: filter calc(0.5 * var(--transition-base));
       will-change: filter;
+    }
+
+    body:not(.is-loaded) .player {
+      min-height: 20vw;
     }
 
     .is-audio .player {
