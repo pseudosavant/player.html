@@ -136,7 +136,7 @@
 
         function gdriveCallback(response) {
           if (
-            global.google.picker.Action.PICKED &&
+            response.action === global.google.picker.Action.PICKED &&
             response.docs &&
             response.docs[0]
           ) {
@@ -153,6 +153,8 @@
             };
 
             resolve(metadata);
+          } else if (response.action === global.google.picker.Action.CANCEL) {
+            resolve();
           }
         }
 

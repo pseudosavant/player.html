@@ -77,7 +77,7 @@
 
     function getVideo(url) {
       const $player = document.createElement('video');
-      $player.crossorigin = 'anonymous';
+      $player.crossOrigin = 'anonymous';
       $player.muted = true;
       $player.autoplay = true; // Must be set to `true` for iOS
       $player.playsInline = true; // Must be set to `true` to prevent automatic fullscreen on iOS
@@ -157,6 +157,7 @@
     }
 
     const isSeekable = (videoElement) => {
+      if (!videoElement.seekable || videoElement.seekable.length === 0) return false;
       return videoElement.seekable.end(0) === 0;
     }
     window.isSeekable = isSeekable;

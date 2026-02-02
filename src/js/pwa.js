@@ -1,4 +1,6 @@
-    const icon = document.querySelector('link[rel="shortcut icon"').href;
+    const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
+    if (!iconLink) return;
+    const icon = iconLink.href;
     const metadata = await imageMetadata(icon);
 
     const manifest = {
@@ -17,7 +19,7 @@
       ],
       display: 'standalone',
       start_url: `${window.location.origin}${window.location.pathname}`,
-      scope: window.pathname,
+      scope: window.location.pathname,
       file_handlers: [
         {
           action: location.href.split('#')[0],

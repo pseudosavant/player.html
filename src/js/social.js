@@ -1,8 +1,9 @@
+    const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
     const metadata = {
       title: document.querySelector('title').textContent,
       description: document.querySelector('meta[name="description"]').content,
       type: 'video.movie',
-      icon: document.querySelector('link[rel="shortcut icon"').href,
+      icon: iconLink ? iconLink.href : undefined,
       backgroundColor: '#FF0099'
     };
 

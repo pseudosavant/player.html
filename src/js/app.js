@@ -129,7 +129,7 @@
 
     const isMedia = (haystack, fileExtensions) => {
       const supportedMediaExtensions = app.options.supportedTypes.extensions.join('|');
-      const re = new RegExp(`\.+(${supportedMediaExtensions})+$`, 'i');
+      const re = new RegExp(`\\.+(${supportedMediaExtensions})+$`, 'i');
       return re.test(haystack);
     };
 
@@ -194,9 +194,9 @@
         const re = /^(.*)(?:\.\w+)$/i;
         const results = re.exec(url);
 
-        if (results.length > 0) return results[1];
+        if (!results || results.length === 0) return undefined;
 
-        return undefined;
+        return results[1];
       }
 
       const findThumbnail = (mediaUrl, files) => {
@@ -489,8 +489,8 @@
         console.info(`Loading media: ${url}`);
         $player.autoplay = true;
 
-        $player.once('error', console.warn(`Unable to begin playback: ${url}`));
-        $player.once('play', console.info(`Playback started: ${url}`));
+        $player.once('error', () => console.warn(`Unable to begin playback: ${url}`));
+        $player.once('play', () => console.info(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
         $player.src = $trick.src = hashState.media = url;
         $player.load();
@@ -854,18 +854,18 @@
       $player.currentTime = $player.duration * relative;
     }
 
-    const updateProgress = () => {
-      const throttledUpdate = throttle(() => {
-        updateHash();
-        updateTitle();
-      }, app.options.updateRate.timeupdate * 25);
+    const throttledUpdateHashAndTitle = throttle(() => {
+      updateHash();
+      updateTitle();
+    }, app.options.updateRate.timeupdate * 25);
 
-      const update = async () => {
+    const updateProgress = () => {
+      const update = () => {
         updateRelativePosition(getRelativePosition());
         updateAbsolutePosition($player.currentTime);
         updateRanges();
 
-        throttledUpdate();
+        throttledUpdateHashAndTitle();
       }
 
       requestAnimationFrame(update);
@@ -1022,7 +1022,8 @@
           break;
         case 'Backspace':
           e.preventDefault();
-          $('.links a').click();
+          const $firstLink = $('.links a');
+          if ($firstLink) $firstLink.click();
           break;
         case 'ArrowLeft':
           e.preventDefault();
