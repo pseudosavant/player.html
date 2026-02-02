@@ -40,6 +40,8 @@ uv run build.py --watch
 * Video thumbnails: [using prerendered thumbnail files](#thumbnails), or rendered on-the-fly in-browser
 * Animated thumbnails**
 * Thumbnail caching using `localStorage`, check cache size, clear cache
+* Playlist support: view, add, reorder, previous/next, and looping playback
+* Import and export `.m3u` playlists
 * Select your own custom theme color
 * Social media metadata (`og:\*`, `twitter:\*`)
 * Media file metadata (bitrate, resolution, etc)
@@ -47,6 +49,22 @@ uv run build.py --watch
 * Paste and Play: just do `CTRL+V` to play the media URL that you currently have in the clipboard
 * Support for playing media directly from ![onedrive](https://user-images.githubusercontent.com/455424/93652838-4cc6dd80-f9cb-11ea-8d8c-062705d5500e.png) **OneDrive** and ![gdrive](https://user-images.githubusercontent.com/455424/93652836-4c2e4700-f9cb-11ea-9a71-7325f745baf9.png) **Google Drive**. You **must supply the appropriate keys** in the `app.options.cloud` AND register your app with Microsoft and/or Google. Instructions are in the code. `player.html` also **must be served over HTTPS** for the Microsoft and Google auth flows to work. [Remix this Glitch](https://glitch.com/edit/#!/player-html-remix?path=src%2Fplayer.html%3A487%3A10) to easily check it out over HTTPS with your own API keys.
 
+## Playlists
+
+Open the playlist panel using the playlist button next to the file sources. From there you can:
+
+* Add media from the file tiles using the add button
+* Reorder items with the up/down controls
+* Jump to previous/next track (buttons in the main controls or Page Up/Page Down)
+* Toggle looping playback for the entire playlist
+* Import `.m3u` playlists from a URL (requires CORS) or from a local file
+* Export the current playlist as a `.m3u` file
+
+Notes:
+
+* Playlists are stored in memory only (they reset on refresh).
+* Looping is enabled by default and repeats the playlist.
+* Imported `.m3u` files can include relative URLs; they are resolved against the playlist URL (or the current page for local files).
 \* Be careful with concurrency. Increasing the setting above 1 does make it generate thumbnails much faster. But it is very easy for HTTP requests for generating thumbnails to saturate a connection enough that the main video gets starved for bandwidth. Especially if you browse into a folder with many dozens of videos in it.
 
 \** Animated thumbnails can consume a lot of data. The experience may degrade on slower network connections
@@ -98,4 +116,4 @@ The latest version of these web servers (others may work as well):
 
 * [MIT](./LICENSE)
 
-&copy; 2024 Paul Ellis
+&copy; 2026 Paul Ellis

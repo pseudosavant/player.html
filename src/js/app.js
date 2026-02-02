@@ -9,6 +9,7 @@
     const $help = $('.help');
     const $settings = $('.settings');
     const $subtitles = $('.subtitle-selection');
+    const $playlist = $('.playlist');
     const $currentTimestamp = $('.current-timestamp');
 
     const getSupportedTypes = () => {
@@ -53,6 +54,9 @@
     console.info(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
     const hashState = { location: '', media: '' };
+    app.playlist = [];
+    app.playlistIndex = -1;
+    app.playlistLoop = true;
 
     const urlToFolder = (url) => {
       if (isFolder(url)) return url;
@@ -260,8 +264,17 @@
       }
 
       const $el = getTargetEl(e);
+      if (!$el) return;
 
-      if ($el.hasClass('file')) actionPlay($el.href);
+      const eventPath = (e.composedPath ? e.composedPath() : [e.target]);
+      const addButtonClicked = eventPath.some((el) => el.classList && el.classList.contains('btn-add-to-playlist'));
+      if (addButtonClicked && $el && $el.hasClass('file')) {
+        e.stopImmediatePropagation();
+        addToPlaylist($el.href);
+        return;
+      }
+
+      if ($el.hasClass('file')) setPlaylistFromUrl($el.href, true);
       if ($el.hasClass('folder')) {
         hashState.location = $el.href;
         clearThumbnailQueue();
@@ -277,7 +290,12 @@
       const isAudioClass = (isAudio(url) ? 'audio-file' : '');
 
       return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='Play ${escapedUrl}' style='${(preRenderedThumbnailUrl ? '--image-url-0: url(' + preRenderedThumbnailUrl + ')': '')}' draggable='false'>
-                <div class='title' draggable='false'>${label}</div>
+                <div class='title' draggable='false'>
+                  <span class='label'>${label}</span>
+                  <button class='btn-add-to-playlist' type='button' title='Add to playlist'>
+                    <svg><use xlink:href='#svg-playlist-add'/></svg>
+                  </button>
+                </div>
                 <div class='arrow' draggable='false'>
                   <svg><use xlink:href='#svg-play'/></svg>
                 </div>
@@ -297,6 +315,366 @@
                   <svg class='closed'><use xlink:href='#svg-folder-closed'/></svg>
                 </div>
               </a>`;
+    }
+
+    const playlistItemFromUrl = (url) => {
+      const label = urlToLabel(url);
+      return { url, label: (label ? label : urlToFilename(url)) };
+    }
+
+    const updatePlaylistLoop = () => {
+      if (app.playlistLoop) {
+        $body.removeClass('playlist-loop-off');
+      } else {
+        $body.addClass('playlist-loop-off');
+      }
+    }
+
+    const togglePlaylistLoop = () => {
+      app.playlistLoop = !app.playlistLoop;
+      updatePlaylistLoop();
+    }
+
+    const getPlaylistCurrentIndex = () => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) return -1;
+      if (
+        app.playlistIndex >= 0 &&
+        app.playlistIndex < app.playlist.length &&
+        (!$player.src || app.playlist[app.playlistIndex].url === $player.src)
+      ) {
+        return app.playlistIndex;
+      }
+      if (!$player.src) return -1;
+      return app.playlist.findIndex((item) => item.url === $player.src);
+    }
+
+    const syncPlaylistCurrent = () => {
+      const index = getPlaylistCurrentIndex();
+      app.playlistIndex = index;
+      renderPlaylist();
+    }
+
+    const setPlaylistFromItem = (item, shouldPlay = true) => {
+      if (!item || !item.url) return;
+      app.playlist = [item];
+      app.playlistIndex = 0;
+      renderPlaylist();
+      if (shouldPlay) actionPlay(item.url);
+    }
+
+    const setPlaylistFromUrl = (url, shouldPlay = true) => {
+      if (!url) return;
+      setPlaylistFromItem(playlistItemFromUrl(url), shouldPlay);
+    }
+
+    const setPlaylistFromUrls = (urls) => {
+      app.playlist = (Array.isArray(urls) ? urls.map(playlistItemFromUrl) : []);
+      app.playlistIndex = app.playlist.findIndex((item) => item.url === $player.src);
+      renderPlaylist();
+    }
+
+    const addToPlaylist = (url) => {
+      if (!url) return;
+      app.playlist.push(playlistItemFromUrl(url));
+      renderPlaylist();
+    }
+
+    const hasMultiPlaylist = () => Array.isArray(app.playlist) && app.playlist.length > 1;
+
+    const updatePlaylistMultiState = () => {
+      if (hasMultiPlaylist()) {
+        $body.addClass('playlist-multiple');
+      } else {
+        $body.removeClass('playlist-multiple');
+      }
+    }
+
+    const clearPlaylist = () => {
+      app.playlist = [];
+      app.playlistIndex = -1;
+      renderPlaylist();
+    }
+
+    const playPlaylistIndex = (index) => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) return;
+      if (index < 0 || index >= app.playlist.length) return;
+      app.playlistIndex = index;
+      actionPlay(app.playlist[index].url);
+      renderPlaylist();
+    }
+
+    const advancePlaylist = (reason) => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) return;
+
+      const currentIndex = getPlaylistCurrentIndex();
+      if (currentIndex < 0) return;
+
+      var nextIndex = currentIndex + 1;
+
+      if (nextIndex >= app.playlist.length) {
+        if (!app.playlistLoop) {
+          if (reason === 'error') actionStop();
+          return;
+        }
+        nextIndex = 0;
+      }
+
+      if (nextIndex === currentIndex) {
+        if (reason === 'ended' && app.playlistLoop) {
+          playPlaylistIndex(nextIndex);
+        } else if (reason === 'error') {
+          actionStop();
+        }
+        return;
+      }
+
+      playPlaylistIndex(nextIndex);
+    }
+
+    const playNextTrack = () => {
+      if (!hasMultiPlaylist()) return;
+      const currentIndex = getPlaylistCurrentIndex();
+      if (currentIndex < 0) return;
+      var nextIndex = currentIndex + 1;
+      if (nextIndex >= app.playlist.length) {
+        if (!app.playlistLoop) return;
+        nextIndex = 0;
+      }
+      playPlaylistIndex(nextIndex);
+    }
+
+    const playPreviousTrack = () => {
+      if (!hasMultiPlaylist()) return;
+      const currentIndex = getPlaylistCurrentIndex();
+      if (currentIndex < 0) return;
+      var prevIndex = currentIndex - 1;
+      if (prevIndex < 0) {
+        if (!app.playlistLoop) return;
+        prevIndex = app.playlist.length - 1;
+      }
+      playPlaylistIndex(prevIndex);
+    }
+
+    const removePlaylistItem = (index) => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) return;
+      if (index < 0 || index >= app.playlist.length) return;
+
+      const wasCurrent = index === app.playlistIndex;
+      app.playlist.splice(index, 1);
+
+      if (app.playlist.length === 0) {
+        app.playlistIndex = -1;
+        actionStop();
+        renderPlaylist();
+        return;
+      }
+
+      if (wasCurrent) {
+        const nextIndex = (index >= app.playlist.length ? 0 : index);
+        app.playlistIndex = nextIndex;
+        if (!app.playlistLoop && index >= app.playlist.length) {
+          actionStop();
+        } else {
+          actionPlay(app.playlist[nextIndex].url);
+        }
+      } else if (index < app.playlistIndex) {
+        app.playlistIndex -= 1;
+      }
+
+      renderPlaylist();
+    }
+
+    const swapPlaylistItems = (from, to) => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) return;
+      if (to < 0 || to >= app.playlist.length) return;
+
+      const items = app.playlist;
+      const swap = items[from];
+      items[from] = items[to];
+      items[to] = swap;
+
+      if (app.playlistIndex === from) {
+        app.playlistIndex = to;
+      } else if (app.playlistIndex === to) {
+        app.playlistIndex = from;
+      }
+
+      renderPlaylist();
+    }
+
+    const parseM3U = (text, baseUrl) => {
+      if (!text) return [];
+      const lines = text.split(/\r?\n/);
+      const urls = [];
+
+      lines.forEach((line) => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return;
+        try {
+          const resolved = new URL(trimmed, baseUrl).toString();
+          urls.push(resolved);
+        } catch (e) { }
+      });
+
+      return urls;
+    }
+
+    const importPlaylistFromUrl = async () => {
+      const input = prompt('Enter an M3U URL');
+      if (!input) return;
+
+      var url;
+      try {
+        url = new URL(input, window.location.href).toString();
+      } catch (e) {
+        console.warn('Invalid playlist URL');
+        return;
+      }
+
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const urls = parseM3U(text, url);
+        setPlaylistFromUrls(urls);
+      } catch (e) {
+        console.warn('Unable to import playlist', e);
+      }
+    }
+
+    const importPlaylistFromFile = () => {
+      const $input = $(`<input type="file" accept=".m3u,.m3u8,text/plain"/>`);
+      $input.on('change', async () => {
+        const file = $input.files[0];
+        if (!file) return;
+        const text = await file.text();
+        const base = urlToFolder(window.location.href);
+        const urls = parseM3U(text, base);
+        setPlaylistFromUrls(urls);
+      });
+      $input.click();
+    }
+
+    const exportPlaylist = () => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) return;
+      const lines = ['#EXTM3U', ...app.playlist.map((item) => item.url)];
+      const blob = new Blob([lines.join('\n')], { type: 'audio/x-mpegurl' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'playlist.m3u';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    const renderPlaylist = () => {
+      if (!$playlist) return;
+      const currentIndex = getPlaylistCurrentIndex();
+      app.playlistIndex = currentIndex;
+      updatePlaylistMultiState();
+
+      var html = `
+        <li class='modal-item playlist-controls'>
+          <button class='btn-playlist-import-url' type='button' title='Import playlist from URL (requires CORS support)'>
+            <svg><use xlink:href='#svg-import'/></svg>
+            <span>Import URL</span>
+          </button>
+          <button class='btn-playlist-import-file' type='button' title='Import playlist file'>
+            <svg><use xlink:href='#svg-import'/></svg>
+            <span>Import File</span>
+          </button>
+          <button class='btn-playlist-export' type='button' title='Export playlist'>
+            <svg><use xlink:href='#svg-download'/></svg>
+            <span>Export</span>
+          </button>
+          <button class='btn-playlist-clear' type='button' title='Clear playlist'>Clear</button>
+        </li>
+      `;
+
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) {
+        html += `<li class='modal-item playlist-empty'>Playlist is empty</li>`;
+      } else {
+        app.playlist.forEach((item, index) => {
+          const isCurrent = (index === currentIndex ? 'current' : '');
+          html += `
+            <li class='modal-item playlist-item ${isCurrent}' data-index='${index}' title='${item.url}'>
+              <span class='playlist-label'>${item.label}</span>
+              <span class='playlist-actions'>
+                <button class='btn-playlist-up' type='button' title='Move up'><svg><use xlink:href='#svg-caret-up'/></svg></button>
+                <button class='btn-playlist-down' type='button' title='Move down'><svg><use xlink:href='#svg-caret-down'/></svg></button>
+                <button class='btn-playlist-remove' type='button' title='Remove from playlist'><svg><use xlink:href='#svg-playlist-remove'/></svg></button>
+              </span>
+            </li>
+          `;
+        });
+      }
+
+      $playlist.html(html);
+
+      const stopClose = (e) => e.stopImmediatePropagation();
+
+      const importUrlButton = $playlist.querySelector('.btn-playlist-import-url');
+      if (importUrlButton) {
+        importUrlButton.addEventListener('click', (e) => {
+          stopClose(e);
+          importPlaylistFromUrl();
+        });
+      }
+
+      const importFileButton = $playlist.querySelector('.btn-playlist-import-file');
+      if (importFileButton) {
+        importFileButton.addEventListener('click', (e) => {
+          stopClose(e);
+          importPlaylistFromFile();
+        });
+      }
+
+      const exportButton = $playlist.querySelector('.btn-playlist-export');
+      if (exportButton) {
+        exportButton.addEventListener('click', (e) => {
+          stopClose(e);
+          exportPlaylist();
+        });
+      }
+
+      const clearButton = $playlist.querySelector('.btn-playlist-clear');
+      if (clearButton) {
+        clearButton.addEventListener('click', (e) => {
+          stopClose(e);
+          clearPlaylist();
+        });
+      }
+
+      const items = [...$playlist.querySelectorAll('.playlist-item')];
+      items.forEach((item) => {
+        item.addEventListener('click', (e) => {
+          stopClose(e);
+          const index = parseInt(item.dataset.index, 10);
+          playPlaylistIndex(index);
+        });
+
+        const up = item.querySelector('.btn-playlist-up');
+        if (up) up.addEventListener('click', (e) => {
+          stopClose(e);
+          const index = parseInt(item.dataset.index, 10);
+          swapPlaylistItems(index, index - 1);
+        });
+
+        const down = item.querySelector('.btn-playlist-down');
+        if (down) down.addEventListener('click', (e) => {
+          stopClose(e);
+          const index = parseInt(item.dataset.index, 10);
+          swapPlaylistItems(index, index + 1);
+        });
+
+        const remove = item.querySelector('.btn-playlist-remove');
+        if (remove) remove.addEventListener('click', (e) => {
+          stopClose(e);
+          const index = parseInt(item.dataset.index, 10);
+          removePlaylistItem(index);
+        });
+      });
     }
 
     var thumbnailPromises = [];
@@ -328,7 +706,16 @@
 
     const clearThumbnailQueue = () => { thumbnailPromises = []; }
 
-    const getRelativePosition = () => $player.currentTime / $player.duration || 0;
+    const getMediaDuration = () => {
+      const duration = $player.duration;
+      if (Number.isFinite(duration)) return duration;
+      if ($player.seekable && $player.seekable.length > 0) {
+        return $player.seekable.end($player.seekable.length - 1);
+      }
+      return 0;
+    }
+
+    const getRelativePosition = () => $player.currentTime / getMediaDuration() || 0;
     const getProgressBarWidth = () => $progressBar.offsetWidth;
 
     const getState = () => {
@@ -394,7 +781,10 @@
             break;
         }
 
-        return actionPlay(metadata.url);
+        if (!metadata || !metadata.url) return;
+        const label = (metadata.name ? removeFileExtension(metadata.name) : urlToLabel(metadata.url));
+        const item = { url: metadata.url, label: (label ? label : urlToFilename(metadata.url)) };
+        return setPlaylistFromItem(item, true);
       }
     }
 
@@ -407,7 +797,7 @@
       if (clipboard && re.test(clipboard)) {
         const url = clipboard;
         console.info(`Playing media from clipboard: ${clipboard}`);
-        actionPlay(url);
+        setPlaylistFromUrl(url, true);
       }
     }
 
@@ -489,7 +879,10 @@
         console.info(`Loading media: ${url}`);
         $player.autoplay = true;
 
-        $player.once('error', () => console.warn(`Unable to begin playback: ${url}`));
+        $player.once('error', () => {
+          console.warn(`Unable to begin playback: ${url}`);
+          advancePlaylist('error');
+        });
         $player.once('play', () => console.info(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
         $player.src = $trick.src = hashState.media = url;
@@ -524,6 +917,7 @@
         console.info(`Playback stopped`);
       }
 
+      syncPlaylistCurrent();
       setCurrentMediaTile();
     }
 
@@ -535,7 +929,8 @@
             const file = await fileHandle.getFile();
             const url = URL.createObjectURL(file);
 
-            actionPlay(url);
+            const label = (file.name ? removeFileExtension(file.name) : urlToLabel(url));
+            setPlaylistFromItem({ url, label: (label ? label : urlToFilename(url)) }, true);
           }
         });
       }
@@ -760,8 +1155,10 @@
     const actionSkip = () => seek(getSkipDuration());
 
     const seek = (delta) => {
+      const duration = getMediaDuration();
       const newTime = $player.currentTime + delta;
-      return $player.currentTime = minmax(0, newTime, $player.duration);
+      if (!duration) return $player.currentTime = Math.max(0, newTime);
+      return $player.currentTime = minmax(0, newTime, duration);
     }
 
     const updateVolumeSupport = () => {
@@ -849,9 +1246,18 @@
     });
 
     /* Progress bar */
+    const getProgressBarRelative = (e) => {
+      const rect = $progressBar.getBoundingClientRect();
+      if (!rect.width) return 0;
+      const point = (e.touches && e.touches.length ? e.touches[0].clientX : e.clientX);
+      if (isUndefined(point)) return 0;
+      const raw = (point - rect.left) / rect.width;
+      return minmax(0, raw, 1);
+    }
+
     const actionProgressBarSeek = (e) => {
-      const relative = e.offsetX / getProgressBarWidth();
-      $player.currentTime = $player.duration * relative;
+      const relative = getProgressBarRelative(e);
+      $player.currentTime = getMediaDuration() * relative;
     }
 
     const throttledUpdateHashAndTitle = throttle(() => {
@@ -882,8 +1288,8 @@
     const updateTrickRelativePosition = (p) => setCSSVariableNumber('--trick-position'   , `${p * 100}%`, trickPositionEl);
 
     const progressBarTrickHover = (e) => {
-      const relative = e.layerX / getProgressBarWidth();
-      const absolute = relative * $player.duration;
+      const relative = getProgressBarRelative(e);
+      const absolute = relative * getMediaDuration();
 
       updateTrickRelativePosition(relative);
 
@@ -904,7 +1310,12 @@
 
     const syncTrickSrc = () => $trick.src = $player.src;
 
-    const playFile = (file) => { if (file) return actionPlay(URL.createObjectURL(file)); };
+    const playFile = (file) => {
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const label = (file.name ? removeFileExtension(file.name) : urlToLabel(url));
+      return setPlaylistFromItem({ url, label: (label ? label : urlToFilename(url)) }, true);
+    };
 
     const actionOpenLocalFile = () => {
       const reader = new FileReader();
@@ -940,16 +1351,22 @@
       setupModals();
       setupDragAndDrop();
       $body.on('paste', actionPasteAndPlay);
+      updatePlaylistLoop();
+      renderPlaylist();
     }
 
     const setupPrimaryControls = () => {
       $('.btn-subtitles').on('click', () => toggleModal($subtitles));
       $('.btn-fileinfo').on('click', () => toggleModal($fileinfo));
+      $('.btn-playlist').on('click', () => toggleModal($playlist));
       $('.btn-settings').on('click', () => toggleModal($settings));
       $('.btn-playback-rate').on('click', actionPlaybackRate);
       $('.btn-rewind').on('click', actionReplay);
       $('.btn-fast-forward').on('click', actionSkip);
       $('.btn-stop').on('click', actionStop);
+      $('.btn-previous').on('click', playPreviousTrack);
+      $('.btn-next').on('click', playNextTrack);
+      $('.btn-loop').on('click', togglePlaylistLoop);
       $('.btn-volume').on('click', actionVolume);
       delay(10, updateVolume);
 
@@ -972,6 +1389,7 @@
         if (!isValue) hideModals();
       });
       $help.on('click', hideModals);
+      $playlist.on('click', (e) => e.stopImmediatePropagation());
 
       setupSettingsControls();
     }
@@ -991,14 +1409,22 @@
       $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
       $player.on('pause', () => updatePlaybackState('pause'));
       $player.on('play',  () => updatePlaybackState('play'));
-      $player.on('ended', () => updatePlaybackState('stop'));
+      $player.on('ended', () => {
+        updatePlaybackState('stop');
+        advancePlaylist('ended');
+      });
       $player.on('click', () => { if ($player.src.length > 0) actionPlayPause(); });
       $player.on('dblclick', actionFullscreenToggle);
       $player.on('volumechange', updateVolume);
       $player.on('ratechange', updatePlaybackRate);
 
       $progressBar.on('mousemove', throttle(progressBarTrickHover, app.options.updateRate.trickHover));
-      $progressBar.on('click', actionProgressBarSeek);
+      if (window.PointerEvent) {
+        $progressBar.on('pointerdown', actionProgressBarSeek);
+      } else {
+        $progressBar.on('touchstart', actionProgressBarSeek);
+        $progressBar.on('click', actionProgressBarSeek);
+      }
     }
 
     const keyboardBroker = (e) => {
@@ -1024,6 +1450,14 @@
           e.preventDefault();
           const $firstLink = $('.links a');
           if ($firstLink) $firstLink.click();
+          break;
+        case 'PageUp':
+          e.preventDefault();
+          playPreviousTrack();
+          break;
+        case 'PageDown':
+          e.preventDefault();
+          playNextTrack();
           break;
         case 'ArrowLeft':
           e.preventDefault();
@@ -1066,7 +1500,7 @@
       // Prevent default when pressing contextmenu key
       $html.on('contextmenu', (e) => e.preventDefault());
     }
-    $body.on('keydown', keyboardBroker);
+    window.addEventListener('keydown', keyboardBroker);
 
     const toggleModal = ($el) => {
       if ($el.hasClass('show')) {
@@ -1646,7 +2080,7 @@
       if (hash) {
         if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
           $player.muted = true; /* Autoplay on load only works if it is muted */
-          actionPlay(hash.media);
+          setPlaylistFromUrl(hash.media, true);
         }
 
         if (hash.time && hash.time > 0) $player.currentTime = hash.time;

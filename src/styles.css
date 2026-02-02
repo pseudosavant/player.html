@@ -216,7 +216,7 @@
     }
 
     .is-audio .player {
-      max-height: 20vh;
+      min-height: 50vh;
       background-size: contain;
     }
 
@@ -282,6 +282,7 @@
     .subtitle-selection:before { content: "Select a subtitle below"; }
     .fileinfo:before { content: "File metadata"; }
     .help:before { content: "Keyboard Shortcuts" }
+    .playlist:before { content: "Playlist"; }
 
     .modal-item {
       display: flex;
@@ -433,6 +434,72 @@
       transform: translateX(calc(var(--width) - var(--diameter)));
     }
 
+    .playlist .playlist-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .playlist .playlist-controls button {
+      width: auto;
+      height: auto;
+      padding: 0.35rem 0.75rem;
+      border-radius: 1rem;
+      background-color: rgba(0,0,0,0.2);
+      color: var(--modal-font-color);
+      border: 0 none;
+      gap: 0.35rem;
+    }
+
+    .playlist .playlist-controls button svg {
+      width: 1rem;
+      height: 1rem;
+      fill: var(--modal-font-color);
+    }
+
+    .playlist-item {
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .playlist-item .playlist-label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .playlist-item.current {
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .playlist-item .playlist-actions {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .playlist-item .playlist-actions button {
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border-radius: 999px;
+      border: 0 none;
+      background-color: transparent;
+    }
+
+    .playlist-item .playlist-actions svg {
+      width: 1.5rem;
+      height: 1.5rem;
+      fill: var(--modal-font-color);
+    }
+
+    .playlist-empty {
+      justify-content: center;
+      opacity: 0.7;
+    }
+
     .color-scheme-change-transition, .color-scheme-change-transition * {
       --transition-args: calc(var(--transition-base) * 3) ease;
       transition:
@@ -510,8 +577,8 @@
       border: 0 none;
       outline: none;
 
-      width: min(10vw, 3rem);
-      height: min(10vw, 3rem);
+      width: min(10vw, 2.5rem);
+      height: min(10vw, 2.5rem);
 
       margin: 0rem 0.1rem;
       padding: 0;
@@ -588,6 +655,19 @@
     .is-pip .btn-pip .exit  { display: block; }
     .is-pip .btn-pip .enter { display: none; }
     .is-audio .btn-pip      { display: none !important; }
+
+    .btn-loop .loop-off { display: none; }
+    .playlist-loop-off .btn-loop .loop-on { display: none; }
+    .playlist-loop-off .btn-loop .loop-off { display: block; }
+
+    .btn-previous,
+    .btn-next {
+      display: none;
+    }
+    .playlist-multiple .btn-previous,
+    .playlist-multiple .btn-next {
+      display: inline-flex;
+    }
 
     .current-timestamp {
       grid-area: progress-bar;
@@ -815,7 +895,10 @@
     .links a .title {
       /* Title */
       position: absolute;
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
       bottom: 0;
       left: 0;
 
@@ -833,6 +916,43 @@
       -webkit-backdrop-filter: blur(var(--blur-base) / 4);
       backdrop-filter: blur(var(--blur-base) / 4);
     }
+
+    .links a .title .label {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 2rem;
+    }
+
+    .folder .title {
+      justify-content: flex-start;
+    }
+
+    .folder .title .label {
+      flex: 0 1 auto;
+    }
+
+    .links .btn-add-to-playlist {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      height: auto;
+      border-radius: 0;
+      border: 0 none;
+      background: none;
+      box-shadow: none;
+      color: inherit;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+
+    .links .btn-add-to-playlist svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .links a:hover .btn-add-to-playlist { opacity: 1; }
 
     .links a.parent .title::after {
       content: '[Parent Folder]';
@@ -908,7 +1028,8 @@
       background-color: hsla(var(--theme-hue), 50%, 20%, 0.25);
     }
 
-    .file:hover     svg { fill: var(--theme-color); }
+    .file:hover .arrow svg,
+    .file .btn-add-to-playlist:hover svg { fill: var(--theme-color); }
     .current .arrow svg {
       fill: var(--playing-color);
       filter: drop-shadow(0px 0px 3px var(--playing-color));

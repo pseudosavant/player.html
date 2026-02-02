@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.4.1'>
+  <meta name='version' content='2.5.0'>
   <meta name='Copyright' content='©2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -27,6 +27,8 @@
         <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of media</span></li>
         <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 10 seconds</span></li>
         <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 30 seconds</span></li>
+        <li class='help-item modal-item'><span class='key'>Page Up</span><span class='desc'>Previous track</span></li>
+        <li class='help-item modal-item'><span class='key'>Page Down</span><span class='desc'>Next track</span></li>
         <li class='help-item modal-item'><span class='key'>R</span><span class='desc'>Alter playback rate</span></li>
         <li class='help-item modal-item'><span class='key'>S</span><span class='desc'>Select a subtitle</span></li>
         <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
@@ -34,6 +36,7 @@
         <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
       </ul>
       <ul class='subtitle-selection modal'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
+      <ul class='playlist modal'></ul>
       <ul class='settings modal'></ul>
       <div class="modal-background-overlay"></div>
     </div>
@@ -47,22 +50,29 @@
         <button class='btn-settings' type='button' title='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
-        <button class='btn-play-pause' type='button' title='Toggle Play/Pause [Spacebar]'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
+        <button class='btn-previous' type='button' title='Previous track [Page Up]'><svg><use xlink:href='#svg-previous'/></svg></button>
         <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]'><svg><use xlink:href='#svg-replay'/></svg></button>
-        <button class='btn-fast-forward' type='button' title='Go forward 30 seconds [Right Arrow]'><svg><use xlink:href='#svg-skip'/></svg></button>
+        <button class='btn-play-pause' type='button' title='Toggle Play/Pause [Spacebar]'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
         <button class='btn-stop' type='button' title='Stop media playback'><svg><use xlink:href='#svg-stop'/></svg></button>
+        <button class='btn-fast-forward' type='button' title='Go forward 30 seconds [Right Arrow]'><svg><use xlink:href='#svg-skip'/></svg></button>
+        <button class='btn-next' type='button' title='Next track [Page Down]'><svg><use xlink:href='#svg-next'/></svg></button>
+        <button class='btn-loop' type='button' title='Toggle playlist looping'>
+          <svg class='loop-on'><use xlink:href='#svg-loop-on'/></svg>
+          <svg class='loop-off'><use xlink:href='#svg-loop-off'/></svg>
+        </button>
         <button class='btn-volume' type='button' title='Adjust audio volume'>
           <svg class='level-0' title="Muted"><use xlink:href='#svg-speaker-volume-0'/></svg>
           <svg class='level-1' title="Volume 33%"><use xlink:href='#svg-speaker-volume-1'/></svg>
           <svg class='level-2' title="Volume 66%"><use xlink:href='#svg-speaker-volume-2'/></svg>
           <svg class='level-3' title="Volume 100%"><use xlink:href='#svg-speaker-volume-3'/></svg>
         </button>
+        <button class='btn-playback-rate' type='button' title='Alter media playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
         <button class='btn-fullscreen' type='button' title='Toogle fullscreen mode'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
         <button class='btn-pip' type='button' title='Toggle picture-in-picture mode'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
         <button class='btn-subtitles' type='button' title='Toggle Subtitles'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
-        <button class='btn-playback-rate' type='button' title='Alter media playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
       </section>
       <section class='controls-sources'>
+        <button class='btn-playlist' type='button' title='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
         <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
         <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
         <button class='btn-local-file' type='button' title='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
