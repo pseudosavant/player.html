@@ -4,8 +4,8 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.4.0'>
-  <meta name='Copyright' content='©2024 Paul Ellis'>
+  <meta name='version' content='2.4.1'>
+  <meta name='Copyright' content='©2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
   <link rel='shortcut icon'
@@ -1475,7 +1475,9 @@
 
   <!-- PWA -->
   <script type="module">
-    const icon = document.querySelector('link[rel="shortcut icon"').href;
+    const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
+    if (!iconLink) return;
+    const icon = iconLink.href;
     const metadata = await imageMetadata(icon);
 
     const manifest = {
@@ -1494,7 +1496,7 @@
       ],
       display: 'standalone',
       start_url: `${window.location.origin}${window.location.pathname}`,
-      scope: window.pathname,
+      scope: window.location.pathname,
       file_handlers: [
         {
           action: location.href.split('#')[0],
@@ -1542,11 +1544,12 @@
 
   <!-- Social Media metadata -->
   <script type="module">
+    const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
     const metadata = {
       title: document.querySelector('title').textContent,
       description: document.querySelector('meta[name="description"]').content,
       type: 'video.movie',
-      icon: document.querySelector('link[rel="shortcut icon"').href,
+      icon: iconLink ? iconLink.href : undefined,
       backgroundColor: '#FF0099'
     };
 
@@ -1752,7 +1755,7 @@
 
     function getVideo(url) {
       const $player = document.createElement('video');
-      $player.crossorigin = 'anonymous';
+      $player.crossOrigin = 'anonymous';
       $player.muted = true;
       $player.autoplay = true; // Must be set to `true` for iOS
       $player.playsInline = true; // Must be set to `true` to prevent automatic fullscreen on iOS
@@ -1832,6 +1835,7 @@
     }
 
     const isSeekable = (videoElement) => {
+      if (!videoElement.seekable || videoElement.seekable.length === 0) return false;
       return videoElement.seekable.end(0) === 0;
     }
     window.isSeekable = isSeekable;
@@ -2092,7 +2096,7 @@
 
         function gdriveCallback(response) {
           if (
-            global.google.picker.Action.PICKED &&
+            response.action === global.google.picker.Action.PICKED &&
             response.docs &&
             response.docs[0]
           ) {
@@ -2109,6 +2113,8 @@
             };
 
             resolve(metadata);
+          } else if (response.action === global.google.picker.Action.CANCEL) {
+            resolve();
           }
         }
 
@@ -2619,7 +2625,7 @@
 
     const isMedia = (haystack, fileExtensions) => {
       const supportedMediaExtensions = app.options.supportedTypes.extensions.join('|');
-      const re = new RegExp(`\.+(${supportedMediaExtensions})+$`, 'i');
+      const re = new RegExp(`\\.+(${supportedMediaExtensions})+$`, 'i');
       return re.test(haystack);
     };
 
@@ -2684,9 +2690,9 @@
         const re = /^(.*)(?:\.\w+)$/i;
         const results = re.exec(url);
 
-        if (results.length > 0) return results[1];
+        if (!results || results.length === 0) return undefined;
 
-        return undefined;
+        return results[1];
       }
 
       const findThumbnail = (mediaUrl, files) => {
@@ -2979,8 +2985,8 @@
         console.info(`Loading media: ${url}`);
         $player.autoplay = true;
 
-        $player.once('error', console.warn(`Unable to begin playback: ${url}`));
-        $player.once('play', console.info(`Playback started: ${url}`));
+        $player.once('error', () => console.warn(`Unable to begin playback: ${url}`));
+        $player.once('play', () => console.info(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
         $player.src = $trick.src = hashState.media = url;
         $player.load();
@@ -3344,18 +3350,18 @@
       $player.currentTime = $player.duration * relative;
     }
 
-    const updateProgress = () => {
-      const throttledUpdate = throttle(() => {
-        updateHash();
-        updateTitle();
-      }, app.options.updateRate.timeupdate * 25);
+    const throttledUpdateHashAndTitle = throttle(() => {
+      updateHash();
+      updateTitle();
+    }, app.options.updateRate.timeupdate * 25);
 
-      const update = async () => {
+    const updateProgress = () => {
+      const update = () => {
         updateRelativePosition(getRelativePosition());
         updateAbsolutePosition($player.currentTime);
         updateRanges();
 
-        throttledUpdate();
+        throttledUpdateHashAndTitle();
       }
 
       requestAnimationFrame(update);
@@ -3512,7 +3518,8 @@
           break;
         case 'Backspace':
           e.preventDefault();
-          $('.links a').click();
+          const $firstLink = $('.links a');
+          if ($firstLink) $firstLink.click();
           break;
         case 'ArrowLeft':
           e.preventDefault();
