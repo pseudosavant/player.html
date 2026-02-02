@@ -40,7 +40,7 @@ uv run build.py --watch
 * Video thumbnails: [using prerendered thumbnail files](#thumbnails), or rendered on-the-fly in-browser
 * Animated thumbnails**
 * Thumbnail caching using `localStorage`, check cache size, clear cache
-* Playlist support: view, add, reorder, previous/next, and looping playback
+* Playlist support: view, add, reorder, previous/next, looping playback, and local save/restore
 * Import and export `.m3u` playlists
 * Select your own custom theme color
 * Social media metadata (`og:\*`, `twitter:\*`)
@@ -59,12 +59,14 @@ Open the playlist panel using the playlist button next to the file sources. From
 * Toggle looping playback for the entire playlist
 * Import `.m3u` playlists from a URL (requires CORS) or from a local file
 * Export the current playlist as a `.m3u` file
+* Save the playlist to browser localStorage and restore it later
 
 Notes:
 
 * Playlists are stored in memory only (they reset on refresh).
 * Looping is enabled by default and repeats the playlist.
 * Imported `.m3u` files can include relative URLs; they are resolved against the playlist URL (or the current page for local files).
+* Saved playlists live in localStorage and are only restored on demand.
 \* Be careful with concurrency. Increasing the setting above 1 does make it generate thumbnails much faster. But it is very easy for HTTP requests for generating thumbnails to saturate a connection enough that the main video gets starved for bandwidth. Especially if you browse into a folder with many dozens of videos in it.
 
 \** Animated thumbnails can consume a lot of data. The experience may degrade on slower network connections

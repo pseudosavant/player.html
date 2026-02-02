@@ -57,6 +57,7 @@
     app.playlist = [];
     app.playlistIndex = -1;
     app.playlistLoop = true;
+    const playlistStorageKey = 'playlist-saved';
 
     const urlToFolder = (url) => {
       if (isFolder(url)) return url;
@@ -568,6 +569,29 @@
       setTimeout(() => URL.revokeObjectURL(url), 0);
     }
 
+    const savePlaylistToStorage = () => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) {
+        storageRemove(playlistStorageKey);
+        return;
+      }
+      const urls = app.playlist.map((item) => item.url);
+      storageStore(playlistStorageKey, JSON.stringify(urls));
+    }
+
+    const restorePlaylistFromStorage = () => {
+      const saved = storageRetrieve(playlistStorageKey);
+      if (!saved) return;
+      try {
+        const urls = JSON.parse(saved);
+        if (!Array.isArray(urls)) return;
+        const filtered = urls.filter((url) => isString(url));
+        if (filtered.length === 0) return;
+        setPlaylistFromUrls(filtered);
+      } catch (e) {
+        console.warn('Unable to restore playlist', e);
+      }
+    }
+
     const renderPlaylist = () => {
       if (!$playlist) return;
       const currentIndex = getPlaylistCurrentIndex();
@@ -583,6 +607,14 @@
           <button class='btn-playlist-import-file' type='button' title='Import playlist file'>
             <svg><use xlink:href='#svg-import'/></svg>
             <span>Import File</span>
+          </button>
+          <button class='btn-playlist-restore' type='button' title='Restore playlist from localStorage'>
+            <svg><use xlink:href='#svg-import'/></svg>
+            <span>Restore</span>
+          </button>
+          <button class='btn-playlist-save' type='button' title='Save playlist to localStorage'>
+            <svg><use xlink:href='#svg-save'/></svg>
+            <span>Save</span>
           </button>
           <button class='btn-playlist-export' type='button' title='Export playlist'>
             <svg><use xlink:href='#svg-download'/></svg>
@@ -635,6 +667,22 @@
         exportButton.addEventListener('click', (e) => {
           stopClose(e);
           exportPlaylist();
+        });
+      }
+
+      const restoreButton = $playlist.querySelector('.btn-playlist-restore');
+      if (restoreButton) {
+        restoreButton.addEventListener('click', (e) => {
+          stopClose(e);
+          restorePlaylistFromStorage();
+        });
+      }
+
+      const saveButton = $playlist.querySelector('.btn-playlist-save');
+      if (saveButton) {
+        saveButton.addEventListener('click', (e) => {
+          stopClose(e);
+          savePlaylistToStorage();
         });
       }
 
