@@ -12,6 +12,30 @@
     const $playlist = $('.playlist');
     const $currentTimestamp = $('.current-timestamp');
 
+    const escapeHtml = (value) => {
+      if (value === null || typeof value === 'undefined') return '';
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return String(value).replace(/[&<>"']/g, (c) => map[c]);
+    }
+
+    const escapeAttr = (value) => escapeHtml(value);
+
+    const escapeCssUrl = (value) => {
+      if (value === null || typeof value === 'undefined') return '';
+      return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    const setAriaPressed = (selector, pressed) => {
+      const $el = $(selector);
+      if ($el) $el.attr('aria-pressed', pressed ? 'true' : 'false');
+    }
+
     const getSupportedTypes = () => {
       const supported = {
         extensions: [],
@@ -65,6 +89,16 @@
       var pieces = url.split('/'); // Break the URL into pieces
       pieces.pop(); // Remove the last piece (the filename)
       return pieces.join('/') + '/'; // Put it back together with a trailing /
+    }
+
+    const getParentFolder = (url) => {
+      try {
+        const base = urlToFolder(url);
+        const parentUrl = new URL('../', base).toString();
+        return (parentUrl === base ? undefined : parentUrl);
+      } catch (e) {
+        return undefined;
+      }
     }
 
     const isFile = (url) => {
@@ -170,6 +204,17 @@
       const targetUrl = url || window.location.href;
       const folder = urlToFolder(targetUrl);
       const links = await folderApiRequest(folder);
+
+      const parentUrl = getParentFolder(folder);
+      if (parentUrl && Array.isArray(links.folders)) {
+        const hasParent = links.folders.some((item) => (
+          item &&
+          (item.type === 'parent' || item.url === parentUrl || item.url === '../')
+        ));
+        if (!hasParent) {
+          links.folders.unshift({ url: parentUrl, type: 'parent', name: 'Parent' });
+        }
+      }
 
       const oldLinksHash = linksHash(app.links);
       const newLinksHash = linksHash(links);
@@ -280,20 +325,27 @@
         hashState.location = $el.href;
         clearThumbnailQueue();
         createLinks($el.href);
+        updateHash({ push: true });
+        return;
       }
 
       updateHash();
     }
 
     const createFileTemplate = (url, label, optionalClasses = '', preRenderedThumbnailUrl = '' ) => {
-      const singleQuoteEscapeCode = '%27';
-      const escapedUrl = url.replace(`'`, singleQuoteEscapeCode);
+      const escapedUrl = escapeAttr(url);
+      const safeLabel = escapeHtml(label);
+      const safeTitle = escapeAttr(`Play ${url}`);
+      const styleValue = preRenderedThumbnailUrl
+        ? `--image-url-0: url('${escapeCssUrl(preRenderedThumbnailUrl)}')`
+        : '';
+      const safeStyle = escapeAttr(styleValue);
       const isAudioClass = (isAudio(url) ? 'audio-file' : '');
 
-      return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='Play ${escapedUrl}' style='${(preRenderedThumbnailUrl ? '--image-url-0: url(' + preRenderedThumbnailUrl + ')': '')}' draggable='false'>
+      return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='${safeTitle}' style='${safeStyle}' draggable='false'>
                 <div class='title' draggable='false'>
-                  <span class='label'>${label}</span>
-                  <button class='btn-add-to-playlist' type='button' title='Add to playlist'>
+                  <span class='label'>${safeLabel}</span>
+                  <button class='btn-add-to-playlist' type='button' title='Add to playlist' aria-label='Add to playlist'>
                     <svg><use xlink:href='#svg-playlist-add'/></svg>
                   </button>
                 </div>
@@ -304,12 +356,13 @@
     }
 
     const createFolderTemplate = (url, label, optionalClasses = '') => {
-      const singleQuoteEscapeCode = '%27';
-      const escapedUrl = url.replace(`'`, singleQuoteEscapeCode);
+      const escapedUrl = escapeAttr(url);
+      const safeLabel = escapeHtml(label);
+      const safeTitle = escapeAttr(`Navigate to ${url}`);
 
-      return `<a href='${escapedUrl}' class='folder ${optionalClasses}' draggable='false' title='Navigate to ${escapedUrl}'>
+      return `<a href='${escapedUrl}' class='folder ${optionalClasses}' draggable='false' title='${safeTitle}'>
                 <div class='title' draggable='false'>
-                  <svg class='icon'><use xlink:href='#svg-folder-arrow'/></svg><span class="label">${label}</span>
+                  <svg class='icon'><use xlink:href='#svg-folder-arrow'/></svg><span class="label">${safeLabel}</span>
                 </div>
                 <div class='arrow' draggable='false'>
                   <svg class='open'><use xlink:href='#svg-folder-open'/></svg>
@@ -329,6 +382,7 @@
       } else {
         $body.addClass('playlist-loop-off');
       }
+      setAriaPressed('.btn-loop', app.playlistLoop);
     }
 
     const togglePlaylistLoop = () => {
@@ -629,13 +683,15 @@
       } else {
         app.playlist.forEach((item, index) => {
           const isCurrent = (index === currentIndex ? 'current' : '');
+          const safeTitle = escapeAttr(item.url);
+          const safeLabel = escapeHtml(item.label);
           html += `
-            <li class='modal-item playlist-item ${isCurrent}' data-index='${index}' title='${item.url}'>
-              <span class='playlist-label'>${item.label}</span>
+            <li class='modal-item playlist-item ${isCurrent}' data-index='${index}' title='${safeTitle}'>
+              <span class='playlist-label'>${safeLabel}</span>
               <span class='playlist-actions'>
-                <button class='btn-playlist-up' type='button' title='Move up'><svg><use xlink:href='#svg-caret-up'/></svg></button>
-                <button class='btn-playlist-down' type='button' title='Move down'><svg><use xlink:href='#svg-caret-down'/></svg></button>
-                <button class='btn-playlist-remove' type='button' title='Remove from playlist'><svg><use xlink:href='#svg-playlist-remove'/></svg></button>
+                <button class='btn-playlist-up' type='button' title='Move up' aria-label='Move up'><svg><use xlink:href='#svg-caret-up'/></svg></button>
+                <button class='btn-playlist-down' type='button' title='Move down' aria-label='Move down'><svg><use xlink:href='#svg-caret-down'/></svg></button>
+                <button class='btn-playlist-remove' type='button' title='Remove from playlist' aria-label='Remove from playlist'><svg><use xlink:href='#svg-playlist-remove'/></svg></button>
               </span>
             </li>
           `;
@@ -725,34 +781,75 @@
       });
     }
 
-    var thumbnailPromises = [];
+    var thumbnailQueue = [];
+    var thumbnailProcessing = false;
+    var thumbnailObserver;
     const populateThumbnails = async () => {
+      if (retrieveSetting('thumbnailing') === false) return;
       const $files = [...document.querySelectorAll('.file')];
-      const queue = [];
-
-      $files.forEach(($file) => {
-        const url = $file.href;
-        thumbnailPromises.push({$file, url});
-      });
-
-      const concurrency = app.options.thumbnails.concurrency;
-
-      for (let j = 0; j < thumbnailPromises.length; j + concurrency) {
-        // If there are promises left shift the first one into the queue
-        if (thumbnailPromises.length > 0) {
-          let work = thumbnailPromises.shift();
-          queue.push(setThumbnail(work.$file, work.url));
-        }
-
-        // If the queue is full/ready run all the promises
-        if (queue.length >= concurrency) {
-          const results = await Promise.all(queue);
-          queue.length = 0; // clears array
-        }
-      }
+      setupThumbnailObserver($files);
     }
 
-    const clearThumbnailQueue = () => { thumbnailPromises = []; }
+    const enqueueThumbnail = ($file) => {
+      if (!$file) return;
+      if ($file.dataset.thumbnailQueued === 'true' || $file.dataset.thumbnailDone === 'true') return;
+      if (hasPreRenderedThumbnail($file)) {
+        $file.dataset.thumbnailDone = 'true';
+        return;
+      }
+
+      $file.dataset.thumbnailQueued = 'true';
+      thumbnailQueue.push({$file, url: $file.href});
+      processThumbnailQueue();
+    }
+
+    const processThumbnailQueue = async () => {
+      if (thumbnailProcessing) return;
+      thumbnailProcessing = true;
+      const concurrency = Math.max(1, app.options.thumbnails.concurrency || 1);
+
+      while (thumbnailQueue.length > 0) {
+        const batch = thumbnailQueue.splice(0, concurrency);
+        await Promise.all(batch.map(async (work) => {
+          await setThumbnail(work.$file, work.url);
+          work.$file.dataset.thumbnailDone = 'true';
+        }));
+      }
+
+      thumbnailProcessing = false;
+    }
+
+    const setupThumbnailObserver = ($files) => {
+      if (thumbnailObserver) thumbnailObserver.disconnect();
+
+      if (!('IntersectionObserver' in window)) {
+        $files.forEach(enqueueThumbnail);
+        return;
+      }
+
+      thumbnailObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting && entry.intersectionRatio === 0) return;
+          const $file = entry.target;
+          if (thumbnailObserver) thumbnailObserver.unobserve($file);
+          enqueueThumbnail($file);
+        });
+      }, { root: null, rootMargin: '200px 0px', threshold: 0.1 });
+
+      $files.forEach(($file) => {
+        if ($file.dataset.thumbnailQueued === 'true' || $file.dataset.thumbnailDone === 'true') return;
+        if (hasPreRenderedThumbnail($file)) {
+          $file.dataset.thumbnailDone = 'true';
+          return;
+        }
+        thumbnailObserver.observe($file);
+      });
+    }
+
+    const clearThumbnailQueue = () => {
+      thumbnailQueue = [];
+      if (thumbnailObserver) thumbnailObserver.disconnect();
+    }
 
     const getMediaDuration = () => {
       const duration = $player.duration;
@@ -765,6 +862,16 @@
 
     const getRelativePosition = () => $player.currentTime / getMediaDuration() || 0;
     const getProgressBarWidth = () => $progressBar.offsetWidth;
+    const updateProgressBarAria = () => {
+      const duration = getMediaDuration();
+      const current = (Number.isFinite($player.currentTime) ? $player.currentTime : 0);
+      const max = (duration && Number.isFinite(duration) ? duration : 0);
+      $progressBar.attr('aria-valuemin', '0');
+      $progressBar.attr('aria-valuemax', `${Math.floor(max)}`);
+      $progressBar.attr('aria-valuenow', `${Math.floor(current)}`);
+      $progressBar.attr('aria-valuetext', `${secondsToString(current)} of ${secondsToString(max)}`);
+      $progressBar.attr('aria-disabled', max > 0 ? 'false' : 'true');
+    }
 
     const getState = () => {
       const location = hashState.location;
@@ -791,10 +898,14 @@
       return hash;
     }
 
-    const updateHash = () => {
+    const updateHash = (opts = {}) => {
       var url = new URL(location);
       url.hash = encodeHash(getState());
-      history.replaceState(null, document.title, url);
+      if (opts.push) {
+        history.pushState(null, document.title, url);
+      } else {
+        history.replaceState(null, document.title, url);
+      }
     }
 
     const updateTitle = () => {
@@ -877,6 +988,8 @@
           $el.removeClass(states[key]);
         }
       });
+
+      setAriaPressed('.btn-play-pause', state === 'play');
     }
 
     const getRanges = () => {
@@ -989,6 +1102,43 @@
       el.load(); // Must invoke `load` to complete the `src` change
     }
 
+    const subtitleDurationCache = new Map();
+
+    const getSubtitleDurationCached = async (url) => {
+      const cached = subtitleDurationCache.get(url);
+      if (typeof cached === 'number') return cached;
+      if (cached && typeof cached.then === 'function') return cached;
+
+      const promise = getSubtitleDuration(url)
+        .then((duration) => {
+          subtitleDurationCache.set(url, duration);
+          return duration;
+        })
+        .catch((e) => {
+          console.warn('Unable to read subtitle duration', e);
+          subtitleDurationCache.delete(url);
+          return 0;
+        });
+
+      subtitleDurationCache.set(url, promise);
+      return promise;
+    }
+
+    const updateSubtitleDurations = () => {
+      const items = [...$subtitles.querySelectorAll('li[data-subtitle-url]')];
+      items.forEach(async (li) => {
+        const $li = $(li);
+        if ($li.hasClass('disable-subtitles')) return;
+        if (li.dataset.subtitleDurationReady === 'true') return;
+        const url = li.dataset.subtitleUrl;
+        if (!url) return;
+        const duration = await getSubtitleDurationCached(url);
+        const name = li.dataset.subtitleName ? decodeURIComponent(li.dataset.subtitleName) : li.textContent;
+        li.textContent = `${name} (${secondsToString(duration)})`;
+        li.dataset.subtitleDurationReady = 'true';
+      });
+    }
+
     const populateSubtitles = async (subtitles) => {
       var html = '';
 
@@ -1001,9 +1151,10 @@
         for (let i = 0; i < subtitles.length; i++) {
           const url = subtitles[i].url;
           const name = decodeURIComponent(urlToFilename(url));
-          const duration = await getSubtitleDuration(url);
-          const hms = secondsToString(duration);
-          html += `<li class='subtitle-item modal-item' data-subtitle-url='${url}' title='${url}'>${name} (${hms})</li>`
+          const safeUrl = escapeAttr(url);
+          const safeName = escapeHtml(name);
+          const encodedName = encodeURIComponent(name);
+          html += `<li class='subtitle-item modal-item' data-subtitle-url='${safeUrl}' data-subtitle-name='${encodedName}' title='${safeUrl}'>${safeName}</li>`
         }
       }
 
@@ -1035,10 +1186,11 @@
         url = await urlToObjectUrl(url, 'text/vtt');
       }
 
-      getSubtitleDuration(url);
+      getSubtitleDurationCached(url);
 
       const $track = $(`<track src='${url}' label='${url}' default>`);
       $player.append($track);
+      setAriaPressed('.btn-subtitles', true);
     }
 
     const clearSubtitles = () => {
@@ -1049,6 +1201,7 @@
           $(track).remove();
         });
       }
+      setAriaPressed('.btn-subtitles', false);
     }
 
     const isSubtitle = (url) => url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
@@ -1076,18 +1229,19 @@
       const f = await fetch(url);
       const text = await f.text();
 
-      const lines = text.split('--> ');
-      const lastLinePosition = lines.length - 1;
-      const lastLine = lines[lastLinePosition];
+      const re = /(\d{2}):(\d{2}):(\d{2})[.,](\d{3})/g;
+      let lastMatch;
+      let match;
 
-      const re = /(\d{2}):(\d{2}):(\d{2})\.(\d{3})/;
-      const results = re.exec(lastLine);
+      while ((match = re.exec(text)) !== null) {
+        lastMatch = match;
+      }
 
-      if (results) {
-        const h = parseInt(results[1], 10);
-        const m = parseInt(results[2], 10);
-        const s = parseInt(results[3], 10);
-        const ms = parseInt(results[4], 10);
+      if (lastMatch) {
+        const h = parseInt(lastMatch[1], 10);
+        const m = parseInt(lastMatch[2], 10);
+        const s = parseInt(lastMatch[3], 10);
+        const ms = parseInt(lastMatch[4], 10);
 
         const seconds = h * 3600 + m * 60 + s + ms / 1000;
         return seconds;
@@ -1228,6 +1382,7 @@
     /* Fullscreen */
     const actionFullscreenToggle = () => (isFullscreen() ? exitFullscreen() : requestFullscreen());
     const isFullscreen = () => !!document.fullscreenElement || !!document.webkitFullscreenElement;
+    const updateFullscreenAria = () => setAriaPressed('.btn-fullscreen', isFullscreen());
     const updateFullscreenSupport = () => {
       const $el = $playerContainer;
 
@@ -1265,13 +1420,16 @@
       if (isPIPSupported()) {
         await $player.requestPictureInPicture();
         $html.addClass('is-pip')
+        setAriaPressed('.btn-pip', true);
       } else {
         $html.removeClass('is-pip');
+        setAriaPressed('.btn-pip', false);
       }
     };
     const exitPIP = () => {
       if (isPIPSupported()) document.exitPictureInPicture();
       $html.removeClass('is-pip');
+      setAriaPressed('.btn-pip', false);
     };
 
     const prefixRun = ($el, methods) => {
@@ -1308,6 +1466,72 @@
       $player.currentTime = getMediaDuration() * relative;
     }
 
+    let isProgressDragging = false;
+    const progressDragStart = (e) => {
+      isProgressDragging = true;
+      if (e.pointerId && $progressBar.setPointerCapture) {
+        $progressBar.setPointerCapture(e.pointerId);
+      }
+      actionProgressBarSeek(e);
+      e.preventDefault();
+    }
+
+    const progressDragMove = (e) => {
+      if (!isProgressDragging) return;
+      actionProgressBarSeek(e);
+      e.preventDefault();
+    }
+
+    const progressDragEnd = (e) => {
+      if (!isProgressDragging) return;
+      isProgressDragging = false;
+      actionProgressBarSeek(e);
+      if (e.pointerId && $progressBar.releasePointerCapture) {
+        try { $progressBar.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
+      e.preventDefault();
+    }
+
+    const progressKeyStep = (delta) => {
+      if (!getMediaDuration()) return;
+      $player.currentTime = minmax(0, $player.currentTime + delta, getMediaDuration());
+      updateProgress();
+    }
+
+    const progressKeyHandler = (e) => {
+      if (getMediaDuration() <= 0) return;
+      switch (e.key) {
+        case 'ArrowLeft':
+        case 'ArrowDown':
+          e.preventDefault();
+          progressKeyStep(-5);
+          break;
+        case 'ArrowRight':
+        case 'ArrowUp':
+          e.preventDefault();
+          progressKeyStep(5);
+          break;
+        case 'PageUp':
+          e.preventDefault();
+          progressKeyStep(-30);
+          break;
+        case 'PageDown':
+          e.preventDefault();
+          progressKeyStep(30);
+          break;
+        case 'Home':
+          e.preventDefault();
+          $player.currentTime = 0;
+          updateProgress();
+          break;
+        case 'End':
+          e.preventDefault();
+          $player.currentTime = getMediaDuration();
+          updateProgress();
+          break;
+      }
+    }
+
     const throttledUpdateHashAndTitle = throttle(() => {
       updateHash();
       updateTitle();
@@ -1318,6 +1542,7 @@
         updateRelativePosition(getRelativePosition());
         updateAbsolutePosition($player.currentTime);
         updateRanges();
+        updateProgressBarAria();
 
         throttledUpdateHashAndTitle();
       }
@@ -1425,9 +1650,13 @@
       $('.btn-play-pause').on('click', actionPlayPause);
       $('.btn-fullscreen').on('click', actionFullscreenToggle);
       updateFullscreenSupport();
+      updateFullscreenAria();
+      document.addEventListener('fullscreenchange', updateFullscreenAria);
+      document.addEventListener('webkitfullscreenchange', updateFullscreenAria);
       $('.btn-pip').on('click', actionPIPToggle);
       updatePIPSupport();
       updateVolumeSupport();
+      setAriaPressed('.btn-subtitles', false);
     }
 
     const setupModals = () => {
@@ -1468,16 +1697,46 @@
 
       $progressBar.on('mousemove', throttle(progressBarTrickHover, app.options.updateRate.trickHover));
       if (window.PointerEvent) {
-        $progressBar.on('pointerdown', actionProgressBarSeek);
+        $progressBar.on('pointerdown', progressDragStart);
+        $progressBar.on('pointermove', progressDragMove);
+        $progressBar.on('pointerup', progressDragEnd);
+        $progressBar.on('pointercancel', progressDragEnd);
       } else {
-        $progressBar.on('touchstart', actionProgressBarSeek);
-        $progressBar.on('click', actionProgressBarSeek);
+        $progressBar.on('mousedown', (e) => {
+          progressDragStart(e);
+          const move = (ev) => progressDragMove(ev);
+          const end = (ev) => {
+            progressDragEnd(ev);
+            window.removeEventListener('mousemove', move);
+            window.removeEventListener('mouseup', end);
+          };
+          window.addEventListener('mousemove', move);
+          window.addEventListener('mouseup', end);
+        });
+        $progressBar.on('touchstart', (e) => {
+          progressDragStart(e);
+          const move = (ev) => progressDragMove(ev);
+          const end = (ev) => {
+            progressDragEnd(ev);
+            window.removeEventListener('touchmove', move);
+            window.removeEventListener('touchend', end);
+            window.removeEventListener('touchcancel', end);
+          };
+          window.addEventListener('touchmove', move, { passive: false });
+          window.addEventListener('touchend', end);
+          window.addEventListener('touchcancel', end);
+        });
       }
+      $progressBar.on('keydown', progressKeyHandler);
     }
 
     const keyboardBroker = (e) => {
       // Don't handle keyboard combinations
       if (e.ctrlKey || e.altKey) return;
+      const target = e.target;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      if (target && target.classList && target.classList.contains('progress-bar')) return;
+      if (document.querySelector('.modal.show') && e.key !== 'Escape') return;
 
       switch (e.key) {
         case '0':
@@ -1545,10 +1804,9 @@
           toggleModal($settings);
           break;
       }
-      // Prevent default when pressing contextmenu key
-      $html.on('contextmenu', (e) => e.preventDefault());
     }
     window.addEventListener('keydown', keyboardBroker);
+    $html.on('contextmenu', (e) => e.preventDefault());
 
     const toggleModal = ($el) => {
       if ($el.hasClass('show')) {
@@ -1563,6 +1821,7 @@
 
     const showModal = ($el) => {
       $el.addClass('show');
+      if ($el === $subtitles) updateSubtitleDurations();
       $el.once('click', hideModals);
     }
 
@@ -1692,6 +1951,14 @@
           const $el = $('.setting-blur');
           const val = $el.checked;
           settings.blur.set(val);
+
+          if (val) {
+            try {
+              delete $('html').dataset.blur;
+            } catch (e) {}
+          } else {
+            $('html').dataset.blur = 'disabled';
+          }
         }
       },
       transitions: {
@@ -1726,6 +1993,11 @@
           const $el = $('.setting-thumbnailing');
           const val = $el.checked;
           settings.thumbnailing.set(val);
+          if (!val) {
+            clearThumbnailQueue();
+          } else {
+            populateThumbnails();
+          }
         }
       },
       animate: {
@@ -1997,19 +2269,28 @@
     }
 
     const createAnimationCSS = () => {
-      const timestamps = [...app.options.thumbnails.timestamps];
-      const n = (Array.isArray(timestamps) ? timestamps.length : 1);
+      const timestamps = (
+        Array.isArray(app.options.thumbnails.timestamps) && app.options.thumbnails.timestamps.length > 0
+          ? [...app.options.thumbnails.timestamps]
+          : [0]
+      );
+      const n = timestamps.length;
+      const style = $('style[primary]');
+      if (!style || !style.sheet) return;
 
       var animationRule = '@keyframes animateThumbnail {\r\n';
-      const unit = (1 / (n - 1)) * 100;
-
-      for (let i = 0; i < n; i++) {
-        const percent = `${unit * i}%`;
-        animationRule += `${percent} { background-image: var(--image-url-${i}); }\r\n`;
+      if (n <= 1) {
+        animationRule += `0% { background-image: var(--image-url-0); }\r\n`;
+        animationRule += `100% { background-image: var(--image-url-0); }\r\n`;
+      } else {
+        const unit = (1 / (n - 1)) * 100;
+        for (let i = 0; i < n; i++) {
+          const percent = `${unit * i}%`;
+          animationRule += `${percent} { background-image: var(--image-url-${i}); }\r\n`;
+        }
       }
       animationRule += '}';
 
-      const style = $('style[primary]');
       style.sheet.insertRule(animationRule);
 
       setCSSVariableNumber('--thumbnail-timestamps', timestamps.length, $('html'));

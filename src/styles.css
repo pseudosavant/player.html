@@ -587,6 +587,17 @@
       cursor: pointer;
     }
 
+    .controls button:focus-visible,
+    .modal input:focus-visible,
+    .modal button:focus-visible,
+    .links a:focus-visible,
+    .links .btn-add-to-playlist:focus-visible,
+    .playlist .playlist-actions button:focus-visible {
+      outline: 2px solid var(--theme-color);
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+
     .controls button svg {
       fill: var(--theme-color);
       min-width: 100%;
@@ -705,7 +716,7 @@
       --duration: 250ms;
 
       transition: all var(--duration) linear;
-      transition-property: left, transfor, width;
+      transition-property: left, transform, width;
     }
     .is-paused .progress-bar::after,
     .is-paused .progress-bar::before,
@@ -1067,10 +1078,18 @@
       .controls {
         grid-template-areas:
           "progress-bar       progress-bar"
+          "timestamp          timestamp"
           "primary-controls   primary-controls"
           "secondary-controls settings-controls";
-        grid-template-rows: min-content min-content min-content;
+        grid-template-rows: min-content min-content min-content min-content;
         grid-template-columns: auto;
+      }
+
+      .current-timestamp {
+        position: static;
+        grid-area: timestamp;
+        margin-top: 0.35rem;
+        justify-self: end;
       }
 
       .controls-sources   { justify-content: flex-end; }

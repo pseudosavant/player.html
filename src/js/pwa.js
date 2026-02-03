@@ -46,21 +46,45 @@
       document.querySelector('head').appendChild(link);
     }
 
-    function imageMetadata(dataURI) {
+    function imageMetadata(src) {
       const img = document.createElement('img');
 
-      const mimeRe = /data:([\w\/]+);/i;
-      const type = mimeRe.exec(dataURI)[1];
+      const inferImageType = (value) => {
+        const dataMatch = /^data:([^;]+);/i.exec(value);
+        if (dataMatch) return dataMatch[1];
 
-      const promise = new Promise((resolve, reject) => {
+        const extMatch = /\.([a-z0-9]+)(?:$|[?#])/i.exec(value);
+        if (extMatch) {
+          const ext = extMatch[1].toLowerCase();
+          const map = {
+            png: 'image/png',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            gif: 'image/gif',
+            webp: 'image/webp',
+            svg: 'image/svg+xml',
+            ico: 'image/x-icon'
+          };
+          if (map[ext]) return map[ext];
+        }
+
+        return 'image/png';
+      }
+
+      const type = inferImageType(src);
+
+      const promise = new Promise((resolve) => {
         img.onload = function imageSizeLoad() {
           const width = img.naturalWidth;
           const height = img.naturalHeight;
           resolve({ height, width, type });
         }
+        img.onerror = function imageSizeError() {
+          resolve({ height: 0, width: 0, type });
+        }
       });
 
-      img.src = dataURI;
+      img.src = src;
 
       return promise;
     }

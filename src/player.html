@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.5.1'>
+  <meta name='version' content='2.6.0'>
   <meta name='Copyright' content='©2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -41,41 +41,41 @@
       <div class="modal-background-overlay"></div>
     </div>
     <section class='controls'>
-      <div class='progress-bar' style=' --relative-position: 0%;'></div>
+      <div class='progress-bar' style=' --relative-position: 0%;' role='slider' tabindex='0' aria-label='Seek' aria-valuemin='0' aria-valuemax='0' aria-valuenow='0' aria-valuetext='0:00 of 0:00' aria-disabled='true'></div>
       <div class='trick-container' style='--trick-position: 0%'>
         <video class='trick'></video>
       </div>
       <section class='controls-settings'>
-        <button class='btn-fileinfo' type='button' title='Show media file information'><svg><use xlink:href='#svg-info'/></svg></button>
-        <button class='btn-settings' type='button' title='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
+        <button class='btn-fileinfo' type='button' title='Show media file information' aria-label='Show media file information'><svg><use xlink:href='#svg-info'/></svg></button>
+        <button class='btn-settings' type='button' title='Open settings' aria-label='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
-        <button class='btn-previous' type='button' title='Previous track [Page Up]'><svg><use xlink:href='#svg-previous'/></svg></button>
-        <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]'><svg><use xlink:href='#svg-replay'/></svg></button>
-        <button class='btn-play-pause' type='button' title='Toggle Play/Pause [Spacebar]'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
-        <button class='btn-stop' type='button' title='Stop media playback'><svg><use xlink:href='#svg-stop'/></svg></button>
-        <button class='btn-fast-forward' type='button' title='Go forward 30 seconds [Right Arrow]'><svg><use xlink:href='#svg-skip'/></svg></button>
-        <button class='btn-next' type='button' title='Next track [Page Down]'><svg><use xlink:href='#svg-next'/></svg></button>
-        <button class='btn-loop' type='button' title='Toggle playlist looping'>
+        <button class='btn-previous' type='button' title='Previous track [Page Up]' aria-label='Previous track'><svg><use xlink:href='#svg-previous'/></svg></button>
+        <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]' aria-label='Go back'><svg><use xlink:href='#svg-replay'/></svg></button>
+        <button class='btn-play-pause' type='button' title='Toggle Play/Pause [Spacebar]' aria-label='Play or pause' aria-pressed='false'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
+        <button class='btn-stop' type='button' title='Stop media playback' aria-label='Stop playback'><svg><use xlink:href='#svg-stop'/></svg></button>
+        <button class='btn-fast-forward' type='button' title='Go forward 30 seconds [Right Arrow]' aria-label='Go forward'><svg><use xlink:href='#svg-skip'/></svg></button>
+        <button class='btn-next' type='button' title='Next track [Page Down]' aria-label='Next track'><svg><use xlink:href='#svg-next'/></svg></button>
+        <button class='btn-loop' type='button' title='Toggle playlist looping' aria-label='Toggle playlist looping' aria-pressed='false'>
           <svg class='loop-on'><use xlink:href='#svg-loop-on'/></svg>
           <svg class='loop-off'><use xlink:href='#svg-loop-off'/></svg>
         </button>
-        <button class='btn-volume' type='button' title='Adjust audio volume'>
+        <button class='btn-volume' type='button' title='Adjust audio volume' aria-label='Adjust audio volume'>
           <svg class='level-0' title="Muted"><use xlink:href='#svg-speaker-volume-0'/></svg>
           <svg class='level-1' title="Volume 33%"><use xlink:href='#svg-speaker-volume-1'/></svg>
           <svg class='level-2' title="Volume 66%"><use xlink:href='#svg-speaker-volume-2'/></svg>
           <svg class='level-3' title="Volume 100%"><use xlink:href='#svg-speaker-volume-3'/></svg>
         </button>
-        <button class='btn-playback-rate' type='button' title='Alter media playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
-        <button class='btn-fullscreen' type='button' title='Toogle fullscreen mode'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
-        <button class='btn-pip' type='button' title='Toggle picture-in-picture mode'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
-        <button class='btn-subtitles' type='button' title='Toggle Subtitles'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
+        <button class='btn-playback-rate' type='button' title='Alter media playback rate' aria-label='Change playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
+        <button class='btn-fullscreen' type='button' title='Toogle fullscreen mode' aria-label='Toggle fullscreen' aria-pressed='false'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
+        <button class='btn-pip' type='button' title='Toggle picture-in-picture mode' aria-label='Toggle picture-in-picture' aria-pressed='false'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
+        <button class='btn-subtitles' type='button' title='Toggle Subtitles' aria-label='Select subtitles' aria-pressed='false'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
       </section>
       <section class='controls-sources'>
-        <button class='btn-playlist' type='button' title='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
-        <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
-        <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
-        <button class='btn-local-file' type='button' title='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
+        <button class='btn-playlist' type='button' title='Open playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
+        <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive' aria-label='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
+        <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive' aria-label='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
+        <button class='btn-local-file' type='button' title='Open local media file' aria-label='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
       </section>
     <div class='current-timestamp' style='--duration: "0:00"; --absolute-position: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
