@@ -12,6 +12,9 @@
     const $playlist = $('.playlist');
     const $currentTimestamp = $('.current-timestamp');
 
+    const isDebug = () => !!(app && app.options && app.options.debug);
+    const logInfo = (...args) => { if (isDebug()) console.info(...args); }
+
     const escapeHtml = (value) => {
       if (value === null || typeof value === 'undefined') return '';
       const map = {
@@ -75,7 +78,7 @@
 
     const isSupportedMimeType = (mime) => app.options.supportedTypes.mime.includes(mime);
     app.options.supportedTypes = getSupportedTypes();
-    console.info(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
+    logInfo(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
     const hashState = { location: '', media: '' };
     app.playlist = [];
@@ -959,7 +962,7 @@
 
       if (clipboard && re.test(clipboard)) {
         const url = clipboard;
-        console.info(`Playing media from clipboard: ${clipboard}`);
+        logInfo(`Playing media from clipboard: ${clipboard}`);
         setPlaylistFromUrl(url, true);
       }
     }
@@ -1041,14 +1044,14 @@
 
       // Being playback if there is a URL
       if (!!url) {
-        console.info(`Loading media: ${url}`);
+        logInfo(`Loading media: ${url}`);
         $player.autoplay = true;
 
         $player.once('error', () => {
           console.warn(`Unable to begin playback: ${url}`);
           advancePlaylist('error');
         });
-        $player.once('play', () => console.info(`Playback started: ${url}`));
+        $player.once('play', () => logInfo(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
         $player.src = $trick.src = hashState.media = url;
         $player.load();
@@ -1079,7 +1082,7 @@
         hashState.media = undefined;
         $body.removeClass('is-loaded');
 
-        console.info(`Playback stopped`);
+        logInfo(`Playback stopped`);
       }
 
       syncPlaylistCurrent();
@@ -1295,8 +1298,10 @@
       }
       $player.dataset.volume = volume;
 
-      const logVolume = (volume === 0 ? 0 : Math.pow(10, volume / 3) / 10);
-      $player.volume = logVolume;
+      const maxVolumeStep = 3;
+      const uiValue = (volume === 0 ? 0 : (volume / maxVolumeStep)); // 0..1
+      const exponent = (typeof app.options.volumeExponent === 'number' ? app.options.volumeExponent : 1.8);
+      $player.volume = (uiValue === 0 ? 0 : Math.pow(uiValue, exponent));
     }
 
     const updateVolume = () => {

@@ -4,6 +4,7 @@ import mimetypes
 import pathlib
 import re
 import time
+from datetime import datetime
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC = ROOT / "src"
@@ -98,7 +99,7 @@ def inline_assets(html: str) -> str:
     return html
 
 
-def build() -> None:
+def build(log_fn=None) -> None:
     html = read_text(TEMPLATE)
     html = inline_styles(html)
     html = remove_dev_stylesheet(html)
@@ -109,7 +110,11 @@ def build() -> None:
     DIST.mkdir(parents=True, exist_ok=True)
     out_path = DIST / "player.html"
     out_path.write_text(html, encoding="utf-8")
-    print(f"Built {out_path}")
+    message = f"Built {out_path}"
+    if log_fn:
+        log_fn(message)
+    else:
+        print(message)
 
 
 def collect_sources() -> list[pathlib.Path]:
@@ -132,17 +137,34 @@ def snapshot(paths: list[pathlib.Path]) -> dict[pathlib.Path, int]:
 
 
 def watch() -> None:
+    def log(message: str) -> None:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] {message}")
+
     paths = collect_sources()
     prev = snapshot(paths)
-    build()
-    print("Watching for changes... (Ctrl+C to stop)")
+    build(log_fn=log)
+    log("Watching for changes... (Ctrl+C to stop)")
     while True:
         time.sleep(0.5)
         paths = collect_sources()
         curr = snapshot(paths)
         if curr != prev:
+            changed = []
+            for path in sorted(set(prev.keys()) | set(curr.keys())):
+                if prev.get(path) != curr.get(path):
+                    try:
+                        changed.append(str(path.relative_to(ROOT)))
+                    except ValueError:
+                        changed.append(str(path))
+
+            if changed:
+                log(f"Change detected: {', '.join(changed)}")
+            else:
+                log("Change detected")
+
             prev = curr
-            build()
+            build(log_fn=log)
 
 
 def main() -> None:

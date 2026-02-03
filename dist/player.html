@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.7.0'>
+  <meta name='version' content='2.7.1'>
   <meta name='Copyright' content='©2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -1352,6 +1352,8 @@
     const global = window;
     global.app = {
       options: {
+        // When false, suppress non-error console noise.
+        debug: false,
         cloud: {
           onedrive: {
             clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
@@ -1373,6 +1375,9 @@
           resizeQuality: 'high', // `<canvas>` resize quality
           concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
         },
+        // Perceptual volume curve exponent for the discrete volume control (0..1 -> 0..1).
+        // Higher values give more control at lower volumes.
+        volumeExponent: 1.8,
         updateRate: { // Limit UI update rates in ms
           timeupdate: 1000/5, // media playback `timeupdate` events
           trickHover: 1000/10 // Seeking on trickplay hover overlay
@@ -1653,6 +1658,8 @@
     if (iconLink) {
       const icon = iconLink.href;
       const metadata = await imageMetadata(icon);
+      const startUrl = window.location.href.split('#')[0];
+      const scopeUrl = new URL('./', startUrl).toString();
 
       const manifest = {
         short_name: document.title,
@@ -1669,8 +1676,8 @@
           }
         ],
         display: 'standalone',
-        start_url: `${window.location.origin}${window.location.pathname}`,
-        scope: window.location.pathname,
+        start_url: startUrl,
+        scope: scopeUrl,
         file_handlers: [
           {
             action: location.href.split('#')[0],
@@ -1891,18 +1898,34 @@
       cacheKeyPrefix: 'video-thumbnail.js'
     };
 
+    const isDebug = () => {
+      try {
+        return !!(
+          global.app &&
+          global.app.options &&
+          global.app.options.thumbnails &&
+          global.app.options.thumbnails.debug
+        );
+      } catch (e) {
+        return false;
+      }
+    }
+
+    const logInfo = (...args) => { if (isDebug()) console.info(...args); }
+    const logWarn = (...args) => { if (isDebug()) console.warn(...args); }
+
     const round = (val, digits) => +val.toFixed(digits);
 
     function store(key, val) {
       try {
         localStorage.setItem(key, val);
-        console.info(`[localStorage] Persisted: ${key} `);
+        logInfo(`[localStorage] Persisted: ${key} `);
         return true;
       } catch (e) {
         if (e.name === 'QuotaExceededError') {
-          console.warn(`[localStorage] Quota exceeded: unable to persist ${key}`)
+          logWarn(`[localStorage] Quota exceeded: unable to persist ${key}`)
         } else {
-          console.warn(`[localStorage] Failed to store: ${key} (${e.name})`, e);
+          logWarn(`[localStorage] Failed to store: ${key} (${e.name})`, e);
         }
         return null;
       }
@@ -1912,7 +1935,7 @@
       try {
         return localStorage.getItem(key);
       } catch (e) {
-        console.warn(`[localStorage] Failed to retrieve: ${key}`, e);
+        logWarn(`[localStorage] Failed to retrieve: ${key}`, e);
         return null;
       }
     }
@@ -1943,11 +1966,11 @@
           const supported = localStorage.getItem(key) === val;
           localStorage.removeItem(key);
 
-        if (!supported) console.info(falseMessage);
+        if (!supported) logInfo(falseMessage);
 
         return supported;
       } catch (e) {
-        console.info(falseMessage);
+        logInfo(falseMessage);
         return false;
       }
     })();
@@ -2075,7 +2098,7 @@
             const duration = 0;
 
             thumbnails.push({URI, timestamp, duration, mime, seekTime, sizeKB});
-            console.info(`[${defaults.cacheKeyPrefix}] Retrieved from cache: ${cachedKey}`);
+            logInfo(`[${defaults.cacheKeyPrefix}] Retrieved from cache: ${cachedKey}`);
           } else if (!cacheReadOnly) {
             // Generate fresh thumbnail if not found in cache
             const $player = await getVideo(url);
@@ -2101,7 +2124,7 @@
               while (!store(cacheKey, thumbnail.URI) && keys.length > 0) {
                 const key = keys.shift(); // Select oldest cached thumbnail
                 localStorage.removeItem(key); // Remove oldest cached thumbnail
-                console.info(`[${defaults.cacheKeyPrefix}] Purged from cache: ${key}`);
+                logInfo(`[${defaults.cacheKeyPrefix}] Purged from cache: ${key}`);
               }
             }
           }
@@ -2109,7 +2132,7 @@
 
         return thumbnails;
       } catch (e) {
-        console.info(`[${defaults.cacheKeyPrefix}] Unable to create thumbnail(s) for: ${url}`, e);
+        logInfo(`[${defaults.cacheKeyPrefix}] Unable to create thumbnail(s) for: ${url}`, e);
       }
     }
 
@@ -2158,6 +2181,8 @@
   <!-- File Pickers -->
   <script type="module">
     const global = window;
+    const isDebug = () => !!(global.app && global.app.options && global.app.options.debug);
+    const logInfo = (...args) => { if (isDebug()) console.info(...args); }
     /*
       You must supply the appropriate keys in the `app.options.cloud` at the top of this <script> block AND register your app with
       Google and/or Microsoft.
@@ -2193,7 +2218,9 @@
       const p = new Promise((resolve, reject) => {
         function complete(res) {
           if (!res || !res.value || !res.value[0]) {
-            console.warn('No file returned from OneDrive');
+            // Common case: user closes the picker without choosing a file.
+            logInfo('OneDrive picker closed without a file');
+            resolve();
             return;
           }
 
@@ -2405,6 +2432,9 @@
     const $playlist = $('.playlist');
     const $currentTimestamp = $('.current-timestamp');
 
+    const isDebug = () => !!(app && app.options && app.options.debug);
+    const logInfo = (...args) => { if (isDebug()) console.info(...args); }
+
     const escapeHtml = (value) => {
       if (value === null || typeof value === 'undefined') return '';
       const map = {
@@ -2468,7 +2498,7 @@
 
     const isSupportedMimeType = (mime) => app.options.supportedTypes.mime.includes(mime);
     app.options.supportedTypes = getSupportedTypes();
-    console.info(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
+    logInfo(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
     const hashState = { location: '', media: '' };
     app.playlist = [];
@@ -3352,7 +3382,7 @@
 
       if (clipboard && re.test(clipboard)) {
         const url = clipboard;
-        console.info(`Playing media from clipboard: ${clipboard}`);
+        logInfo(`Playing media from clipboard: ${clipboard}`);
         setPlaylistFromUrl(url, true);
       }
     }
@@ -3434,14 +3464,14 @@
 
       // Being playback if there is a URL
       if (!!url) {
-        console.info(`Loading media: ${url}`);
+        logInfo(`Loading media: ${url}`);
         $player.autoplay = true;
 
         $player.once('error', () => {
           console.warn(`Unable to begin playback: ${url}`);
           advancePlaylist('error');
         });
-        $player.once('play', () => console.info(`Playback started: ${url}`));
+        $player.once('play', () => logInfo(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
         $player.src = $trick.src = hashState.media = url;
         $player.load();
@@ -3472,7 +3502,7 @@
         hashState.media = undefined;
         $body.removeClass('is-loaded');
 
-        console.info(`Playback stopped`);
+        logInfo(`Playback stopped`);
       }
 
       syncPlaylistCurrent();
@@ -3688,8 +3718,10 @@
       }
       $player.dataset.volume = volume;
 
-      const logVolume = (volume === 0 ? 0 : Math.pow(10, volume / 3) / 10);
-      $player.volume = logVolume;
+      const maxVolumeStep = 3;
+      const uiValue = (volume === 0 ? 0 : (volume / maxVolumeStep)); // 0..1
+      const exponent = (typeof app.options.volumeExponent === 'number' ? app.options.volumeExponent : 1.8);
+      $player.volume = (uiValue === 0 ? 0 : Math.pow(uiValue, exponent));
     }
 
     const updateVolume = () => {

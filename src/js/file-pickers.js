@@ -1,4 +1,6 @@
     const global = window;
+    const isDebug = () => !!(global.app && global.app.options && global.app.options.debug);
+    const logInfo = (...args) => { if (isDebug()) console.info(...args); }
     /*
       You must supply the appropriate keys in the `app.options.cloud` at the top of this <script> block AND register your app with
       Google and/or Microsoft.
@@ -34,7 +36,9 @@
       const p = new Promise((resolve, reject) => {
         function complete(res) {
           if (!res || !res.value || !res.value[0]) {
-            console.warn('No file returned from OneDrive');
+            // Common case: user closes the picker without choosing a file.
+            logInfo('OneDrive picker closed without a file');
+            resolve();
             return;
           }
 

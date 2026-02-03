@@ -2,6 +2,8 @@
     if (iconLink) {
       const icon = iconLink.href;
       const metadata = await imageMetadata(icon);
+      const startUrl = window.location.href.split('#')[0];
+      const scopeUrl = new URL('./', startUrl).toString();
 
       const manifest = {
         short_name: document.title,
@@ -18,8 +20,8 @@
           }
         ],
         display: 'standalone',
-        start_url: `${window.location.origin}${window.location.pathname}`,
-        scope: window.location.pathname,
+        start_url: startUrl,
+        scope: scopeUrl,
         file_handlers: [
           {
             action: location.href.split('#')[0],

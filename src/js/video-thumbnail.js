@@ -14,18 +14,34 @@
       cacheKeyPrefix: 'video-thumbnail.js'
     };
 
+    const isDebug = () => {
+      try {
+        return !!(
+          global.app &&
+          global.app.options &&
+          global.app.options.thumbnails &&
+          global.app.options.thumbnails.debug
+        );
+      } catch (e) {
+        return false;
+      }
+    }
+
+    const logInfo = (...args) => { if (isDebug()) console.info(...args); }
+    const logWarn = (...args) => { if (isDebug()) console.warn(...args); }
+
     const round = (val, digits) => +val.toFixed(digits);
 
     function store(key, val) {
       try {
         localStorage.setItem(key, val);
-        console.info(`[localStorage] Persisted: ${key} `);
+        logInfo(`[localStorage] Persisted: ${key} `);
         return true;
       } catch (e) {
         if (e.name === 'QuotaExceededError') {
-          console.warn(`[localStorage] Quota exceeded: unable to persist ${key}`)
+          logWarn(`[localStorage] Quota exceeded: unable to persist ${key}`)
         } else {
-          console.warn(`[localStorage] Failed to store: ${key} (${e.name})`, e);
+          logWarn(`[localStorage] Failed to store: ${key} (${e.name})`, e);
         }
         return null;
       }
@@ -35,7 +51,7 @@
       try {
         return localStorage.getItem(key);
       } catch (e) {
-        console.warn(`[localStorage] Failed to retrieve: ${key}`, e);
+        logWarn(`[localStorage] Failed to retrieve: ${key}`, e);
         return null;
       }
     }
@@ -66,11 +82,11 @@
           const supported = localStorage.getItem(key) === val;
           localStorage.removeItem(key);
 
-        if (!supported) console.info(falseMessage);
+        if (!supported) logInfo(falseMessage);
 
         return supported;
       } catch (e) {
-        console.info(falseMessage);
+        logInfo(falseMessage);
         return false;
       }
     })();
@@ -198,7 +214,7 @@
             const duration = 0;
 
             thumbnails.push({URI, timestamp, duration, mime, seekTime, sizeKB});
-            console.info(`[${defaults.cacheKeyPrefix}] Retrieved from cache: ${cachedKey}`);
+            logInfo(`[${defaults.cacheKeyPrefix}] Retrieved from cache: ${cachedKey}`);
           } else if (!cacheReadOnly) {
             // Generate fresh thumbnail if not found in cache
             const $player = await getVideo(url);
@@ -224,7 +240,7 @@
               while (!store(cacheKey, thumbnail.URI) && keys.length > 0) {
                 const key = keys.shift(); // Select oldest cached thumbnail
                 localStorage.removeItem(key); // Remove oldest cached thumbnail
-                console.info(`[${defaults.cacheKeyPrefix}] Purged from cache: ${key}`);
+                logInfo(`[${defaults.cacheKeyPrefix}] Purged from cache: ${key}`);
               }
             }
           }
@@ -232,7 +248,7 @@
 
         return thumbnails;
       } catch (e) {
-        console.info(`[${defaults.cacheKeyPrefix}] Unable to create thumbnail(s) for: ${url}`, e);
+        logInfo(`[${defaults.cacheKeyPrefix}] Unable to create thumbnail(s) for: ${url}`, e);
       }
     }
 

@@ -10,6 +10,8 @@
     const global = window;
     global.app = {
       options: {
+        // When false, suppress non-error console noise.
+        debug: false,
         cloud: {
           onedrive: {
             clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
@@ -31,6 +33,9 @@
           resizeQuality: 'high', // `<canvas>` resize quality
           concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
         },
+        // Perceptual volume curve exponent for the discrete volume control (0..1 -> 0..1).
+        // Higher values give more control at lower volumes.
+        volumeExponent: 1.8,
         updateRate: { // Limit UI update rates in ms
           timeupdate: 1000/5, // media playback `timeupdate` events
           trickHover: 1000/10 // Seeking on trickplay hover overlay
