@@ -205,14 +205,18 @@
       const folder = urlToFolder(targetUrl);
       const links = await folderApiRequest(folder);
 
+      if (Array.isArray(links.folders)) {
+        links.folders = links.folders.filter((item) => !(item && item.role === 'self'));
+      }
+
       const parentUrl = getParentFolder(folder);
       if (parentUrl && Array.isArray(links.folders)) {
         const hasParent = links.folders.some((item) => (
           item &&
-          (item.type === 'parent' || item.url === parentUrl || item.url === '../')
+          (item.role === 'parent' || item.type === 'parent' || item.url === parentUrl || item.url === '../')
         ));
         if (!hasParent) {
-          links.folders.unshift({ url: parentUrl, type: 'parent', name: 'Parent' });
+          links.folders.unshift({ url: parentUrl, role: 'parent', name: 'Parent' });
         }
       }
 
@@ -235,7 +239,7 @@
         const rawUrl = folder.url;
         const url = decodeURI(rawUrl).replace(base, '');
         const label = url;
-        const optClasses = (folder.type === 'parent' ? 'parent' : '');
+        const optClasses = ((folder.role || folder.type) === 'parent' ? 'parent' : '');
 
         html += createFolderTemplate(rawUrl, label, optClasses);
       });

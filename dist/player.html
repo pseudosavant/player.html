@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.6.0'>
+  <meta name='version' content='2.7.0'>
   <meta name='Copyright' content='©2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -2327,368 +2327,66 @@
     filePickerMain();
 </script>
 
-  <!-- folder.api -->
+  <!-- folder.api v2 -->
   <script type="module">
-    // folder.api: version 1.1.0
-    const global = window;
-    const urlType = (url) => {
-      if (isHiddenFileOrFolder(url)) {
-        return 'hidden';
-      } else if (isFolder(url)) {
-        return 'folder';
-      } else if (isFile(url)) {
-        return 'file';
-      } else {
-        return 'unknown';
-      }
+/*! folder-api browser bundle (single-file, no dependencies)
+ *  Features: fetch/iframe/auto, recursion, size/date parsing, MIME (HEAD), hidden detection.
+ *  Exposes global folderApiRequest and ESM export.
+ *  License: MIT
+ */
+ 'use strict';
+
+  // -------- Utilities --------
+  const ensureHttp = (url)=>{ const u=new URL(url); if(!/^https?:$/.test(u.protocol)) throw new Error('unsupported scheme'); u.pathname=u.pathname.replace(/\/+/g,'/'); if(!u.pathname.endsWith('/')) u.pathname+='/'; return u; };
+  const keyForVisited = (u)=> `${u.protocol}//${u.host.toLowerCase()}${u.pathname}`;
+  const parentDirectory = (u)=>{ const parts=u.pathname.split('/').filter(Boolean); if(!parts.length) return null; parts.pop(); return `${u.protocol}//${u.host}/${parts.join('/')}${parts.length?'/':''}`; };
+  const rootDirectory = (u)=> `${u.protocol}//${u.host}/`;
+  const hidden = (name)=> name.startsWith('.') && name!=='.' && name!=='..';
+  const safeDecode = (seg, errors)=>{ try{return decodeURIComponent(seg);}catch{ errors.push(`decode: failed to decode segment '${seg}'`); return seg; } };
+  const classify = (href, meta)=>{ if(href.endsWith('/')) return 'folder'; const last=href.split('/').filter(Boolean).pop()||''; if(/^[^.].*\.[^.]+$/.test(last)) return 'file'; if(/\b(dir|folder|directory)\b/i.test(meta)) return 'folder'; return 'file'; };
+  const monthIdx = m=>['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m.toLowerCase());
+  function parseDate(text, errors){ let m=/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(text); if(m){return new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0))).toISOString();} m=/(\d{2})-(\w{3})-(\d{4})\s(\d{2}):(\d{2})/.exec(text); if(m){ const mi=monthIdx(m[2]); if(mi>-1) return new Date(Date.UTC(+m[3],mi,+m[1],+m[4],+m[5],0)).toISOString(); } m=/(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{2})(?:\s?(AM|PM))/i.exec(text); if(m){ let H=+m[4]; const ap=m[6]; if(ap){ if(/am/i.test(ap)){ if(H===12)H=0;} else if(/pm/i.test(ap)){ if(H!==12)H+=12; }} return new Date(Date.UTC(+m[3],+m[1]-1,+m[2],H,+m[5],0)).toISOString(); } if(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(text)) errors.push('date: ambiguous numeric date pattern'); return null; }
+  function parseSize(text){ const re=/(\d+(?:\.\d+)?)([KMGTP]?B?)/gi; const pow={ '':0,'B':0,'K':1,'KB':1,'M':2,'MB':2,'G':3,'GB':3,'T':4,'TB':4,'P':5,'PB':5 }; const tokens=[]; let m; while((m=re.exec(text))){ const raw=m[0]; const val=+m[1]; const unit=(m[2]||'').toUpperCase(); if(isNaN(val)||pow[unit]==null) continue; if(/^\d{4}$/.test(raw)){ const idx=m.index; const around=text.slice(Math.max(0,idx-5),Math.min(text.length,idx+6)); if(/[\d]{4}[-/]/.test(around)) continue; } const bytes = Math.floor(val*Math.pow(1024,pow[unit])); tokens.push({bytes,unit,raw,index:m.index}); } if(!tokens.length) return null; let withUnit=tokens.filter(t=>/[KMGTP]/.test(t.unit)); let cand=withUnit.length?withUnit:tokens.filter(t=>{ const before=text[t.index-1]||''; const after=text[t.index+t.raw.length]||''; if(': -'.includes(before)||': -'.includes(after)) return false; if(t.bytes<=60){ const slice=text.slice(Math.max(0,t.index-5),Math.min(text.length,t.index+8)); if(/\d{1,2}:\d{2}/.test(slice)) return false; } return true; }); if(!cand.length) cand=tokens; return cand.sort((a,b)=>b.bytes-a.bytes)[0].bytes; }
+  const pushError=(errs,prefix,msg)=>errs.push(`${prefix}: ${msg}`);
+
+  // -------- Fetch / Iframe loaders --------
+  async function fetchHtml(url, opts, stats){ const controller=new AbortController(); const t=setTimeout(()=>controller.abort(),opts.timeoutMs); if(opts.signal){ if(opts.signal.aborted) controller.abort(); const on=()=>controller.abort(); opts.signal.addEventListener('abort',on,{once:true}); }
+    try{ const res=await fetch(url,{redirect:'follow',signal:controller.signal}); stats.fetches++; if(res.status!==200) throw new Error('http '+res.status); const ct=res.headers.get('content-type')||''; if(!/text\/html/i.test(ct)) throw new Error('not html'); return await res.text(); } finally { clearTimeout(t);} }
+  async function iframeHtml(url, opts, stats){ if(typeof document==='undefined') throw new Error('no DOM'); const iframe=document.createElement('iframe'); iframe.setAttribute('sandbox','allow-same-origin'); Object.assign(iframe.style,{position:'absolute',width:'0',height:'0',border:'0',visibility:'hidden'}); document.body.appendChild(iframe); stats.iframes++; return await new Promise((resolve,reject)=>{ const to=setTimeout(()=>{ cleanup(); reject(new Error('timeout')); },opts.timeoutMs); function cleanup(){ clearTimeout(to); iframe.remove(); } iframe.onload=()=>{ try{ const html=iframe.contentDocument?.documentElement?.outerHTML||''; cleanup(); resolve(html);}catch(e){ cleanup(); reject(e);} }; iframe.onerror=()=>{ cleanup(); reject(new Error('iframe error')); }; iframe.src=url; }); }
+
+  // -------- Parsing directory listing --------
+  function parseDirectory(baseUrl, html, opts){ const errors=[]; const doc=new DOMParser().parseFromString(html,'text/html'); const anchors=[]; for(const sel of ['pre a[href]','table a[href]','ul a[href]','ol a[href]']) anchors.push(...doc.querySelectorAll(sel)); if(!anchors.length) anchors.push(...doc.querySelectorAll('a[href]'));
+    const seen=new Set(); const folders=[]; const files=[]; for(const a of anchors){ const hrefRaw=a.getAttribute('href'); if(!hrefRaw) continue; if(seen.has(hrefRaw)) continue; seen.add(hrefRaw); if(/^javascript:/i.test(hrefRaw)||/^mailto:/i.test(hrefRaw)||/#/.test(hrefRaw)) continue; const abs=new URL(hrefRaw,baseUrl); if(opts.sameOriginOnly && abs.origin!==new URL(baseUrl).origin) continue; const meta=deriveLineText(a); const kind=classify(abs.toString(),meta); const parts=abs.pathname.split('/').filter(Boolean); const segRaw=parts[parts.length-(abs.toString().endsWith('/')?1:1)]||''; const decoded=safeDecode(segRaw,errors); const isHidden=hidden(decoded); const date=parseDate(meta,errors); const size=parseSize(meta); if(kind==='folder'){ folders.push({ kind:'folder', url:abs.toString().endsWith('/')?abs.toString():abs.toString()+'/', rawName:segRaw, name:decoded, hidden:isHidden, size:null, date }); } else { files.push({ kind:'file', url:abs.toString(), rawName:segRaw, name:decoded, hidden:isHidden, size:size??null, date }); }
     }
-
-    const isFile = (url) => {
-      const parsed = new URL(url);
-      const finalPosition = parsed.pathname.lastIndexOf('/') + 1;
-      const finalPart = parsed.pathname.substring(finalPosition);
-      const isFile = hasPeriod(finalPart) || isUppercase(finalPart)
-      return isFile;
-    }
-    const isUppercase = (s) => !!s.match(/^[A-Z]+$/);
-    const hasPeriod = (s) => s.indexOf('.') >= 0;
-    const isFolder = (url) => !isFile(url);
-
-    const isHiddenFileOrFolder = (url) => {
-      const reHidden = /\/\..+$/i;
-      return url.toString().match(reHidden);
-    }
-
-    const parentFolder = (url) => {
-      // Only add the first slash if the URL doesn't have it at the end
-      const append = (url.endsWith('/') ? '../' : '/../');
-      const parentUrl = new URL(url + append).toString();
-      return parentUrl;
-    }
-
-    const urlToFoldername = (url) => {
-      var pieces = url.split('/');
-      return pieces[pieces.length - 2]; // Return piece before final `/`
-    }
-
-    const urlToFilename = (url) => {
-      const re = /\/([^/]+)$/;
-      const parts = re.exec(url);
-      return (parts && parts.length > 1 ? parts[1] : url);
-    }
-
-    // Parses each node's metadata by running a function on each entry
-    const linkToMetadata = async (node, server) => {
-      return (
-        typeof servers[server] === 'function' ?
-          servers[server](node) :
-          {}
-      );
-    }
-
-    const getHeaderData = async (url) => {
-      if (!url) return {};
-
-      try {
-        const res = await fetch(url);
-        const h = res.headers;
-        return h;
-      } catch (e) {
-        console.warn(e);
-        return new Headers();
-      }
-    }
-
-    const getServer = async (url) => {
-      const headers = await getHeaderData(url);
-
-      if (isNginx(headers)) {
-        return 'nginx';
-      } else if (isApache(headers)) {
-        return 'apache';
-      } else if (isIIS(headers)) {
-        return 'iis';
-      } else if (isDeno(headers)) {
-        return 'deno';
-      }
-
-      return 'generic';
-    }
-
-    const isServer = (server) => (headers) => {
-      if (!headers.get('Server')) return false;
-
-      return headers.get('Server').toString().toLowerCase().includes(server.toLowerCase());
-    }
-    const isApache = isServer('Apache');
-    const isIIS = isServer('IIS');
-    const isNginx = isServer('Nginx');
-    const isDeno = (headers) => {
-      return (
-        Array.from(headers.keys()).length === 2 &&
-        headers.has('content-length') &&
-        headers.has('content-type')
-        );
-    };
-
-    const servers = {
-      apache: (node) => {
-        const metadata = { date: undefined, size: undefined };
-
-        if (!node.parentNode || !node.parentNode.parentNode) return metadata;
-
-        const row = node.parentNode.parentNode;
-
-        const dateNode = row.querySelector('td:nth-of-type(3)');
-        if (dateNode) {
-          const dateRe = /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/g;
-          const dateResults = dateRe.exec(dateNode.textContent);
-
-          if (dateResults) {
-            const d =     (toInteger(dateResults[1]) >= 0 ? toInteger(dateResults[1]) : undefined);
-            const m =     (isString(dateResults[2])       ? dateResults[2] : undefined);
-            const y =     (toInteger(dateResults[3]) >= 0 ? toInteger(dateResults[3]) : undefined);
-            const hours = (toInteger(dateResults[4]) >= 0 ? toInteger(dateResults[4]) : undefined);
-            const mins =  (toInteger(dateResults[5]) >= 0 ? toInteger(dateResults[5]) : undefined);
-            metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
-          }
-        }
-
-        const sizeNode = row.querySelector('td:nth-of-type(4)');
-
-        if (sizeNode) {
-          const sizeRe = /(\d+)(\w)?/g;
-          const sizeResults = sizeRe.exec(sizeNode.textContent);
-
-          if (sizeResults) {
-            const val = toInteger(sizeResults[1]);
-            const unit = (isUndefined(sizeResults[2]) ? 'B' : sizeResults[2]);
-
-            const factor = {
-              B: 0, K: 1, M: 2, G: 3, T: 4
-            }
-
-            metadata.size = Math.floor(
-              val * Math.pow(1024, factor[unit])
-            );
-          }
-        }
-
-        return metadata;
-      },
-      nginx: (node) => {
-        const metadata = { date: undefined, size: undefined };
-
-        const metadataNode = node.nextSibling;
-        if (!metadataNode) return metadata;
-
-        const text = metadataNode.textContent;
-        const re = /(\d{2})-(\w{3})-(\d{4})\s(\d{2}):(\d{2})\s+(\d+)?/g;
-        const results = re.exec(text);
-
-        if (!results) return metadata;
-        const d =     (toInteger(results[1]) >= 0 ? toInteger(results[1]) : undefined);
-        const m =     (isString(results[2])       ? results[2] : undefined);
-        const y =     (toInteger(results[3]) >= 0 ? toInteger(results[3]) : undefined);
-        const hours = (toInteger(results[4]) >= 0 ? toInteger(results[4]) : undefined);
-        const mins =  (toInteger(results[5]) >= 0 ? toInteger(results[5]) : undefined);
-        metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
-
-        metadata.size = (isNumber(toInteger(results[6])) ? toInteger(results[6]) : undefined);
-
-        return metadata;
-      },
-      iis: (node) => {
-        const metadata = { date: undefined, size: undefined };
-
-        const metadataNode = node.previousSibling;
-        if (!metadataNode) return metadata;
-
-        const re = /(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})\s(AM|PM)\s+(\d+)?/i;
-        const text = metadataNode.textContent;
-        const results = re.exec(text);
-        if (!results) return metadata;
-
-        const d =     (toInteger(results[1]) >= 0 ? toInteger(results[1]) : undefined);
-        const m =     (isString(results[2])       ? results[2] : undefined);
-        const y =     (toInteger(results[3]) >= 0 ? toInteger(results[3]) : undefined);
-        const hours = (toInteger(results[4]) >= 0 ? toInteger(results[4]) : undefined);
-        const mins =  (toInteger(results[5]) >= 0 ? toInteger(results[5]) : undefined);
-        metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
-
-        metadata.size = (isNumber(toInteger(results[7])) ? toInteger(results[7]) : undefined);
-
-        return metadata;
-      },
-      deno: (node) => {
-        const row = node.parentElement.parentElement;
-        const sizeString = row.querySelector('td:nth-of-type(2)').innerText;
-        const sizeRe = /([\d\.]+)(\w)/;
-
-        const parsed = sizeRe.exec(sizeString);
-        if (!parsed) return {};
-
-        const value = toNumber(parsed[1]);
-        if (!isNumber(value)) return {};
-        
-        const unit = parsed[2].trim();
-        const units = {
-          B: 1,
-          K: 1000,
-          M: 1_000_000,
-          G: 1_000_000_000,
-          T: 1_000_000_000_000
-        }
-
-        const size = value * units[unit];
-        const metadata = { size };
-
-        return metadata;
-      },
-      fallback: (node) => {
-        const metadata = { date: undefined, size: undefined };
-
-        const metadataNode = node.nextSibling;
-        if (!metadataNode) return metadata;
-
-        const text = metadataNode.textContent;
-        const re = /(\d{2})-(\w{3})-(\d{4})\s(\d{2}):(\d{2})\s+(\d+)?/g;
-        const results = re.exec(text);
-
-        if (!results) return metadata;
-        const d =     (toInteger(results[1]) >= 0 ? toInteger(results[1]) : undefined);
-        const m =     (isString(results[2])       ? results[2] : undefined);
-        const y =     (toInteger(results[3]) >= 0 ? toInteger(results[3]) : undefined);
-        const hours = (toInteger(results[4]) >= 0 ? toInteger(results[4]) : undefined);
-        const mins =  (toInteger(results[5]) >= 0 ? toInteger(results[5]) : undefined);
-        metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
-
-        metadata.size = (isNumber(toInteger(results[6])) ? toInteger(results[6]) : undefined);
-
-        return metadata;
-      },
-    }
-
-    const removeDuplicates = (items) => {
-      const o = {};
-
-      items.forEach((item) => {
-        const key = item.href;
-        o[key] = item;
-      });
-
-      return Object.values(o);
-    }
-
-    const getLinksFromFrame = async (frame, baseUrl) => {
-      const server = await getServer(baseUrl) || 'generic';
-
-      var query;
-
-      switch (server) {
-        case 'apache':
-          query = 'td a';
-
-          if ([...frame.contentDocument.querySelectorAll(query)].length === 0) {
-            query = 'a'; // Fallback to any `<a>` if none are found
-          }
-
-          break;
-        case 'deno':
-        case 'iis':
-        case 'nginx':
-        default:
-          query = 'a';
-          break;
-      }
-
-      const links = removeDuplicates([...frame.contentDocument.querySelectorAll(query)]);
-      const folders = [];
-      const files = [];
-
-      for (var i = 0; i < links.length; i++) {
-        const link = links[i];
-        const url = link.toString();
-        const type = urlType(url);
-
-        var target;
-        const metadata = await linkToMetadata(link, server);
-        const res = { url };
-
-        switch (type) {
-          case 'folder':
-            res.name = urlToFoldername(url);
-            res.type = 'child';
-            target = folders;
-            break;
-          case 'file':
-            res.name = urlToFilename(url);
-            target = files;
-            break;
-        }
-
-        if (metadata.size) res.size = metadata.size;
-        if (metadata.date) res.date = metadata.date;
-
-        if (target === folders) {
-          if (server === 'apache' && !metadata.date || // Apache never has a date for parent folders
-            url === '../' ||
-            url === parentFolder(baseUrl)
-          ) {
-            res.type = 'parent';
-          } else if (url === '/') {
-            res.type = 'root';
-          }
-        }
-
-        if (target) target.push(res);
-      }
-
-      // Populate a parent folder if no folders are listed
-      if (folders.length === 0) {
-        const parent = {
-          type: 'parent',
-          url: parentFolder(baseUrl),
-          name: 'Parent'
-        }
-
-        folders.push(parent);
-      }
-
-      return { server, folders, files };
-    }
-
-    const folderApiRequest = async (url) => {
-      const $frame = document.createElement('iframe');
-      $frame.style.visibility = 'hidden';
-      $frame.style.overflow = 'hidden';
-      $frame.style.width = 0;
-      $frame.style.height = 0;        
-      document.querySelector('body').appendChild($frame); // `<iframe>` must be appended before setting `src` or iOS calls load on `appendChild` as well
-
-      const promise = new Promise((resolve, reject) => {
-        $frame.addEventListener('error', reject, false);
-
-        $frame.addEventListener('load', async () => {
-          const links = await getLinksFromFrame($frame, url);
-          $frame.parentElement.removeChild($frame);
-          resolve(links);
-        }, false);
-      });
-
-      $frame.src = url; // Setting src starts loading
-
-      return promise;
-    }
-
-    const toNumber = (d) => +d;
-    const toInteger = (d) => parseInt(d, 10);
-    const is = (type) => (v) => typeof v === type;
-    const isNumber = is('number');
-    const isString = is('string');
-    const isUndefined = is('undefined');
-
-    global.folderApiRequest = folderApiRequest;
+    return { folders, files, errors }; }
+  function deriveLineText(a){ const tr=a.closest('tr'); if(tr) return tr.textContent||''; const li=a.closest('li'); if(li) return li.textContent||''; const pre=a.closest('pre'); if(pre){ const lines=pre.textContent.split(/\n/); const t=a.textContent?.trim(); const line=lines.find(l=>t&&l.includes(t)); return line||a.textContent||''; } return a.parentElement?.textContent||a.textContent||''; }
+
+  // -------- MIME enrichment --------
+  async function enrichMime(files, opts, stats, errors){ if(!opts.includeMime||!files.length) return; const limit=Math.max(1,opts.headConcurrency); let active=0; const queue=[]; const run=async(fn)=>{ if(active>=limit) return await new Promise(r=>queue.push(()=>r(run(fn)))); active++; try{ await fn(); } finally { active--; const n=queue.shift(); if(n) n(); } };
+    await Promise.all(files.map(f=>run(async()=>{ try{ const c=new AbortController(); const to=setTimeout(()=>c.abort(),opts.timeoutMs); const res=await fetch(f.url,{method:'HEAD',signal:c.signal}); stats.heads++; clearTimeout(to); if(res.ok){ if(!f.mime) f.mime=res.headers.get('content-type'); const len=res.headers.get('content-length'); if(len&&!f.size){ const n=+len; if(!isNaN(n)) f.size=n; } } else if(res.status===405||res.status===501){ pushError(errors,'mime','HEAD not supported'); } } catch{ pushError(errors,'mime',`failed HEAD for ${f.url}`); } })) ); }
+
+  // -------- Traversal --------
+  async function traverse(startUrl, opts, state){ const normalized=ensureHttp(startUrl).toString(); const u=new URL(normalized); const key=keyForVisited(u); if(state.visited.has(key)){ pushError(state.errors,'loop',`already visited ${normalized}`); return makeNode(normalized,u,0,'self'); } state.visited.add(key); const node=makeNode(normalized,u,0,'self'); state.allFolders.push(node); await loadDir(node,0); async function loadDir(cur,depth){ if(state.safety>50000){ pushError(state.errors,'limit','entry limit exceeded'); return; } let html=null; try{ if(opts.mode==='fetch'||opts.mode==='auto') html=await fetchHtml(cur.url,opts,state.stats); } catch(e){ if(opts.mode==='auto'){ html=await iframeHtml(cur.url,opts,state.stats); } else if(opts.mode==='iframe'){ html=await iframeHtml(cur.url,opts,state.stats); } else { throw e; } }
+      if(html==null) throw new Error('failed to load directory'); const parsed=parseDirectory(cur.url,html,opts); parsed.errors.forEach(e=>state.errors.push(e)); const curUrl=new URL(cur.url); const root=rootDirectory(curUrl); const parent=parentDirectory(curUrl);
+  for(const f of parsed.folders){ const fu=new URL(f.url); const depthFolder=folderDepth(curUrl,fu); const role= roleFor(f.url, normalized, root, parent); const fe={ kind:'folder', url:f.url, rawName:f.rawName, name:f.name, hidden:f.hidden, size:null, date:f.date, role, depth:depthFolder, children:[], files:[] }; if(role==='child') cur.children.push(fe); if(!state.allFolders.find(x=>x.url===fe.url && x.role===fe.role)) state.allFolders.push(fe); state.safety++; }
+      for(const fi of parsed.files){ const file={ kind:'file', url:fi.url, rawName:fi.rawName, name:fi.name, hidden:fi.hidden, size:fi.size, date:fi.date }; cur.files.push(file); state.allFiles.push(file); state.safety++; }
+      if(depth<opts.maxDepth){ for(const ch of cur.children){ const k=keyForVisited(new URL(ch.url)); if(state.visited.has(k)) continue; state.visited.add(k); await loadDir(ch,depth+1); } }
+      state.maxDepth=Math.max(state.maxDepth,depth); }
+    return node; }
+  function makeNode(url,u,depth,role){ const seg=u.pathname.split('/').filter(Boolean).pop()||''; return { kind:'folder', url, rawName:seg, name:seg, hidden:hidden(seg), size:null, date:null, role, depth, children:[], files:[] }; }
+  const folderDepth=(base,cand)=>{ const b=base.pathname.split('/').filter(Boolean); const c=cand.pathname.split('/').filter(Boolean); if(c.length<b.length) return 0; return c.length - b.length; };
+  const roleFor=(url,start,root,parent)=>{ if(url===start) return 'self'; if(url===root) return 'root'; if(parent && url===parent) return 'parent'; return 'child'; };
+
+  // -------- Option normalization --------
+  const norm=(o={})=>({ maxDepth: Math.max(0,o.maxDepth||0), mode: o.mode||'auto', includeMime: !!o.includeMime, headConcurrency: Math.max(1,o.headConcurrency||6), timeoutMs: Math.max(100,o.timeoutMs||15000), sameOriginOnly: o.sameOriginOnly!==false, signal: o.signal });
+
+  // -------- Public API --------
+  export async function folderApiRequest(url, options){ const opts=norm(options||{}); const start= (typeof performance!=='undefined'&&performance.now)? performance.now(): Date.now(); const state={ visited:new Set(), allFolders:[], allFiles:[], errors:[], stats:{fetches:0,iframes:0,heads:0}, safety:0, maxDepth:0 }; const root=await traverse(url, opts, state); if(opts.includeMime) await enrichMime(state.allFiles, opts, state.stats, state.errors); const duration=((typeof performance!=='undefined'&&performance.now)? performance.now(): Date.now())-start; const entries=[...state.allFolders, ...state.allFiles]; return { url: root.url, root, folders: state.allFolders, files: state.allFiles, entries, generatedAt: new Date().toISOString(), errors: state.errors, stats:{ fetches: state.stats.fetches, iframes: state.stats.iframes, heads: state.stats.heads, durationMs: duration, maxDepth: state.maxDepth } }; }
+
+  // Attach global for convenience in browsers when loaded via <script type="module">
+  if (typeof globalThis !== 'undefined' && !globalThis.folderApiRequest) {
+    globalThis.folderApiRequest = folderApiRequest;
+  }
 </script>
 
   <!-- App code -->
@@ -2900,14 +2598,18 @@
       const folder = urlToFolder(targetUrl);
       const links = await folderApiRequest(folder);
 
+      if (Array.isArray(links.folders)) {
+        links.folders = links.folders.filter((item) => !(item && item.role === 'self'));
+      }
+
       const parentUrl = getParentFolder(folder);
       if (parentUrl && Array.isArray(links.folders)) {
         const hasParent = links.folders.some((item) => (
           item &&
-          (item.type === 'parent' || item.url === parentUrl || item.url === '../')
+          (item.role === 'parent' || item.type === 'parent' || item.url === parentUrl || item.url === '../')
         ));
         if (!hasParent) {
-          links.folders.unshift({ url: parentUrl, type: 'parent', name: 'Parent' });
+          links.folders.unshift({ url: parentUrl, role: 'parent', name: 'Parent' });
         }
       }
 
@@ -2930,7 +2632,7 @@
         const rawUrl = folder.url;
         const url = decodeURI(rawUrl).replace(base, '');
         const label = url;
-        const optClasses = (folder.type === 'parent' ? 'parent' : '');
+        const optClasses = ((folder.role || folder.type) === 'parent' ? 'parent' : '');
 
         html += createFolderTemplate(rawUrl, label, optClasses);
       });
