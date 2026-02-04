@@ -923,7 +923,7 @@
 
       const name = urlToLabel(url);
       const time = secondsToString($player.currentTime);
-      const title = `${prefix} â€“ ${name} (${time})`;
+      const title = `${prefix} - ${name} (${time})`;
 
       return document.title = title;
     }
