@@ -1,4 +1,4 @@
-    const global = window;
+﻿    const global = window;
     const $html = $('html');
     const $body = $('body');
     const $playerContainer = $('.player-container');
@@ -923,7 +923,7 @@
 
       const name = urlToLabel(url);
       const time = secondsToString($player.currentTime);
-      const title = `${prefix} – ${name} (${time})`;
+      const title = `${prefix} â€“ ${name} (${time})`;
 
       return document.title = title;
     }
@@ -2259,21 +2259,26 @@
       const opts = {
         size: thumbnailOpts.size,
         mime: {...thumbnailOpts.mime},
-        shouldCache: thumbnailOpts.cache,
+        cache: thumbnailOpts.cache,
         timestamps: timestamps,
         cacheReadOnly: !thumbnailOpts.cache || isPlaying()
       }
-      const thumbnails = await videoThumbnail(url, opts);
-      settings.cache.update();
+      try {
+        const thumbnails = await videoThumbnail(url, opts);
+        settings.cache.update();
 
-      if (thumbnails && thumbnails.length > 0) {
-        thumbnails.forEach((thumbnail, i) => {
-          if (thumbnail && thumbnail.URI && thumbnail.URI.length > 30) {
-            node.style.setProperty(`--image-url-${i}`,`url('${thumbnail.URI}')`);
-          }
-        });
+        if (thumbnails && thumbnails.length > 0) {
+          thumbnails.forEach((thumbnail, i) => {
+            if (thumbnail && thumbnail.URI && thumbnail.URI.length > 30) {
+              node.style.setProperty(`--image-url-${i}`,`url('${thumbnail.URI}')`);
+            }
+          });
 
-        return thumbnails[0];
+          return thumbnails[0];
+        }
+      } catch (e) {
+        if (isDebug()) console.warn('Thumbnail generation failed', url, e);
+        return null;
       }
     }
 

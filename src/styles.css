@@ -212,7 +212,7 @@
     }
 
     body:not(.is-loaded) .player {
-      min-height: 20vw;
+      min-height: max(20vw, 33vh);
     }
 
     .is-audio .player {
