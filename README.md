@@ -5,7 +5,7 @@ It can be used as:
 * A web player for folders of media on a server (NAS/home server/shared hosting).
 * A local media player by installing it as a PWA (where supported).
 
-![player.html in action](https://user-images.githubusercontent.com/455424/140204106-eff3504d-64f0-4038-977b-52555dd96358.png)
+![player.html in action](https://github.com/user-attachments/assets/7bc13981-52ad-4871-be0f-c0625ec565f2)
 ![player.html on all of your devices](https://user-images.githubusercontent.com/455424/140200711-7a414217-63db-41b7-8f6e-8d00d7e9eb27.png)
 
 ## What player.html can do
