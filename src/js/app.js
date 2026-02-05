@@ -1142,6 +1142,73 @@
 
     const subtitleDurationCache = new Map();
 
+    const hasSubtitleTracks = () => {
+      const trackElements = $player ? $player.querySelectorAll('track') : null;
+      if (trackElements && trackElements.length > 0) return true;
+
+      const textTracks = $player ? $player.textTracks : null;
+      if (!textTracks || !textTracks.length) return false;
+      for (let i = 0; i < textTracks.length; i++) {
+        const kind = textTracks[i].kind;
+        if (kind === 'subtitles' || kind === 'captions') return true;
+      }
+      return false;
+    }
+
+    const createDisableSubtitlesItem = () => {
+      const $toggle = $(`<li class='subtitle-item modal-item disable-subtitles'>Turn off subtitles</li>`);
+      $toggle.on('click', (e) => {
+        e.preventDefault();
+        clearSubtitles();
+      });
+      return $toggle;
+    }
+
+    const updateSubtitleToggleVisibility = () => {
+      if (!$subtitles) return;
+      const hasTracks = hasSubtitleTracks();
+      const existing = $subtitles.querySelector('.disable-subtitles');
+      if (hasTracks) {
+        if (!existing) $subtitles.append(createDisableSubtitlesItem());
+      } else if (existing) {
+        $(existing).remove();
+      }
+    }
+
+    const disableAllTextTracks = () => {
+      const textTracks = $player ? $player.textTracks : null;
+      if (!textTracks || !textTracks.length) return;
+      for (let i = 0; i < textTracks.length; i++) {
+        const kind = textTracks[i].kind;
+        if (kind === 'subtitles' || kind === 'captions') {
+          textTracks[i].mode = 'disabled';
+        }
+      }
+    }
+
+    const enableLatestSubtitleTrack = () => {
+      const textTracks = $player ? $player.textTracks : null;
+      if (!textTracks || !textTracks.length) return false;
+      let lastIndex = -1;
+      for (let i = 0; i < textTracks.length; i++) {
+        const kind = textTracks[i].kind;
+        if (kind === 'subtitles' || kind === 'captions') lastIndex = i;
+      }
+      if (lastIndex < 0) return false;
+      for (let i = 0; i < textTracks.length; i++) {
+        const kind = textTracks[i].kind;
+        if (kind === 'subtitles' || kind === 'captions') {
+          textTracks[i].mode = (i === lastIndex ? 'showing' : 'disabled');
+        }
+      }
+      return true;
+    }
+
+    const ensureSubtitleTrackEnabled = () => {
+      if (enableLatestSubtitleTrack()) return;
+      setTimeout(() => enableLatestSubtitleTrack(), 0);
+    }
+
     const getSubtitleDurationCached = async (url) => {
       const cached = subtitleDurationCache.get(url);
       if (typeof cached === 'number') return cached;
@@ -1196,23 +1263,19 @@
         }
       }
 
-      html += `<li class='subtitle-item modal-item disable-subtitles'>Turn off subtitles</li>`;
-
       $subtitles.html(html);
 
-      const list = [...$subtitles.querySelectorAll('li')];
+      const list = [...$subtitles.querySelectorAll('li[data-subtitle-url]')];
       list.forEach((li) => {
         const $li = $(li);
         $li.on('click', (e) => {
           e.preventDefault();
 
-          if ($li.hasClass('disable-subtitles')) {
-            clearSubtitles();
-          } else {
-            loadSubtitle(li.dataset.subtitleUrl);
-          }
+          loadSubtitle(li.dataset.subtitleUrl);
         });
       })
+
+      updateSubtitleToggleVisibility();
     }
 
     const loadSubtitle = async (url) => {
@@ -1228,17 +1291,24 @@
 
       const $track = $(`<track src='${url}' label='${url}' default>`);
       $player.append($track);
+      ensureSubtitleTrackEnabled();
+      updateSubtitleToggleVisibility();
       setAriaPressed('.btn-subtitles', true);
     }
 
     const clearSubtitles = () => {
+      disableAllTextTracks();
       const tracks = [...document.querySelectorAll('track')];
 
       if (tracks) {
         tracks.forEach((track) => {
+          if (track.track && (track.track.kind === 'subtitles' || track.track.kind === 'captions')) {
+            track.track.mode = 'disabled';
+          }
           $(track).remove();
         });
       }
+      updateSubtitleToggleVisibility();
       setAriaPressed('.btn-subtitles', false);
     }
 
@@ -1721,7 +1791,10 @@
     }
 
     const setupPlayerEvents = () => {
-      $player.on('loadedmetadata', updateFileinfo);
+      $player.on('loadedmetadata', () => {
+        updateFileinfo();
+        updateSubtitleToggleVisibility();
+      });
       $player.on('loadeddata', syncTrickSrc);
       $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
       $player.on('pause', () => updatePlaybackState('pause'));
