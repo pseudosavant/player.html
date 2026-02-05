@@ -26,7 +26,7 @@
           {
             action: location.href.split('#')[0],
             accept: {
-              "audio/*": [".mp3", ".wav", ".aac", ".m4a", ".ogg"],
+              "audio/*": [".mp3", ".wav", ".aac", ".m4a", ".mka", ".ogg"],
               "video/*": [".mp4", ".mov", ".webm", ".mkv"]
             }
           }

@@ -33,6 +33,10 @@
           resizeQuality: 'high', // `<canvas>` resize quality
           concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
         },
+        audioThumbnails: {
+          concurrency: 4, // How many audio thumbnails should it generate at a time. Audio artwork checks are typically lightweight.
+          sidecarConcurrency: 4 // How many sidecar checks should run per audio file.
+        },
         // Perceptual volume curve exponent for the discrete volume control (0..1 -> 0..1).
         // Higher values give more control at lower volumes.
         volumeExponent: 1.8,

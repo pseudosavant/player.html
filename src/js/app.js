@@ -62,7 +62,10 @@
         { mime: 'audio/mpeg',       extensions: ['mp3'] },
         { mime: 'audio/aac',        extensions: ['aac'] },
         { mime: 'audio/m4a',        extensions: ['m4a'] },
-        { mime: 'audio/ogg',        extensions: ['ogg'] }
+        { mime: 'audio/mp4',        extensions: ['m4a'] },
+        { mime: 'audio/ogg',        extensions: ['ogg'] },
+        { mime: 'audio/x-matroska', extensions: ['mka'] },
+        { mime: 'audio/matroska',   extensions: ['mka'] }
       ];
 
       const v = document.createElement('video');
@@ -176,7 +179,7 @@
     };
 
     const isAudio = (url) => {
-      const re = /(?:\/)((?:[^/])+\.(?:wav|mp3|aac|m4a|ogg))/gi
+      const re = /(?:\/)((?:[^/])+\.(?:wav|mp3|aac|m4a|mka|ogg))/gi
       return re.test(url);
     }
 
@@ -258,11 +261,6 @@
 
       const findThumbnail = (mediaUrl, files) => {
         if (!Array.isArray(files)) return undefined;
-
-        if (isAudio(mediaUrl)) {
-          const audioIconUrl = './assets/audio-icon.svg';
-          return {url: audioIconUrl};
-        }
 
         const mediaPrefix = removeUrlExtension(mediaUrl);
 
@@ -788,8 +786,10 @@
       });
     }
 
-    var thumbnailQueue = [];
-    var thumbnailProcessing = false;
+    var audioThumbnailQueue = [];
+    var videoThumbnailQueue = [];
+    var audioThumbnailProcessing = false;
+    var videoThumbnailProcessing = false;
     var thumbnailObserver;
     const populateThumbnails = async () => {
       if (retrieveSetting('thumbnailing') === false) return;
@@ -806,24 +806,50 @@
       }
 
       $file.dataset.thumbnailQueued = 'true';
-      thumbnailQueue.push({$file, url: $file.href});
+      if (isAudio($file.href)) {
+        audioThumbnailQueue.push({$file, url: $file.href});
+      } else {
+        videoThumbnailQueue.push({$file, url: $file.href});
+      }
       processThumbnailQueue();
     }
 
-    const processThumbnailQueue = async () => {
-      if (thumbnailProcessing) return;
-      thumbnailProcessing = true;
+    const processThumbnailQueue = () => {
+      processVideoThumbnailQueue();
+      processAudioThumbnailQueue();
+    }
+
+    const processVideoThumbnailQueue = async () => {
+      if (videoThumbnailProcessing) return;
+      videoThumbnailProcessing = true;
       const concurrency = Math.max(1, app.options.thumbnails.concurrency || 1);
 
-      while (thumbnailQueue.length > 0) {
-        const batch = thumbnailQueue.splice(0, concurrency);
+      while (videoThumbnailQueue.length > 0) {
+        const batch = videoThumbnailQueue.splice(0, concurrency);
         await Promise.all(batch.map(async (work) => {
           await setThumbnail(work.$file, work.url);
           work.$file.dataset.thumbnailDone = 'true';
         }));
       }
 
-      thumbnailProcessing = false;
+      videoThumbnailProcessing = false;
+    }
+
+    const processAudioThumbnailQueue = async () => {
+      if (audioThumbnailProcessing) return;
+      audioThumbnailProcessing = true;
+      const audioOpts = app.options.audioThumbnails || {};
+      const concurrency = Math.max(1, audioOpts.concurrency || 1);
+
+      while (audioThumbnailQueue.length > 0) {
+        const batch = audioThumbnailQueue.splice(0, concurrency);
+        await Promise.all(batch.map(async (work) => {
+          await setThumbnail(work.$file, work.url);
+          work.$file.dataset.thumbnailDone = 'true';
+        }));
+      }
+
+      audioThumbnailProcessing = false;
     }
 
     const setupThumbnailObserver = ($files) => {
@@ -854,7 +880,8 @@
     }
 
     const clearThumbnailQueue = () => {
-      thumbnailQueue = [];
+      audioThumbnailQueue = [];
+      videoThumbnailQueue = [];
       if (thumbnailObserver) thumbnailObserver.disconnect();
     }
 
@@ -997,6 +1024,7 @@
       });
 
       setAriaPressed('.btn-play-pause', state === 'play');
+      if (state === 'stop') resetPlayerBackground();
     }
 
     const getRanges = () => {
@@ -1060,8 +1088,10 @@
         $player.once('loadedmetadata', () => {
           if ($player.videoWidth === 0 && $player.videoHeight === 0) {
             $body.addClass('is-audio');
+            if (!$player.paused) schedulePlayerArtworkBackground(url);
           } else {
             $body.removeClass('is-audio');
+            resetPlayerBackground();
           }
         });
 
@@ -1082,6 +1112,7 @@
         hashState.media = undefined;
         $body.removeClass('is-loaded');
 
+        resetPlayerBackground();
         logInfo(`Playback stopped`);
       }
 
@@ -1694,7 +1725,10 @@
       $player.on('loadeddata', syncTrickSrc);
       $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
       $player.on('pause', () => updatePlaybackState('pause'));
-      $player.on('play',  () => updatePlaybackState('play'));
+      $player.on('play',  () => {
+        updatePlaybackState('play');
+        if ($body.hasClass('is-audio')) schedulePlayerArtworkBackground($player.currentSrc);
+      });
       $player.on('ended', () => {
         updatePlaybackState('stop');
         advancePlaylist('ended');
@@ -2213,6 +2247,105 @@
       $player.style.backgroundImage = `url('${dataUri}')`;
     }
 
+    let audioArtworkRequestId = 0;
+    let audioArtworkActive = false;
+    let audioArtworkForUrl = '';
+    let audioArtworkTimeoutId = null;
+
+    const getAudioThumbnailOptions = () => {
+      const thumbnailOpts = app.options.thumbnails;
+      const audioConfig = app.options.audioThumbnails || {};
+      const audioConcurrency = Math.max(1, audioConfig.concurrency || 1);
+      const sidecarConcurrency = Math.max(1, audioConfig.sidecarConcurrency || audioConcurrency);
+
+      return {
+        sourceStrategy: 'race',
+        sidecarExts: ['jpg', 'jpeg'],
+        sidecarValidate: 'auto',
+        sidecarConcurrency: sidecarConcurrency,
+        output: {
+          type: 'dataURI',
+          size: thumbnailOpts.size,
+          mime: { ...thumbnailOpts.mime }
+        },
+        debug: isDebug()
+      };
+    };
+
+    const getTileArtworkCssUrl = (url) => {
+      const $tile = $(`.file[href='${url}']`);
+      if (!$tile) return null;
+      const value = $tile.style.getPropertyValue('--image-url-0');
+      if (!value || value === 'none') return null;
+      return { value: value.trim(), $tile };
+    };
+
+    const resetPlayerBackground = () => {
+      audioArtworkRequestId += 1;
+      audioArtworkActive = false;
+      audioArtworkForUrl = '';
+      if (audioArtworkTimeoutId) {
+        clearTimeout(audioArtworkTimeoutId);
+        audioArtworkTimeoutId = null;
+      }
+      updatePlayerBackground();
+    };
+
+    const schedulePlayerArtworkBackground = (url) => {
+      if (!url) return;
+      if (audioArtworkActive && audioArtworkForUrl === url) return;
+      if (audioArtworkTimeoutId) clearTimeout(audioArtworkTimeoutId);
+      audioArtworkTimeoutId = setTimeout(() => {
+        audioArtworkTimeoutId = null;
+        setPlayerArtworkBackground(url);
+      }, 0);
+    };
+
+    const setPlayerArtworkBackground = async (url) => {
+      const requestId = ++audioArtworkRequestId;
+      audioArtworkActive = false;
+
+      if (!url || (!isAudio(url) && !$body.hasClass('is-audio'))) {
+        updatePlayerBackground();
+        return;
+      }
+
+      const tileArtwork = getTileArtworkCssUrl(url);
+      if (tileArtwork && tileArtwork.value) {
+        $player.style.backgroundImage = tileArtwork.value;
+        audioArtworkActive = true;
+        audioArtworkForUrl = url;
+        return;
+      }
+
+      if (typeof audioThumbnail !== 'function') {
+        updatePlayerBackground();
+        return;
+      }
+
+      try {
+        const results = await audioThumbnail(url, getAudioThumbnailOptions());
+        if (requestId !== audioArtworkRequestId) return;
+
+        const best = (results && (results.best || results[0])) || null;
+        if (best && best.URI) {
+          const cssUrl = `url('${escapeCssUrl(best.URI)}')`;
+          $player.style.backgroundImage = cssUrl;
+          audioArtworkActive = true;
+          audioArtworkForUrl = url;
+          if (tileArtwork && tileArtwork.$tile && !hasPreRenderedThumbnail(tileArtwork.$tile)) {
+            tileArtwork.$tile.style.setProperty('--image-url-0', cssUrl);
+          }
+          return;
+        }
+      } catch (e) {
+        if (isDebug()) console.warn('Audio artwork generation failed', url, e);
+      }
+
+      if (requestId !== audioArtworkRequestId) return;
+      updatePlayerBackground();
+    };
+
     const getThemeColorBaseHSL = () => {
       const themeColorBase = getCSSVariable('--theme-color-base')
         .split(',')
@@ -2239,7 +2372,7 @@
         $('head').append(`<meta name="theme-color" content="${hex}">`);
       }
 
-      updatePlayerBackground();
+      if (!audioArtworkActive) updatePlayerBackground();
     }
 
     const isPlaying = () => (
@@ -2254,7 +2387,32 @@
       if (hasPreRenderedThumbnail(node)) return;
       const thumbnailOpts = app.options.thumbnails;
 
-      const timestamps = (retrieveSetting('animate') ? [...thumbnailOpts.timestamps] : [thumbnailOpts.timestamps[0]]);
+      const timestampList = (
+        Array.isArray(thumbnailOpts.timestamps) && thumbnailOpts.timestamps.length > 0
+          ? [...thumbnailOpts.timestamps]
+          : [0]
+      );
+      const shouldAnimate = retrieveSetting('animate');
+      const timestamps = (shouldAnimate ? timestampList : [timestampList[0]]);
+      const frameCount = (shouldAnimate ? timestamps.length : 1);
+
+      if (isAudio(url) && typeof audioThumbnail === 'function') {
+        const audioOpts = getAudioThumbnailOptions();
+        try {
+          const results = await audioThumbnail(url, audioOpts);
+          const best = (results && (results.best || results[0])) || null;
+          if (best && best.URI) {
+            const safeURI = escapeCssUrl(best.URI);
+            for (let i = 0; i < frameCount; i++) {
+              node.style.setProperty(`--image-url-${i}`, `url('${safeURI}')`);
+            }
+            return best;
+          }
+        } catch (e) {
+          if (isDebug()) console.warn('Audio thumbnail generation failed', url, e);
+        }
+        return null;
+      }
 
       const opts = {
         size: thumbnailOpts.size,

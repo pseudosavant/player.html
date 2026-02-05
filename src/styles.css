@@ -895,7 +895,7 @@
       background-origin: border-box;
       background-repeat: no-repeat;
 
-      background-image: var(--image-url-0);
+      background-image: var(--image-url-0, var(--image-fallback, none));
       animation: animateThumbnail 1000ms infinite;
       animation-play-state: paused;
     }
@@ -988,6 +988,7 @@
     }
 
     .file.audio-file {
+      --image-fallback: url('./assets/audio-icon.svg');
       background-size: contain;
     }
 

@@ -31,7 +31,7 @@ uv run build.py --watch
 * Only 1 file with zero external dependencies
 * [`SVG images`](https://github.com/microsoft/fluentui-system-icons/) are inlined
 * May be installed as a PWA (Progressive Web App) app. Dynamically generated inline data URI manifest file.
-* Playback of `MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, `OGG`, `MP3`, `WAV`, `AAC`, `M4A` files using the browser media engine
+* Playback of `MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, `OGG`, `MP3`, `WAV`, `AAC`, `M4A`, `MKA` files using the browser media engine
 * Support for loading external `SRT` and `VTT` subtitle files
 * Shareable URL that will load `player.html` in the same folder location, and media position
 * Custom media playback controls (fullscreen, play, pause, mute, etc, volume, playback rate)
