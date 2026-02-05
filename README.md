@@ -6,7 +6,7 @@ It can be used as:
 * A local media player by installing it as a PWA (where supported).
 
 ![player.html in action](https://github.com/user-attachments/assets/7bc13981-52ad-4871-be0f-c0625ec565f2)
-![player.html on all of your devices](https://user-images.githubusercontent.com/455424/140200711-7a414217-63db-41b7-8f6e-8d00d7e9eb27.png)
+![player.html on all of your devices](https://github.com/user-attachments/assets/6a4771ca-50d0-4089-aed6-3f9a2c1570dd)
 
 ## What player.html can do
 * Play videos with external subtitles (`.srt` / `.vtt`).

@@ -1,176 +1,174 @@
-
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>player.html composite</title>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, user-scalable=no, initial-scale=1.0" name="viewport" />
-    <style>
-        * {
-            box-sizing: border-box;
-            overflow: hidden;
-            user-select: none;
-        }
+  <title>player.html composite</title>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, user-scalable=no, initial-scale=1.0" name="viewport" />
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
 
-        html {
-            font-size: 16px;
-            font-family: Calibri, sans-serif;
-            position: relative;
-            height: 1300px;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
+    body {
+      min-height: 110vh;
+      overflow: hidden;
+    }
 
-        body {
-          width: calc(1920px * 0.8);
-        }
+    iframe {
+      z-index: 10;
+    }
 
-        iframe {
-            z-index: 10;
-        }
+    img {
+      z-index: 20;
+    }
 
-        img {
-            z-index: 20;
-        }
+    .iphone,
+    .pixel,
+    .ipad {
+      position: absolute;
+      -webkit-box-reflect: below 0px -webkit-gradient(linear, right top, right bottom, from(transparent), to(rgba(255, 255, 255, 0.3)));
+      filter: drop-shadow(0px 3px 5px #666)
+    }
 
-        .devices {
-            height: 100vh;
-            width: 100%;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
+    .pc {
+      position: absolute;
+      filter: none;
+    }
 
-        .devices > * {
-            position: relative;
-            -webkit-box-reflect: below 0px -webkit-gradient(linear, right top, right bottom, from(transparent), to(rgba(255, 255, 255, 0.3)));
-            filter: drop-shadow(0px 3px 2px #999);
-        }
+    img {
+      position: relative;
+      display: block;
+    }
 
-        .devices img  {
-            position: relative;
-            display: block;
-        }
+    iframe {
+      top: 0;
+      left: 0;
+      position: absolute;
+      border: 0 none;
+      overflow: hidden;
+    }
 
-        .devices iframe {
-            top: 0;
-            left: 0;
-            position: absolute;
-            border: 0 none;
-        }
+    .pc {
+      z-index: 10;
+      width: 98vw;
+      top: 10px;
+      left: 1vw;
+    }
 
-        .pc {
-            z-index: 10;
-            transform: scale(0.75) translate(0, -93px);
-            filter: none;
-            top: -58px;
-        }
-        .pc iframe {
-            width: 1932px;
-            height: 855px;
-            border-top: 1rem solid #000;
-            margin-left: 25px;
-            margin-top: 10px;
-            /* transform: perspective(6300px) rotateX(12deg) scale(0.98); */
-        }
-        .pc img {
-          width: 1980px;
-        }
+    .pc iframe {
+      width: 97vw;
+      height: 41vw;
+      margin-left: 1vw;
+      margin-top: 1vw;
+    }
 
-        .iphone {
-            z-index: 15;
-            transform: scale(0.35) translate(57px,360px);
-            left: 0;
-        }
-        .iphone iframe {
-            width: 469px;
-            height: 1016px; 
-            margin-left: 35px;
-            border-top: 3rem solid black;
-            margin-top: 30px;
-        }
+    .pc img {
+      width: 100%;
+      max-width: 98vw;
+      margin: 0 auto;
+    }
 
-        .pixel {
-            z-index: 35;
-            transform: scale(0.3) translate(0px,1610px);
-        }
-        .pixel iframe {
-            width: 916px;
-            height: 510px;
-            margin-left: 105px;
-            margin-top: 32px;
-        }
+    .iphone {
+      z-index: 15;
+      left: 13vw;
+      bottom: 5vh;
+      transform: scale(0.35);
+      transform-origin: bottom left;
+    }
 
-        .ipad {
-            z-index: 30;
-            transform: scale(0.4) translate(580px,-228px);
-            height: 1352px;
-            right: 0;
-        }
-        .ipad iframe {
-            bottom: 0;
-            right: 0;
-            width: 955px;
-            height: 1274px;
-            margin-top: 40px;
-            margin-left: 36px;
-        }
+    .iphone iframe {
+      width: 469px;
+      height: 1016px;
+      margin-left: 35px;
+      border-top: 3rem solid black;
+      margin-top: 30px;
+    }
 
-        .pc, .iphone, .pixel, .ipad {
-            /* display:none !important; */
-            position: absolute;
-        }
-    </style>
+    .pixel {
+      z-index: 35;
+      left: 50%;
+      bottom: 3vh;
+      transform: translateX(-50%) scale(0.3);
+      transform-origin: bottom center;
+    }
+
+    .pixel iframe {
+      width: 916px;
+      height: 510px;
+      margin-left: 105px;
+      margin-top: 32px;
+    }
+
+    .ipad {
+      z-index: 30;
+      right: 4vw;
+      bottom: 5vh;
+      height: 1352px;
+      transform: scale(0.4);
+      transform-origin: bottom right;
+    }
+
+    .ipad iframe {
+      bottom: 0;
+      right: 0;
+      width: 955px;
+      height: 1274px;
+      margin-top: 40px;
+      margin-left: 36px;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="devices">
-        <div class="pc">
-          <iframe src="../src/player.html"></iframe>
-          <img src="dell-monitor-template.png">            
-        </div>
-        <div class="iphone">
-          <iframe src="../src/player.html"></iframe>
-          <img src="iphone-x-template.png">  
-        </div>
-        <div class="pixel">
-          <iframe src="../src/player.html"></iframe>
-          <img src="pixel-2-xl-template.png">
-        </div>
-        <div class="ipad">
-            <iframe src="../src/player.html"></iframe>
-            <img src="ipad-pro-template.png">            
-        </div>
-    </div>
-    </div>
-    <script>
-        function run() {
-            const frames = [...document.querySelectorAll('iframe')];
-            frames.forEach((iframe) => {
-                const doc = iframe.contentDocument;
-                doc.querySelector('.links a:nth-child(1)').click();
-                
-                setTimeout(() => {
-                    doc.querySelector('.links a:nth-child(4)').click();
-                }, 4000);
+  <div class="pc">
+    <iframe src="../dist/player.html"></iframe>
+    <img src="dell-monitor-template.png">
+  </div>
+  <div class="iphone">
+    <iframe src="../dist/player.html"></iframe>
+    <img src="iphone-x-template.png">
+  </div>
+  <div class="pixel">
+    <iframe src="../dist/player.html"></iframe>
+    <img src="pixel-2-xl-template.png">
+  </div>
+  <div class="ipad">
+    <iframe src="../dist/player.html"></iframe>
+    <img src="ipad-pro-template.png">
+  </div>
+  <script>
+    function run() {
+      const tapDelay = 1000;
 
-                setTimeout(() => {
-                    doc.querySelector('.links a:nth-child(2)').click();
-                }, 10000);
+      const frames = [...document.querySelectorAll('iframe')];
+      frames.forEach((iframe) => {
+        const doc = iframe.contentDocument;
+        doc.querySelector('.links a:nth-child(1)').click();
 
-                setTimeout(() => {
-                    doc.querySelector('.player').pause();
-                    doc.querySelector('.player').style.filter = '';
-                    doc.querySelector('html').style.overflow = 'hidden';
-                }, 15000);
-            });
-        }
+        setTimeout(() => {
+          doc.querySelector('.links a:nth-child(6)').click();
+        }, tapDelay);
 
-        window.onload = () => setTimeout(run, 3000);
+        setTimeout(() => {
+          doc.querySelector('.links a:nth-child(3)').click();
+        }, tapDelay * 2);
+        setTimeout(() => {
+          doc.querySelector('.links a:nth-child(4)').click();
+        }, tapDelay * 3);
 
-        document.body.addEventListener('dblclick', run, false);
-    </script>
+        setTimeout(() => {
+          doc.querySelector('.player').pause();
+          doc.querySelector('.player').style.filter = '';
+          doc.querySelector('html').style.overflow = 'hidden';
+        }, tapDelay * 10);
+      });
+    }
+
+    /* This must be triggered by a user action due to the video playback */
+    document.body.addEventListener('dblclick', run, false);
+  </script>
 </body>
+
 </html>
