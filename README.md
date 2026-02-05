@@ -1,13 +1,33 @@
 # player.html
-One file drop-in audio and video player web app for using media files served using basic HTTP directory listing.
+Single-file audio + video player web app for media libraries served from basic HTTP directory listings (NGINX/Apache/IIS/etc).
+
+It can be used as:
+* A web player for folders of media on a server (NAS/home server/shared hosting).
+* A local media player by installing it as a PWA (where supported).
 
 ![player.html in action](https://user-images.githubusercontent.com/455424/140204106-eff3504d-64f0-4038-977b-52555dd96358.png)
 ![player.html on all of your devices](https://user-images.githubusercontent.com/455424/140200711-7a414217-63db-41b7-8f6e-8d00d7e9eb27.png)
 
-## Usage
-`player.html` is designed to be a drop-in audio and video player that does not require any configuration or other files.
+## What player.html can do
+* Play videos with external subtitles (`.srt` / `.vtt`).
+* Play audio (not just video) and use cover art thumbnails when available.
+* Build playlists from folders/albums, reorder them, and loop playback.
+* Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
+* Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
+* Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
+* Play media from OneDrive / Google Drive (HTTPS + app keys required).
+* Share a URL that resumes at the same folder + media + timestamp.
 
-To use it, build the single-file distributable and copy `./dist/player.html` into a folder that is served over HTTP using the web server's folder listing functionality. `player.html` uses the folder listing as an API for enumerating the files and folders. It should work with almost any web server, but it has only been tested against NGINX, Apache, and IIS.
+## Contents
+* [Quick Start](#quick-start)
+* [Features](#features)
+* [Pre-rendered server-side thumbnails](#pre-rendered-server-side-thumbnails)
+* [Installing ffmpeg](#installing-ffmpeg)
+* [Supported browsers](#supported-browsers)
+* [Supported web servers](#supported-web-servers)
+
+## Quick Start
+`player.html` is designed to be a drop-in audio and video player that does not require any configuration or other files.
 
 ### Build
 The build inlines CSS, JS, SVGs, and assets into a single portable file.
@@ -22,32 +42,67 @@ For continuous rebuilds while editing:
 uv run build.py --watch
 ```
 
+### Use As A Web Player (HTTP Directory Listing)
+1) Copy `./dist/player.html` into a folder that is served over HTTP with directory listing enabled.
+2) Browse to `player.html` in your browser.
+
+`player.html` treats the directory listing HTML as an API for enumerating files/folders, so it works with simple web servers (see [Supported web servers](#supported-web-servers)).
+
+### Use As A Local Media Player (PWA)
+Serve `player.html` from `https://` (or `http://localhost`) and use your browser's "Install" option to install it as an app.
+
+Once installed, it can be launched like a local media player. Some platforms also support opening local media files directly into the app (PWA file handlers).
+
 ### Development
-- `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
-- `dist/player.html` is generated output; do not edit it by hand.
+* `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
+* `dist/player.html` is generated output; do not edit it by hand.
 
-### Supported features
+## Features
+### Core
+* Single file (`dist/player.html`) with zero runtime dependencies.
+* All CSS/JS/SVG/assets are inlined (portable drop-in file).
 
-* Only 1 file with zero external dependencies
-* [`SVG images`](https://github.com/microsoft/fluentui-system-icons/) are inlined
-* May be installed as a PWA (Progressive Web App) app. Dynamically generated inline data URI manifest file.
-* Playback of `MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, `OGG`, `MP3`, `WAV`, `AAC`, `M4A`, `MKA` files using the browser media engine
-* Support for loading external `SRT` and `VTT` subtitle files
-* Shareable URL that will load `player.html` in the same folder location, and media position
-* Custom media playback controls (fullscreen, play, pause, mute, etc, volume, playback rate)
-* Picture-in-picture support
-* Progress bar with timestamp preview thumbnail on hover, click/drag to seek, and keyboard support when focused
-* Video thumbnails: [using prerendered thumbnail files](#thumbnails), or rendered on-the-fly in-browser
-* Animated thumbnails**
-* Thumbnail caching using `localStorage`, check cache size, clear cache
-* Playlist support: view, add, reorder, previous/next, looping playback, and local save/restore
-* Import and export `.m3u` playlists
-* Select your own custom theme color
-* Social media metadata (`og:\*`, `twitter:\*`)
-* Media file metadata (bitrate, resolution, etc)
-* Keyboard shortcuts (press `?` to see the list)
-* Paste and Play: just do `CTRL+V` to play the media URL that you currently have in the clipboard
-* Support for playing media directly from ![onedrive](https://user-images.githubusercontent.com/455424/93652838-4cc6dd80-f9cb-11ea-8d8c-062705d5500e.png) **OneDrive** and ![gdrive](https://user-images.githubusercontent.com/455424/93652836-4c2e4700-f9cb-11ea-9a71-7325f745baf9.png) **Google Drive**. You **must supply the appropriate keys** in the `app.options.cloud` AND register your app with Microsoft and/or Google. Instructions are in the code. `player.html` also **must be served over HTTPS** for the Microsoft and Google auth flows to work.
+### Playback (Video)
+* Video playback in the browser media engine (`MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, `OGG`, etc).
+* External subtitle support (`.srt` and `.vtt`).
+* Picture-in-picture support.
+* Playback controls: play/pause, seek, stop, volume, playback rate, fullscreen, PiP.
+* Progress bar with timestamp preview thumbnail on hover/click/drag.
+
+### Playback (Audio)
+* Audio playback in the browser media engine (`MP3`, `WAV`, `AAC`, `M4A`, `MKA`, `OGG`, etc).
+* Audio cover art thumbnails (sidecar art and embedded art, when available).
+
+### Browsing & Library
+* Uses folder listing pages as an API (no backend required).
+* Folder + file tiles for fast navigation through large media libraries.
+
+### Playlists
+* Playlist panel: view, add, reorder, previous/next, and looping playback.
+* Import/export `.m3u` playlists.
+* Save/restore playlists via browser storage.
+
+### Thumbnails
+* Video thumbnails use pre-rendered server-side thumbnails when present (recommended for large libraries).
+* Video thumbnails fall back to in-browser thumbnail generation otherwise.
+* Animated thumbnails (optional).
+* Thumbnail caching using `localStorage` (view cache size, clear cache).
+
+### PWA & Sharing
+* Installable as a PWA (inline generated manifest).
+* Shareable URL that resumes `player.html` in the same folder, media item, and timestamp.
+* Social metadata (`og:*`, `twitter:*`) for link previews.
+
+### UI & Metadata
+* Select your own theme color.
+* Media file metadata (bitrate, resolution, etc).
+
+### Keyboard & Convenience
+* Keyboard shortcuts (press `?` in the app to see the list).
+* Paste and Play: `CTRL+V` to play the URL currently in your clipboard.
+
+### Cloud Sources
+* Play media directly from OneDrive and Google Drive (requires HTTPS and valid app keys in `app.options.cloud`).
 
 ## Playlists
 
@@ -72,7 +127,6 @@ Notes:
 
 \** Animated thumbnails can consume a lot of data. The experience may degrade on slower network connections
 
-<a name="thumbnails"></a>
 ## Pre-rendered server-side thumbnails
 
 `player.html` can use server-side thumbnails for any video that has one available. It will fall back to generating thumbnails in the browser otherwise. The server-side thumbnail files must follow the common filename convention of using the video file name, with the extension replaced with an image extension, in the same folder as the video. Note: The image files must be shown by your web server's directory browsing (may require mime-type adjustments on some servers) feature to show up in `player.html`.
@@ -82,16 +136,100 @@ Notes:
 * Media filename: `myMedia.mp4`
 * Matching thumbnail filename: `myMedia.jpg` 
 
-### How to pre-render thumbnails
-
-The easiest way to create thumbnails from video files is on the command-line with [`ffmpeg`](https://ffmpeg.org/). The following command will create a JPEG thumbnail (`myVideo.jpg`) from the video frame 5 seconds into `myVideo.mp4`: `ffmpeg -i myVideo.mp4 -ss 00:00:05.000 -vframes 1 myVideo.jpg`. Loop over folders of video files using your preferred shell (bash, cmd, powershell, etc) to process many videos.
-
 ### Supported thumbnail image formats/extensions
-* GIF
 * JPEG
 * JPG
 * PNG
 * WEBP
+* GIF
+
+### How to pre-render thumbnails
+
+#### Pre-render video thumbnails script
+
+This repo includes `prerender-video-thumbnails.py`, which recursively generates **missing** thumbnails for all video files under a root folder. It never overwrites existing thumbnails.
+
+What it does:
+
+* Looks for videos by extension (e.g. `mp4`, `mkv`, `webm`, `mov`, etc).
+* If a matching thumbnail already exists, it skips the video.
+* Otherwise it generates a new image using `ffmpeg`.
+
+
+Requires [ffmpeg](#ffmpeg) on your PATH.
+
+Run it from the repo root:
+
+```
+uv run prerender-video-thumbnails.py [ROOT]
+```
+
+Examples:
+
+```
+uv run prerender-video-thumbnails.py
+uv run prerender-video-thumbnails.py "C:\Media\Videos" --ext webp --seek 2.5 --max-dim 640
+```
+
+Options:
+
+* `ROOT` - Root folder to scan (default: current directory)
+* `--ext` - Thumbnail extension to create: `jpg`, `jpeg`, `png`, `gif`, `webp` (default: `jpg`)
+* `--seek` - Seek time in seconds for the thumbnail frame (default: `5.0`)
+* `--max-dim` - Maximum output dimension in pixels for the largest side (default: `512`)
+
+#### Pre-render audio thumbnails script
+
+This repo includes `prerender-audio-thumbnails.py`, which recursively creates **missing** `folder.jpg` sidecar files for audio folders. It scans each folder for embedded artwork and uses the first one it finds.
+
+What it does:
+
+* If a folder already has `folder.jpg`, it skips the folder.
+* Otherwise it checks each audio file in the folder for embedded art.
+* The first image it can extract becomes `folder.jpg`.
+
+Requires [ffmpeg](#ffmpeg) on your PATH.
+
+Run it from the repo root:
+
+```
+uv run prerender-audio-thumbnails.py [ROOT]
+```
+
+Examples:
+
+```
+uv run prerender-audio-thumbnails.py
+uv run prerender-audio-thumbnails.py "C:\Media\Audio" --debug
+```
+
+Options:
+
+* `ROOT` - Root folder to scan (default: current directory)
+* `--debug` - Print ffmpeg debug output
+
+<a id="ffmpeg"></a>
+### Installing ffmpeg
+
+The thumbnail scripts require `ffmpeg` to be available on your `PATH`.
+
+Windows (winget):
+
+```
+winget install --id=Gyan.FFmpeg --exact
+```
+
+macOS (Homebrew):
+
+```
+brew install ffmpeg
+```
+
+Linux (package manager examples):
+
+```
+sudo apt install ffmpeg
+```
 
 ## Supported browsers
 
