@@ -165,6 +165,13 @@
       return s.replace(re, '');
     }
 
+    const stripUrlExtension = (url) => {
+      if (!isString(url)) return '';
+      const clean = url.split('#')[0].split('?')[0];
+      const match = /^(.*)(?:\.[^./]+)$/.exec(clean);
+      return match ? match[1] : clean;
+    }
+
     const sortFiles = (a, b) => {
       const labelA = urlToLabel(a.url);
       const labelB = urlToLabel(b.url);
@@ -997,6 +1004,7 @@
     const resetPlayer = () => {
       resetFileinfo();
       clearSubtitles();
+      resetAutoSubtitleState();
       updatePlaybackState('stop');
       $player.playbackRate = 1;
       $player.onerror = undefined;
@@ -1141,6 +1149,64 @@
     }
 
     const subtitleDurationCache = new Map();
+    let autoSubtitleAttemptedFor = '';
+    let autoSubtitlePlaybackStartedFor = '';
+
+    const getAutoSubtitleDefault = () => {
+      if (app && app.options && app.options.subtitles && typeof app.options.subtitles.autoMatch !== 'undefined') {
+        return app.options.subtitles.autoMatch;
+      }
+      return false;
+    }
+
+    const shouldAutoLoadMatchingSubtitles = () => {
+      const stored = retrieveSetting('auto-subtitles');
+      if (typeof stored !== 'undefined') return stored;
+      return getAutoSubtitleDefault();
+    }
+
+    const resetAutoSubtitleState = () => {
+      autoSubtitleAttemptedFor = '';
+      autoSubtitlePlaybackStartedFor = '';
+    }
+
+    const markAutoSubtitlePlaybackStarted = () => {
+      const mediaUrl = $player.currentSrc || $player.src;
+      if (mediaUrl) autoSubtitlePlaybackStartedFor = mediaUrl;
+    }
+
+    const getMatchingSubtitleUrl = (mediaUrl) => {
+      if (!mediaUrl || !Array.isArray(app.links.files)) return null;
+      if (isAudio(mediaUrl)) return null;
+      const mediaBase = stripUrlExtension(mediaUrl);
+      if (!mediaBase) return null;
+
+      const candidates = app.links.files.filter((file) => file && file.url && isSubtitle(file.url));
+      const matches = candidates.filter((file) => stripUrlExtension(file.url) === mediaBase);
+      if (!matches.length) return null;
+
+      const vtt = matches.find((file) => file.url && file.url.toLowerCase().endsWith('.vtt'));
+      return (vtt || matches[0]).url;
+    }
+
+    const maybeAutoLoadSubtitles = () => {
+      if (!shouldAutoLoadMatchingSubtitles()) return;
+
+      const mediaUrl = $player.currentSrc || $player.src;
+      if (!mediaUrl) return;
+      if (autoSubtitlePlaybackStartedFor !== mediaUrl) return;
+      if (!Array.isArray(app.links.files)) return;
+      if (autoSubtitleAttemptedFor === mediaUrl) return;
+
+      autoSubtitleAttemptedFor = mediaUrl;
+
+      if (hasSubtitleTracks()) return;
+
+      const subtitleUrl = getMatchingSubtitleUrl(mediaUrl);
+      if (!subtitleUrl) return;
+
+      loadSubtitle(subtitleUrl);
+    }
 
     const hasSubtitleTracks = () => {
       const trackElements = $player ? $player.querySelectorAll('track') : null;
@@ -1276,6 +1342,7 @@
       })
 
       updateSubtitleToggleVisibility();
+      maybeAutoLoadSubtitles();
     }
 
     const loadSubtitle = async (url) => {
@@ -1800,7 +1867,9 @@
       $player.on('pause', () => updatePlaybackState('pause'));
       $player.on('play',  () => {
         updatePlaybackState('play');
+        markAutoSubtitlePlaybackStarted();
         if ($body.hasClass('is-audio')) schedulePlayerArtworkBackground($player.currentSrc);
+        maybeAutoLoadSubtitles();
       });
       $player.on('ended', () => {
         updatePlaybackState('stop');
@@ -2095,6 +2164,23 @@
             } catch (e) {}
           } else {
             $('html').dataset['transitions'] = 'disabled';
+          }
+        }
+      },
+      'auto-subtitles': {
+        label: 'Auto-load matching subtitles',
+        desc: 'Automatically load a subtitle file that shares the video filename (e.g. .vtt or .srt).',
+        event: 'change',
+        default: getAutoSubtitleDefault(),
+        get: () => typeof retrieveSetting('auto-subtitles') !== 'undefined' ? retrieveSetting('auto-subtitles') : settings['auto-subtitles'].default,
+        set: (val) => persistSetting('auto-subtitles', val),
+        update: () => {
+          const $el = $('.setting-auto-subtitles');
+          const val = $el.checked;
+          settings['auto-subtitles'].set(val);
+          if (val) {
+            autoSubtitleAttemptedFor = '';
+            maybeAutoLoadSubtitles();
           }
         }
       },

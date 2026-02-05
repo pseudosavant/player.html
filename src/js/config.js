@@ -37,6 +37,9 @@
           concurrency: 4, // How many audio thumbnails should it generate at a time. Audio artwork checks are typically lightweight.
           sidecarConcurrency: 4 // How many sidecar checks should run per audio file.
         },
+        subtitles: {
+          autoMatch: false // Auto-load matching .vtt/.srt subtitles after playback starts.
+        },
         // Perceptual volume curve exponent for the discrete volume control (0..1 -> 0..1).
         // Higher values give more control at lower volumes.
         volumeExponent: 1.8,
