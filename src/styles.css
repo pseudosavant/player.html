@@ -936,11 +936,20 @@
     }
 
     .folder .title {
-      justify-content: flex-start;
+      justify-content: space-between;
+    }
+
+    .folder .title .folder-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 0;
     }
 
     .folder .title .label {
-      flex: 0 1 auto;
+      flex: 1;
+      min-width: 0;
     }
 
     .links .btn-add-to-playlist {

@@ -326,9 +326,13 @@
 
       const eventPath = (e.composedPath ? e.composedPath() : [e.target]);
       const addButtonClicked = eventPath.some((el) => el.classList && el.classList.contains('btn-add-to-playlist'));
-      if (addButtonClicked && $el && $el.hasClass('file')) {
+      if (addButtonClicked && $el) {
         e.stopImmediatePropagation();
-        addToPlaylist($el.href);
+        if ($el.hasClass('file')) {
+          addToPlaylist($el.href, isPlaybackStopped());
+        } else if ($el.hasClass('folder')) {
+          addFolderToPlaylist($el.href, { shouldPlay: isPlaybackStopped() });
+        }
         return;
       }
 
@@ -371,10 +375,19 @@
       const escapedUrl = escapeAttr(url);
       const safeLabel = escapeHtml(label);
       const safeTitle = escapeAttr(`Navigate to ${url}`);
+      const isParent = optionalClasses.split(' ').includes('parent');
+      const addButton = (isParent ? '' : `
+                  <button class='btn-add-to-playlist' type='button' title='Add folder to playlist' aria-label='Add folder to playlist'>
+                    <svg><use xlink:href='#svg-playlist-add'/></svg>
+                  </button>`);
 
       return `<a href='${escapedUrl}' class='folder ${optionalClasses}' draggable='false' title='${safeTitle}'>
                 <div class='title' draggable='false'>
-                  <svg class='icon'><use xlink:href='#svg-folder-arrow'/></svg><span class="label">${safeLabel}</span>
+                  <span class='folder-label'>
+                    <svg class='icon'><use xlink:href='#svg-folder-arrow'/></svg>
+                    <span class="label">${safeLabel}</span>
+                  </span>
+                  ${addButton}
                 </div>
                 <div class='arrow' draggable='false'>
                   <svg class='open'><use xlink:href='#svg-folder-open'/></svg>
@@ -440,10 +453,69 @@
       renderPlaylist();
     }
 
-    const addToPlaylist = (url) => {
+    const getMediaUrlsFromLinks = (links) => {
+      if (!links || !Array.isArray(links.files)) return [];
+      const medias = links.files.filter((file) => isMedia(file.url));
+      medias.sort(sortFiles);
+      return medias.map((file) => file.url);
+    }
+
+    const playlistFolderDepthDefault = 2;
+    const normalizePlaylistFolderDepth = (value) => {
+      const parsed = parseInt(value, 10);
+      if (!Number.isFinite(parsed)) return playlistFolderDepthDefault;
+      return Math.max(1, Math.floor(parsed));
+    }
+    const getPlaylistFolderDepth = () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'));
+
+    const addPlaylistItems = (urls, shouldPlay = false) => {
+      if (!Array.isArray(urls)) return;
+      const items = urls
+        .filter((url) => isString(url) && url.length > 0)
+        .map(playlistItemFromUrl)
+        .filter((item) => item && item.url);
+      if (items.length === 0) return;
+      app.playlist.push(...items);
+      if (shouldPlay) {
+        actionPlay(items[0].url);
+      } else {
+        renderPlaylist();
+      }
+    }
+
+    const isPlaybackStopped = () => (!$player.src || $player.src.length === 0 || $body.hasClass('is-stopped'));
+
+    const addToPlaylist = (url, shouldPlay = false) => {
       if (!url) return;
-      app.playlist.push(playlistItemFromUrl(url));
-      renderPlaylist();
+      addPlaylistItems([url], shouldPlay);
+    }
+
+    const addFolderToPlaylist = async (url, opts = {}) => {
+      if (!url) return;
+      const shouldPlay = !!opts.shouldPlay;
+      const depth = (Number.isFinite(opts.depth) ? opts.depth : getPlaylistFolderDepth());
+      const maxDepth = Math.max(0, normalizePlaylistFolderDepth(depth) - 1);
+
+      try {
+        const links = await folderApiRequest(urlToFolder(url), { maxDepth });
+        const urls = getMediaUrlsFromLinks(links);
+        addPlaylistItems(urls, shouldPlay);
+      } catch (e) {
+        console.warn('Unable to add folder to playlist', e);
+      }
+    }
+
+    const addCurrentFolderToPlaylist = () => {
+      const depth = getPlaylistFolderDepth();
+      if (depth <= 1) {
+        const urls = getMediaUrlsFromLinks(app.links);
+        addPlaylistItems(urls, isPlaybackStopped());
+        return;
+      }
+      const baseUrl = (hashState.location && hashState.location.length > 0)
+        ? hashState.location
+        : window.location.href;
+      addFolderToPlaylist(baseUrl, { shouldPlay: isPlaybackStopped(), depth });
     }
 
     const hasMultiPlaylist = () => Array.isArray(app.playlist) && app.playlist.length > 1;
@@ -686,6 +758,10 @@
             <svg><use xlink:href='#svg-download'/></svg>
             <span>Export</span>
           </button>
+          <button class='btn-playlist-add-folder' type='button' title='Add all files from current folder view'>
+            <svg><use xlink:href='#svg-playlist-add'/></svg>
+            <span>Add All</span>
+          </button>
           <button class='btn-playlist-clear' type='button' title='Clear playlist'>Clear</button>
         </li>
       `;
@@ -735,6 +811,14 @@
         exportButton.addEventListener('click', (e) => {
           stopClose(e);
           exportPlaylist();
+        });
+      }
+
+      const addFolderButton = $playlist.querySelector('.btn-playlist-add-folder');
+      if (addFolderButton) {
+        addFolderButton.addEventListener('click', (e) => {
+          stopClose(e);
+          addCurrentFolderToPlaylist();
         });
       }
 
@@ -2024,6 +2108,7 @@
         const type = setting.type || 'checkbox';
         const value = (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
         const checked = (value === true ? 'checked' : '');
+        const attrs = (setting.attrs ? ` ${setting.attrs}` : '');
 
         var valueAttribute = '';
 
@@ -2040,7 +2125,7 @@
         return `${acc}
           <li class='modal-item setting-item' title='${setting.desc}'><span class='key'>${setting.label}</span>
             <span class='desc'>
-              <label><input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}><span class="metadata"></span></label>
+              <label><input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}><span class="metadata"></span></label>
             </span>
           </li>`;
       }, '');
@@ -2219,6 +2304,22 @@
           } else {
             $html.addClass('no-thumbnail-animation');
           }
+        }
+      },
+      'playlist-depth': {
+        label: 'Playlist folder depth',
+        desc: 'How many folder levels to include when adding a folder to the playlist (1 = current folder only).',
+        event: 'change',
+        type: 'number',
+        attrs: 'min="1" step="1" inputmode="numeric"',
+        default: playlistFolderDepthDefault,
+        get: () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth')),
+        set: (val) => persistSetting('playlist-depth', val),
+        update: () => {
+          const $el = $('.setting-playlist-depth');
+          const val = normalizePlaylistFolderDepth($el.value);
+          $el.value = val;
+          settings['playlist-depth'].set(val);
         }
       },
       cache: {
