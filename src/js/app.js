@@ -464,7 +464,7 @@
     const normalizePlaylistFolderDepth = (value) => {
       const parsed = parseInt(value, 10);
       if (!Number.isFinite(parsed)) return playlistFolderDepthDefault;
-      return Math.max(1, Math.floor(parsed));
+      return Math.min(3, Math.max(1, Math.floor(parsed)));
     }
     const getPlaylistFolderDepth = () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'));
 
@@ -2107,12 +2107,14 @@
         const setting = settings[key];
         const type = setting.type || 'checkbox';
         const value = (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
-        const checked = (value === true ? 'checked' : '');
+        const isCheckbox = (type === 'checkbox');
+        const isSelect = (type === 'select');
+        const checked = (isCheckbox && value === true ? 'checked' : '');
         const attrs = (setting.attrs ? ` ${setting.attrs}` : '');
 
         var valueAttribute = '';
 
-        if (typeof value !== 'boolean') {
+        if (typeof value !== 'boolean' && !isSelect) {
           if (setting.type === 'button') {
             valueAttribute = `value="${setting.buttonLabel}"`;
           } else if (setting.type === 'color') {
@@ -2122,10 +2124,27 @@
           }
         }
 
+        const control = (isSelect
+          ? (() => {
+              const options = (setting.options || [])
+                .map((opt) => {
+                  const optValue = (opt && typeof opt === 'object' ? opt.value : opt);
+                  const optLabel = (opt && typeof opt === 'object' ? opt.label : opt);
+                  const safeValue = escapeAttr(optValue);
+                  const safeLabel = escapeHtml(optLabel);
+                  const selected = (String(value) === String(optValue) ? ' selected' : '');
+                  return `<option value="${safeValue}"${selected}>${safeLabel}</option>`;
+                })
+                .join('');
+              return `<select class='setting-${key}'${attrs}>${options}</select>`;
+            })()
+          : `<input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}>`
+        );
+
         return `${acc}
           <li class='modal-item setting-item' title='${setting.desc}'><span class='key'>${setting.label}</span>
             <span class='desc'>
-              <label><input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}><span class="metadata"></span></label>
+              <label>${control}<span class="metadata"></span></label>
             </span>
           </li>`;
       }, '');
@@ -2310,8 +2329,8 @@
         label: 'Playlist folder depth',
         desc: 'How many folder levels to include when adding a folder to the playlist (1 = current folder only).',
         event: 'change',
-        type: 'number',
-        attrs: 'min="1" step="1" inputmode="numeric"',
+        type: 'select',
+        options: [1, 2, 3],
         default: playlistFolderDepthDefault,
         get: () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth')),
         set: (val) => persistSetting('playlist-depth', val),

@@ -67,6 +67,7 @@ Notes:
 * Looping is enabled by default and repeats the playlist.
 * Imported `.m3u` files can include relative URLs; they are resolved against the playlist URL (or the current page for local files).
 * Saved playlists live in localStorage and are only restored on demand.
+
 \* Be careful with concurrency. Increasing the setting above 1 does make it generate thumbnails much faster. But it is very easy for HTTP requests for generating thumbnails to saturate a connection enough that the main video gets starved for bandwidth. Especially if you browse into a folder with many dozens of videos in it. Thumbnails are generated lazily as tiles scroll into view to reduce bandwidth.
 
 \** Animated thumbnails can consume a lot of data. The experience may degrade on slower network connections

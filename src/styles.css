@@ -356,6 +356,23 @@
       --input-background-color: #999;
       --input-slider-color: #FFF;
     }
+
+    .modal select {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.5rem;
+      height: 2rem;
+      font-size: 0.9rem;
+      color: black;
+      border-radius: 2rem;
+      outline: none;
+      cursor: pointer;
+      background-color: #999;
+      border: 0 none;
+      text-align: center;
+      text-align-last: center;
+    }
     .modal input:checked {
       --input-background-color: var(--theme-color);
     }
