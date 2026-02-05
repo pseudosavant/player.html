@@ -88,6 +88,7 @@
     app.playlistIndex = -1;
     app.playlistLoop = true;
     const playlistStorageKey = 'playlist-saved';
+    const playlistSessionKey = 'playlist-session';
 
     const urlToFolder = (url) => {
       if (isFolder(url)) return url;
@@ -460,6 +461,14 @@
       return medias.map((file) => file.url);
     }
 
+    const isAbortError = (e) => {
+      if (!e) return false;
+      if (e.name === 'AbortError' || e.code === 20) return true;
+      if (isString(e) && e.includes('BodyStreamBuffer was aborted')) return true;
+      if (isString(e?.message) && e.message.includes('BodyStreamBuffer was aborted')) return true;
+      return false;
+    }
+
     const playlistFolderDepthDefault = 2;
     const normalizePlaylistFolderDepth = (value) => {
       const parsed = parseInt(value, 10);
@@ -716,6 +725,35 @@
       storageStore(playlistStorageKey, JSON.stringify(urls));
     }
 
+    const savePlaylistToSession = () => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) {
+        sessionRemove(playlistSessionKey);
+        return;
+      }
+      const urls = app.playlist.map((item) => item.url);
+      const index = getPlaylistCurrentIndex();
+      sessionStore(playlistSessionKey, JSON.stringify({ urls, index }));
+    }
+
+    const restorePlaylistFromSession = () => {
+      const saved = sessionRetrieve(playlistSessionKey);
+      if (!saved) return false;
+      try {
+        const payload = JSON.parse(saved);
+        const urls = (payload && Array.isArray(payload.urls) ? payload.urls : []);
+        const filtered = urls.filter((url) => isString(url));
+        if (filtered.length === 0) return false;
+        app.playlist = filtered.map(playlistItemFromUrl);
+        const index = (Number.isFinite(payload.index) ? payload.index : -1);
+        app.playlistIndex = (index >= 0 && index < app.playlist.length ? index : -1);
+        renderPlaylist();
+        return true;
+      } catch (e) {
+        console.warn('Unable to restore playlist from session', e);
+        return false;
+      }
+    }
+
     const restorePlaylistFromStorage = () => {
       const saved = storageRetrieve(playlistStorageKey);
       if (!saved) return;
@@ -735,6 +773,7 @@
       const currentIndex = getPlaylistCurrentIndex();
       app.playlistIndex = currentIndex;
       updatePlaylistMultiState();
+      savePlaylistToSession();
 
       var html = `
         <li class='modal-item playlist-controls'>
@@ -2849,6 +2888,12 @@
 
     // main()
     const main = async () => {
+      window.addEventListener('unhandledrejection', (event) => {
+        if (isAbortError(event.reason)) event.preventDefault();
+      });
+
+      const restoredPlaylist = restorePlaylistFromSession();
+
       setupControls();
       renderSettingsControls();
       createAnimationCSS();
@@ -2860,7 +2905,11 @@
       if (hash) {
         if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
           $player.muted = true; /* Autoplay on load only works if it is muted */
-          setPlaylistFromUrl(hash.media, true);
+          if (restoredPlaylist) {
+            actionPlay(hash.media);
+          } else {
+            setPlaylistFromUrl(hash.media, true);
+          }
         }
 
         if (hash.time && hash.time > 0) $player.currentTime = hash.time;

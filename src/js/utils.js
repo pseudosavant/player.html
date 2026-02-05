@@ -151,6 +151,36 @@
     }
     global.storageRemove = storageRemove;
 
+    const sessionStore = (key, val) => {
+      try {
+        return sessionStorage.setItem(key, val);
+      } catch (e) {
+        console.warn(`Failed to store (session): ${key}`, e);
+        return null;
+      }
+    }
+    global.sessionStore = sessionStore;
+
+    const sessionRetrieve = (key) => {
+      try {
+        return sessionStorage.getItem(key);
+      } catch (e) {
+        console.warn(`Failed to retrieve (session): ${key}`, e);
+        return null;
+      }
+    }
+    global.sessionRetrieve = sessionRetrieve;
+
+    const sessionRemove = (key) => {
+      try {
+        return sessionStorage.removeItem(key);
+      } catch (e) {
+        console.warn(`Failed to remove (session): ${key}`, e);
+        return null;
+      }
+    }
+    global.sessionRemove = sessionRemove;
+
     const secondsToHMS = (totalSecs) => {
       if (Number.isNaN(totalSecs)) return { hours: 0, mins: 0, secs: 0 };
 
