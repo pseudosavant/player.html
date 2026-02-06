@@ -23,6 +23,7 @@ It can be used as:
 ## Contents
 * [Quick Start](#quick-start)
 * [Features](#features)
+* [Feature requests](#feature-requests)
 * [Pre-rendered server-side thumbnails](#pre-rendered-server-side-thumbnails)
 * [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson)
 * [Installing ffmpeg](#installing-ffmpeg)
@@ -294,8 +295,28 @@ Compatibility notes:
 * `subtitles.*` keys are still accepted on load for compatibility, but `settings.*` is the canonical configuration surface for user-facing defaults.
 * Runtime/browser-detected fields may appear in exported files. They are optional and are not required for a hand-authored config file.
 
+## Feature requests
+
+If you have an idea for `player.html`, please open a GitHub issue and label it as an enhancement.
+
+Feature requests are preferred over pull requests.
+
+The more detail you include, the easier it is to implement quickly and correctly. Helpful details include:
+
+* What problem you are trying to solve
+* What behavior you want
+* Any UI/UX expectations
+* Edge cases or compatibility concerns
+* Example files/URLs/screenshots (if relevant)
+
+A useful quality check before posting:
+
+* Paste your issue draft into an AI/LLM and ask:
+  * `Does this feature request for player.html have enough detail to clearly implement it? What other details should I consider adding?`
+* Then paste your enhancement draft after that prompt and refine based on the feedback.
+
 <a id="ffmpeg"></a>
-### Installing ffmpeg
+## Installing ffmpeg
 
 The thumbnail scripts require `ffmpeg` to be available on your `PATH`.
 
@@ -317,6 +338,10 @@ Linux (package manager examples):
 sudo apt install ffmpeg
 ```
 
+## Development
+* `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
+* `dist/player.html` is generated output; do not edit it by hand.
+
 ### Build
 The build inlines CSS, JS, SVGs, and assets into a single portable file.
 
@@ -329,10 +354,6 @@ For continuous rebuilds while editing:
 ```
 uv run build.py --watch
 ```
-
-### Development
-* `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
-* `dist/player.html` is generated output; do not edit it by hand.
 
 ## Supported browsers
 
