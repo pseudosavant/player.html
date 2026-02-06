@@ -477,11 +477,7 @@
     }
     const getPlaylistFolderDepth = () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'));
 
-    const subtitleFontDefault = 'sans';
-    const subtitleSizeDefault = '100%';
-    const subtitlePositionDefault = 'author';
-    const subtitleColorDefault = '#ffffff';
-    const subtitleBackgroundDefault = '#000000';
+    const subtitleOptionsConfig = ((app && app.options && app.options.subtitles) ? app.options.subtitles : {});
 
     const subtitleFontOptions = [
       { value: 'sans', label: 'Sans' },
@@ -509,6 +505,31 @@
     const subtitlePositionValues = subtitlePositionOptions
       .map((opt) => opt.value)
       .filter((value) => value !== 'author');
+
+    const subtitleFontDefault = (() => {
+      const normalized = String(subtitleOptionsConfig.font || '').toLowerCase();
+      return (subtitleFontValues.includes(normalized) ? normalized : 'sans');
+    })();
+    const subtitleSizeDefault = (() => {
+      const normalized = String(subtitleOptionsConfig.size || '').trim();
+      return (subtitleSizeValues.includes(normalized) ? normalized : '100%');
+    })();
+    const subtitlePositionDefault = (() => {
+      const normalized = String(subtitleOptionsConfig.position || '').toLowerCase();
+      if (normalized === 'author') return 'author';
+      const parsed = parseFloat(subtitleOptionsConfig.position);
+      return (Number.isFinite(parsed) && subtitlePositionValues.includes(parsed) ? parsed : 'author');
+    })();
+    const subtitleColorDefault = (() => {
+      const color = String(subtitleOptionsConfig.color || '').trim();
+      if (/^#[0-9a-f]{6}$/i.test(color) || /^#[0-9a-f]{3}$/i.test(color)) return color;
+      return '#ffffff';
+    })();
+    const subtitleBackgroundDefault = (() => {
+      const color = String(subtitleOptionsConfig.background || '').trim();
+      if (/^#[0-9a-f]{6}$/i.test(color) || /^#[0-9a-f]{3}$/i.test(color)) return color;
+      return '#000000';
+    })();
 
     const normalizeSubtitleFont = (value) => {
       const normalized = String(value || '').toLowerCase();
