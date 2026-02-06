@@ -45,6 +45,20 @@
           color: '#ffffff', // Subtitle text color in hex.
           background: '#000000' // Subtitle background color in hex.
         },
+        settings: {
+          hue: 323,
+          blur: true,
+          transitions: true,
+          'auto-subtitles': false,
+          'subtitle-font': 'sans',
+          'subtitle-size': '100%',
+          'subtitle-position': 'author',
+          'subtitle-color': '#ffffff',
+          'subtitle-background': '#000000',
+          thumbnailing: true,
+          animate: true,
+          'playlist-depth': 2
+        },
         // Perceptual volume curve exponent for the discrete volume control (0..1 -> 0..1).
         // Higher values give more control at lower volumes.
         volumeExponent: 1.8,

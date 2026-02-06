@@ -469,15 +469,133 @@
       return false;
     }
 
-    const playlistFolderDepthDefault = 2;
-    const normalizePlaylistFolderDepth = (value) => {
+    const normalizePlaylistFolderDepth = (value, fallback = 2) => {
       const parsed = parseInt(value, 10);
-      if (!Number.isFinite(parsed)) return playlistFolderDepthDefault;
+      if (!Number.isFinite(parsed)) return fallback;
       return Math.min(3, Math.max(1, Math.floor(parsed)));
     }
-    const getPlaylistFolderDepth = () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'));
+    const getPlaylistFolderDepthDefault = () => normalizePlaylistFolderDepth(getOptionSettingDefault('playlist-depth', 2), 2);
+    const getPlaylistFolderDepth = () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'), getPlaylistFolderDepthDefault());
 
-    const subtitleOptionsConfig = ((app && app.options && app.options.subtitles) ? app.options.subtitles : {});
+    const playerConfigFilename = 'player.html.json';
+
+    const isObjectRecord = (value) => (value && typeof value === 'object' && !Array.isArray(value));
+    const getOptionSettingsDefaults = () => (
+      isObjectRecord(app && app.options && app.options.settings)
+        ? app.options.settings
+        : {}
+    );
+    const getOptionSettingDefault = (key, fallback) => {
+      const defaults = getOptionSettingsDefaults();
+      if (Object.prototype.hasOwnProperty.call(defaults, key)) return defaults[key];
+      return fallback;
+    }
+    const normalizeBooleanSetting = (value, fallback) => {
+      if (value === true || value === false) return value;
+      if (value === 'true') return true;
+      if (value === 'false') return false;
+      return fallback;
+    }
+    const normalizeNumberSetting = (value, fallback) => {
+      const parsed = Number(value);
+      return (Number.isFinite(parsed) ? parsed : fallback);
+    }
+    const deepMergeObjects = (target, source) => {
+      if (!isObjectRecord(target) || !isObjectRecord(source)) return target;
+      Object.keys(source).forEach((key) => {
+        const src = source[key];
+        const dst = target[key];
+        if (isObjectRecord(src) && isObjectRecord(dst)) {
+          deepMergeObjects(dst, src);
+        } else {
+          target[key] = src;
+        }
+      });
+      return target;
+    }
+    const deepCloneValue = (value) => {
+      if (Array.isArray(value)) return value.map((item) => deepCloneValue(item));
+      if (isObjectRecord(value)) {
+        const clone = {};
+        Object.keys(value).forEach((key) => clone[key] = deepCloneValue(value[key]));
+        return clone;
+      }
+      return value;
+    }
+    const normalizeConfigSubtitleSettings = (source) => {
+      if (!isObjectRecord(source)) return source;
+      if (!isObjectRecord(source.settings)) source.settings = {};
+
+      const subtitles = (isObjectRecord(source.subtitles) ? source.subtitles : null);
+      if (!subtitles) return source;
+
+      if (Object.prototype.hasOwnProperty.call(subtitles, 'autoMatch') && typeof source.settings['auto-subtitles'] === 'undefined') {
+        source.settings['auto-subtitles'] = subtitles.autoMatch;
+      }
+      if (Object.prototype.hasOwnProperty.call(subtitles, 'font') && typeof source.settings['subtitle-font'] === 'undefined') {
+        source.settings['subtitle-font'] = subtitles.font;
+      }
+      if (Object.prototype.hasOwnProperty.call(subtitles, 'size') && typeof source.settings['subtitle-size'] === 'undefined') {
+        source.settings['subtitle-size'] = subtitles.size;
+      }
+      if (Object.prototype.hasOwnProperty.call(subtitles, 'position') && typeof source.settings['subtitle-position'] === 'undefined') {
+        source.settings['subtitle-position'] = subtitles.position;
+      }
+      if (Object.prototype.hasOwnProperty.call(subtitles, 'color') && typeof source.settings['subtitle-color'] === 'undefined') {
+        source.settings['subtitle-color'] = subtitles.color;
+      }
+      if (Object.prototype.hasOwnProperty.call(subtitles, 'background') && typeof source.settings['subtitle-background'] === 'undefined') {
+        source.settings['subtitle-background'] = subtitles.background;
+      }
+
+      return source;
+    }
+    const applyPlayerConfigObject = (config) => {
+      if (!isObjectRecord(config)) return false;
+      const source = normalizeConfigSubtitleSettings(
+        isObjectRecord(config.options) ? config.options : config
+      );
+      if (!isObjectRecord(source)) return false;
+      deepMergeObjects(app.options, source);
+      if (!isObjectRecord(app.options.settings)) app.options.settings = {};
+      return true;
+    }
+    const loadPlayerConfig = async () => {
+      try {
+        const response = await fetch(playerConfigFilename, { cache: 'no-store' });
+        if (!response || !response.ok) return false;
+        const text = await response.text();
+        if (!text || !text.trim()) return false;
+        let parsed;
+        try {
+          parsed = JSON.parse(text);
+        } catch (e) {
+          console.warn(`Unable to parse ${playerConfigFilename}`, e);
+          return false;
+        }
+        return applyPlayerConfigObject(parsed);
+      } catch (e) {
+        return false;
+      }
+    }
+    const downloadJSON = (filename, data) => {
+      const json = `${JSON.stringify(data, null, 2)}\n`;
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const $a = $('<a>');
+      $a.attr('href', url);
+      $a.attr('download', filename);
+      $('body').append($a);
+      $a.click();
+      $($a).remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    const subtitleFontFallback = 'sans';
+    const subtitleSizeFallback = '100%';
+    const subtitlePositionFallback = 'author';
+    const subtitleColorFallback = '#ffffff';
+    const subtitleBackgroundFallback = '#000000';
 
     const subtitleFontOptions = [
       { value: 'sans', label: 'Sans' },
@@ -506,51 +624,59 @@
       .map((opt) => opt.value)
       .filter((value) => value !== 'author');
 
-    const subtitleFontDefault = (() => {
-      const normalized = String(subtitleOptionsConfig.font || '').toLowerCase();
-      return (subtitleFontValues.includes(normalized) ? normalized : 'sans');
-    })();
-    const subtitleSizeDefault = (() => {
-      const normalized = String(subtitleOptionsConfig.size || '').trim();
-      return (subtitleSizeValues.includes(normalized) ? normalized : '100%');
-    })();
-    const subtitlePositionDefault = (() => {
-      const normalized = String(subtitleOptionsConfig.position || '').toLowerCase();
-      if (normalized === 'author') return 'author';
-      const parsed = parseFloat(subtitleOptionsConfig.position);
-      return (Number.isFinite(parsed) && subtitlePositionValues.includes(parsed) ? parsed : 'author');
-    })();
-    const subtitleColorDefault = (() => {
-      const color = String(subtitleOptionsConfig.color || '').trim();
-      if (/^#[0-9a-f]{6}$/i.test(color) || /^#[0-9a-f]{3}$/i.test(color)) return color;
-      return '#ffffff';
-    })();
-    const subtitleBackgroundDefault = (() => {
-      const color = String(subtitleOptionsConfig.background || '').trim();
-      if (/^#[0-9a-f]{6}$/i.test(color) || /^#[0-9a-f]{3}$/i.test(color)) return color;
-      return '#000000';
-    })();
-
-    const normalizeSubtitleFont = (value) => {
+    const normalizeSubtitleFont = (value, fallback = subtitleFontFallback) => {
       const normalized = String(value || '').toLowerCase();
-      return (subtitleFontValues.includes(normalized) ? normalized : subtitleFontDefault);
+      return (subtitleFontValues.includes(normalized) ? normalized : fallback);
     }
-    const normalizeSubtitleSize = (value) => {
+    const normalizeSubtitleSize = (value, fallback = subtitleSizeFallback) => {
       const normalized = String(value || '').trim();
-      return (subtitleSizeValues.includes(normalized) ? normalized : subtitleSizeDefault);
+      return (subtitleSizeValues.includes(normalized) ? normalized : fallback);
     }
-    const normalizeSubtitlePosition = (value) => {
+    const normalizeSubtitlePosition = (value, fallback = subtitlePositionFallback) => {
       const normalized = String(value || '').toLowerCase();
       if (normalized === 'author') return 'author';
       const parsed = parseFloat(value);
-      if (!Number.isFinite(parsed)) return subtitlePositionDefault;
-      return (subtitlePositionValues.includes(parsed) ? parsed : subtitlePositionDefault);
+      if (!Number.isFinite(parsed)) return fallback;
+      return (subtitlePositionValues.includes(parsed) ? parsed : fallback);
     }
-    const normalizeSubtitleColor = (value, fallback) => {
+    const normalizeSubtitleColor = (value, fallback = subtitleColorFallback) => {
       const str = String(value || '').trim();
       if (/^#[0-9a-f]{6}$/i.test(str) || /^#[0-9a-f]{3}$/i.test(str)) return str;
       return fallback;
     }
+    const getOptionSubtitleDefault = (subtitleKey, settingKey, fallback) => {
+      const fromSettings = getOptionSettingDefault(settingKey, undefined);
+      if (typeof fromSettings !== 'undefined') return fromSettings;
+      if (
+        app &&
+        app.options &&
+        isObjectRecord(app.options.subtitles) &&
+        Object.prototype.hasOwnProperty.call(app.options.subtitles, subtitleKey)
+      ) {
+        return app.options.subtitles[subtitleKey];
+      }
+      return fallback;
+    }
+    const getSubtitleFontDefault = () => normalizeSubtitleFont(
+      getOptionSubtitleDefault('font', 'subtitle-font', subtitleFontFallback),
+      subtitleFontFallback
+    );
+    const getSubtitleSizeDefault = () => normalizeSubtitleSize(
+      getOptionSubtitleDefault('size', 'subtitle-size', subtitleSizeFallback),
+      subtitleSizeFallback
+    );
+    const getSubtitlePositionDefault = () => normalizeSubtitlePosition(
+      getOptionSubtitleDefault('position', 'subtitle-position', subtitlePositionFallback),
+      subtitlePositionFallback
+    );
+    const getSubtitleColorDefault = () => normalizeSubtitleColor(
+      getOptionSubtitleDefault('color', 'subtitle-color', subtitleColorFallback),
+      subtitleColorFallback
+    );
+    const getSubtitleBackgroundDefault = () => normalizeSubtitleColor(
+      getOptionSubtitleDefault('background', 'subtitle-background', subtitleBackgroundFallback),
+      subtitleBackgroundFallback
+    );
     const subtitleFontToFamily = (value) => {
       switch (normalizeSubtitleFont(value)) {
         case 'serif':
@@ -1364,8 +1490,10 @@
     let autoSubtitlePlaybackStartedFor = '';
 
     const getAutoSubtitleDefault = () => {
+      const fromSettings = getOptionSettingDefault('auto-subtitles', undefined);
+      if (typeof fromSettings !== 'undefined') return normalizeBooleanSetting(fromSettings, false);
       if (app && app.options && app.options.subtitles && typeof app.options.subtitles.autoMatch !== 'undefined') {
-        return app.options.subtitles.autoMatch;
+        return normalizeBooleanSetting(app.options.subtitles.autoMatch, false);
       }
       return false;
     }
@@ -1379,14 +1507,14 @@
     const isSubtitleTrackKind = (kind) => kind === 'subtitles' || kind === 'captions';
 
     const getSubtitlePositionPreference = () => {
-      return normalizeSubtitlePosition(retrieveSetting('subtitle-position'));
+      return normalizeSubtitlePosition(retrieveSetting('subtitle-position'), getSubtitlePositionDefault());
     }
 
     const applySubtitleStyleSettings = () => {
-      const font = normalizeSubtitleFont(retrieveSetting('subtitle-font'));
-      const size = normalizeSubtitleSize(retrieveSetting('subtitle-size'));
-      const color = normalizeSubtitleColor(retrieveSetting('subtitle-color'), subtitleColorDefault);
-      const background = normalizeSubtitleColor(retrieveSetting('subtitle-background'), subtitleBackgroundDefault);
+      const font = normalizeSubtitleFont(retrieveSetting('subtitle-font'), getSubtitleFontDefault());
+      const size = normalizeSubtitleSize(retrieveSetting('subtitle-size'), getSubtitleSizeDefault());
+      const color = normalizeSubtitleColor(retrieveSetting('subtitle-color'), getSubtitleColorDefault());
+      const background = normalizeSubtitleColor(retrieveSetting('subtitle-background'), getSubtitleBackgroundDefault());
 
       setCSSVariableNumber('--subtitle-font-family', subtitleFontToFamily(font), $html);
       setCSSVariableNumber('--subtitle-font-size', size, $html);
@@ -2378,6 +2506,15 @@
     }
 
     const bindSettingControls = (keys) => {
+      const updateWithoutPersisting = (setting) => {
+        suppressSettingPersistence = true;
+        try {
+          setting.update();
+        } finally {
+          suppressSettingPersistence = false;
+        }
+      }
+
       keys.forEach((key) => {
         const setting = settings[key];
         const $el = $(`.setting-${key}`);
@@ -2396,11 +2533,12 @@
         });
 
         $el.on('click', (e) => e.stopImmediatePropagation()); // Don't close the modal for clicks on a settings control
-        setting.update();
+        updateWithoutPersisting(setting);
       });
     }
 
     const renderSettingsControls = (useDefaults) => {
+      refreshSettingDefaultsFromOptions();
       const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key));
       const html = renderSettingRows(keys, useDefaults, 'setting-item');
       $settings.html(html);
@@ -2410,6 +2548,7 @@
 
     const renderSubtitleSettingsControls = (useDefaults) => {
       if (!$subtitles) return '';
+      refreshSettingDefaultsFromOptions();
       const keys = Object.keys(settings).filter((key) => isSubtitleSetting(key));
       const rows = renderSettingRows(keys, useDefaults, 'setting-item subtitle-setting-item');
       const html = `<li class='modal-item subtitle-section-heading subtitle-settings-heading'>Subtitle display settings</li>${rows}`;
@@ -2433,7 +2572,11 @@
         return val || undefined;
       }
     };
-    const persistSetting = (key, value) => storageStore(`setting-${key}`, value);
+    let suppressSettingPersistence = false;
+    const persistSetting = (key, value) => {
+      if (suppressSettingPersistence) return;
+      storageStore(`setting-${key}`, value);
+    }
     const clearSetting = (key) => storageRemove(`setting-${key}`);
     const enumerateSettings = () => Object.keys(localStorage).filter((key) => key.startsWith('setting-')).map((key) => key.replace('setting-', ''));
     const resetSettings = () => {
@@ -2463,7 +2606,7 @@
         desc: 'Set the theme color for player.html',
         event: 'input',
         type: 'color',
-        default: getCSSVariable('--default-hue'),
+        default: normalizeNumberSetting(getOptionSettingDefault('hue', getCSSVariable('--default-hue')), getCSSVariable('--default-hue')),
         get: () => (typeof retrieveSetting('hue') !== 'undefined' ? retrieveSetting('hue') : settings.hue.default),
         set: async (val) => {
           persistSetting('hue', val);
@@ -2480,7 +2623,7 @@
         label: 'UI Blur Effects',
         desc: 'Enable/diable blur effects in the UI',
         event: 'change',
-        default: true,
+        default: normalizeBooleanSetting(getOptionSettingDefault('blur', true), true),
         get: () => typeof retrieveSetting('blur') !== 'undefined' ? retrieveSetting('blur') : settings.blur.default,
         set: (val) => persistSetting('blur', val),
         update: () => {
@@ -2501,7 +2644,7 @@
         label: 'UI Transitions',
         desc: 'Enable/disable animated transitions in the UI',
         event: 'change',
-        default: true,
+        default: normalizeBooleanSetting(getOptionSettingDefault('transitions', true), true),
         get: () => typeof retrieveSetting('transitions') !== 'undefined' ? retrieveSetting('transitions') : settings.transitions.default,
         set: (val) => persistSetting('transitions', val),
         update: () => {
@@ -2541,8 +2684,8 @@
         event: 'change',
         type: 'select',
         options: subtitleFontOptions,
-        default: subtitleFontDefault,
-        get: () => normalizeSubtitleFont(retrieveSetting('subtitle-font')),
+        default: getSubtitleFontDefault(),
+        get: () => normalizeSubtitleFont(retrieveSetting('subtitle-font'), settings['subtitle-font'].default),
         set: (val) => persistSetting('subtitle-font', normalizeSubtitleFont(val)),
         update: () => {
           const $el = $('.setting-subtitle-font');
@@ -2558,8 +2701,8 @@
         event: 'change',
         type: 'select',
         options: subtitleSizeOptions,
-        default: subtitleSizeDefault,
-        get: () => normalizeSubtitleSize(retrieveSetting('subtitle-size')),
+        default: getSubtitleSizeDefault(),
+        get: () => normalizeSubtitleSize(retrieveSetting('subtitle-size'), settings['subtitle-size'].default),
         set: (val) => persistSetting('subtitle-size', normalizeSubtitleSize(val)),
         update: () => {
           const $el = $('.setting-subtitle-size');
@@ -2575,8 +2718,8 @@
         event: 'change',
         type: 'select',
         options: subtitlePositionOptions,
-        default: subtitlePositionDefault,
-        get: () => normalizeSubtitlePosition(retrieveSetting('subtitle-position')),
+        default: getSubtitlePositionDefault(),
+        get: () => normalizeSubtitlePosition(retrieveSetting('subtitle-position'), settings['subtitle-position'].default),
         set: (val) => persistSetting('subtitle-position', normalizeSubtitlePosition(val)),
         update: () => {
           const $el = $('.setting-subtitle-position');
@@ -2591,12 +2734,12 @@
         desc: 'Set subtitle text color.',
         event: 'input',
         type: 'color',
-        default: subtitleColorDefault,
-        get: () => normalizeSubtitleColor(retrieveSetting('subtitle-color'), subtitleColorDefault),
-        set: (val) => persistSetting('subtitle-color', normalizeSubtitleColor(val, subtitleColorDefault)),
+        default: getSubtitleColorDefault(),
+        get: () => normalizeSubtitleColor(retrieveSetting('subtitle-color'), settings['subtitle-color'].default),
+        set: (val) => persistSetting('subtitle-color', normalizeSubtitleColor(val, settings['subtitle-color'].default)),
         update: () => {
           const $el = $('.setting-subtitle-color');
-          const val = normalizeSubtitleColor($el.value, subtitleColorDefault);
+          const val = normalizeSubtitleColor($el.value, settings['subtitle-color'].default);
           $el.value = val;
           settings['subtitle-color'].set(val);
           applySubtitleStyleSettings();
@@ -2607,12 +2750,12 @@
         desc: 'Set subtitle background color.',
         event: 'input',
         type: 'color',
-        default: subtitleBackgroundDefault,
-        get: () => normalizeSubtitleColor(retrieveSetting('subtitle-background'), subtitleBackgroundDefault),
-        set: (val) => persistSetting('subtitle-background', normalizeSubtitleColor(val, subtitleBackgroundDefault)),
+        default: getSubtitleBackgroundDefault(),
+        get: () => normalizeSubtitleColor(retrieveSetting('subtitle-background'), settings['subtitle-background'].default),
+        set: (val) => persistSetting('subtitle-background', normalizeSubtitleColor(val, settings['subtitle-background'].default)),
         update: () => {
           const $el = $('.setting-subtitle-background');
-          const val = normalizeSubtitleColor($el.value, subtitleBackgroundDefault);
+          const val = normalizeSubtitleColor($el.value, settings['subtitle-background'].default);
           $el.value = val;
           settings['subtitle-background'].set(val);
           applySubtitleStyleSettings();
@@ -2635,7 +2778,7 @@
         label: 'Generate Thumbnails',
         desc: 'Generate thumbnails for video listings. It may use a lot of bandwidth, especially in large folders of videos. Turn off if it causes playback problems.',
         event: 'change',
-        default: true,
+        default: normalizeBooleanSetting(getOptionSettingDefault('thumbnailing', true), true),
         get: () => typeof retrieveSetting('thumbnailing') !== 'undefined' ? retrieveSetting('thumbnailing') : settings.thumbnailing.default,
         set: (val) => persistSetting('thumbnailing', val),
         update: () => {
@@ -2653,7 +2796,7 @@
         label: 'Animate Thumbnails',
         desc: 'Generate animated thumbnails. Disable this to save bandwidth and localStorage space.',
         event: 'change',
-        default: true,
+        default: normalizeBooleanSetting(getOptionSettingDefault('animate', true), true),
         get: () => typeof retrieveSetting('animate') !== 'undefined' ? retrieveSetting('animate') : settings.animate.default,
         set: (val) => persistSetting('animate', val),
         update: () => {
@@ -2674,8 +2817,8 @@
         event: 'change',
         type: 'select',
         options: [1, 2, 3],
-        default: playlistFolderDepthDefault,
-        get: () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth')),
+        default: getPlaylistFolderDepthDefault(),
+        get: () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'), settings['playlist-depth'].default),
         set: (val) => persistSetting('playlist-depth', val),
         update: () => {
           const $el = $('.setting-playlist-depth');
@@ -2701,6 +2844,16 @@
           $('.setting-cache + .metadata').html(formattedSize);
         }
       },
+      'export-config': {
+        label: 'Export settings file',
+        buttonLabel: 'Export',
+        desc: `Download the current configuration as ${playerConfigFilename}`,
+        event: 'click',
+        type: 'button',
+        get: () => {},
+        set: () => exportPlayerConfig(),
+        update: () => {}
+      },
       reset: {
         label: 'Reset to defaults',
         buttonLabel: 'Reset',
@@ -2715,6 +2868,35 @@
         },
         update: () => {}
       },
+    }
+
+    const refreshSettingDefaultsFromOptions = () => {
+      settings.hue.default = normalizeNumberSetting(getOptionSettingDefault('hue', getCSSVariable('--default-hue')), getCSSVariable('--default-hue'));
+      settings.blur.default = normalizeBooleanSetting(getOptionSettingDefault('blur', true), true);
+      settings.transitions.default = normalizeBooleanSetting(getOptionSettingDefault('transitions', true), true);
+      settings['auto-subtitles'].default = getAutoSubtitleDefault();
+      settings['subtitle-font'].default = getSubtitleFontDefault();
+      settings['subtitle-size'].default = getSubtitleSizeDefault();
+      settings['subtitle-position'].default = getSubtitlePositionDefault();
+      settings['subtitle-color'].default = getSubtitleColorDefault();
+      settings['subtitle-background'].default = getSubtitleBackgroundDefault();
+      settings.thumbnailing.default = normalizeBooleanSetting(getOptionSettingDefault('thumbnailing', true), true);
+      settings.animate.default = normalizeBooleanSetting(getOptionSettingDefault('animate', true), true);
+      settings['playlist-depth'].default = getPlaylistFolderDepthDefault();
+    }
+
+    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'export-config']);
+    const exportPlayerConfig = () => {
+      const options = deepCloneValue(app.options);
+      if (!isObjectRecord(options.settings)) options.settings = {};
+      Object.keys(settings).forEach((key) => {
+        if (nonPersistedSettingKeys.has(key)) return;
+        if (!settings[key] || typeof settings[key].get !== 'function') return;
+        options.settings[key] = settings[key].get();
+      });
+      // `settings` is the canonical home for user-configurable defaults in exported config.
+      if (Object.prototype.hasOwnProperty.call(options, 'subtitles')) delete options.subtitles;
+      downloadJSON(playerConfigFilename, options);
     }
 
     const getHeaderData = async (url) => {
@@ -3198,6 +3380,7 @@
       });
 
       const restoredPlaylist = restorePlaylistFromSession();
+      await loadPlayerConfig();
 
       setupControls();
       renderSettingsControls();

@@ -10,10 +10,12 @@ It can be used as:
 
 ## What player.html can do
 * Play videos with external subtitles (`.srt` / `.vtt`).
+* Customize subtitle display (font, size, position hint, text color, and background color).
 * Play audio (not just video) and use cover art thumbnails when available.
 * Build playlists from folders/albums, reorder them, and loop playback.
 * Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
 * Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
+* Load default behavior from `player.html.json` and export your current configuration from the Settings modal.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
 * Play media from OneDrive / Google Drive (HTTPS + app keys required).
 * Share a URL that resumes at the same folder + media + timestamp.
@@ -22,25 +24,13 @@ It can be used as:
 * [Quick Start](#quick-start)
 * [Features](#features)
 * [Pre-rendered server-side thumbnails](#pre-rendered-server-side-thumbnails)
+* [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson)
 * [Installing ffmpeg](#installing-ffmpeg)
 * [Supported browsers](#supported-browsers)
 * [Supported web servers](#supported-web-servers)
 
 ## Quick Start
 `player.html` is designed to be a drop-in audio and video player that does not require any configuration or other files.
-
-### Build
-The build inlines CSS, JS, SVGs, and assets into a single portable file.
-
-```
-uv run build.py
-```
-
-For continuous rebuilds while editing:
-
-```
-uv run build.py --watch
-```
 
 ### Use As A Web Player (HTTP Directory Listing)
 1) Copy `./dist/player.html` into a folder that is served over HTTP with directory listing enabled.
@@ -53,10 +43,6 @@ Serve `player.html` from `https://` (or `http://localhost`) and use your browser
 
 Once installed, it can be launched like a local media player. Some platforms also support opening local media files directly into the app (PWA file handlers).
 
-### Development
-* `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
-* `dist/player.html` is generated output; do not edit it by hand.
-
 ## Features
 ### Core
 * Single file (`dist/player.html`) with zero runtime dependencies.
@@ -65,6 +51,8 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### Playback (Video)
 * Video playback in the browser media engine (`MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, `OGG`, etc).
 * External subtitle support (`.srt` and `.vtt`).
+* Subtitle display settings in the subtitles modal: font, size, fallback vertical position, text color, and background color.
+* Authored subtitle cue positioning is preserved. The subtitle position setting is only used as a fallback for cues without authored position.
 * Picture-in-picture support.
 * Playback controls: play/pause, seek, stop, volume, playback rate, fullscreen, PiP.
 * Progress bar with timestamp preview thumbnail on hover/click/drag.
@@ -96,6 +84,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### UI & Metadata
 * Select your own theme color.
 * Media file metadata (bitrate, resolution, etc).
+* Settings can be configured by file (`player.html.json`) and exported from the UI. See [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson).
 
 ### Keyboard & Convenience
 * Keyboard shortcuts (press `?` in the app to see the list).
@@ -208,6 +197,103 @@ Options:
 * `ROOT` - Root folder to scan (default: current directory)
 * `--debug` - Print ffmpeg debug output
 
+## Configuration file (`player.html.json`)
+
+`player.html` can load a configuration file named `player.html.json` from the same folder as `player.html`.
+
+Priority order (highest to lowest):
+
+* User settings saved in `localStorage` (`setting-*` keys)
+* `player.html.json`
+* Built-in defaults from `src/js/config.js`
+
+`player.html.json` uses the same shape as `app.options`. You can create one by:
+
+* Opening the Settings modal
+* Clicking `Export settings file`
+* Saving the downloaded `player.html.json` next to `player.html`
+
+### Example
+
+```json
+{
+  "settings": {
+    "hue": 323,
+    "auto-subtitles": false,
+    "subtitle-font": "sans",
+    "subtitle-size": "100%",
+    "subtitle-position": "author",
+    "subtitle-color": "#ffffff",
+    "subtitle-background": "#000000",
+    "thumbnailing": true,
+    "animate": true
+  },
+  "thumbnails": {
+    "timestamps": [0.005, 0.01, 0.015],
+    "size": 320,
+    "mime": { "type": "image/webp", "quality": 0.2 },
+    "cache": true,
+    "resizeQuality": "high",
+    "concurrency": 1
+  },
+  "volumeExponent": 1.8
+}
+```
+
+### Config options
+
+User-facing display and subtitle defaults (most commonly customized):
+
+* `settings.hue`: Theme hue (number)
+* `settings.auto-subtitles`: Auto-load matching subtitle file (`true`/`false`)
+* `settings.subtitle-font`: `sans`, `serif`, `mono`, `casual`
+* `settings.subtitle-size`: `90%`, `100%`, `120%`, `140%`
+* `settings.subtitle-position`: `author`, `90`, `75`, `60`, `35`, `20`
+* `settings.subtitle-color`: Hex color (for example `#ffffff`)
+* `settings.subtitle-background`: Hex color (for example `#000000`)
+* `settings.blur`: Enable UI blur effects (`true`/`false`)
+* `settings.transitions`: Enable UI transitions (`true`/`false`)
+* `settings.thumbnailing`: Enable video thumbnail generation (`true`/`false`)
+* `settings.animate`: Enable animated thumbnails (`true`/`false`)
+* `settings.playlist-depth`: Folder depth used when adding folders to playlists (`1` to `3`)
+
+Thumbnail timing and generation:
+
+* `thumbnails.timestamps`: Relative capture positions for generated thumbnails (`0.0` to `1.0`)
+* `thumbnails.size`: Max thumbnail width in px
+* `thumbnails.mime.type`: Output image mime type (for example `image/webp`)
+* `thumbnails.mime.quality`: Output quality (`0.0` to `1.0`)
+* `thumbnails.cache`: Enable thumbnail cache in `localStorage` (`true`/`false`)
+* `thumbnails.resizeQuality`: Canvas resize quality (`low`, `medium`, `high`)
+* `thumbnails.concurrency`: Concurrent video thumbnail generation jobs
+
+Audio thumbnail options:
+
+* `audioThumbnails.concurrency`: Concurrent cover-art lookups
+* `audioThumbnails.sidecarConcurrency`: Concurrent sidecar checks per audio file
+
+Playback and UI timing:
+
+* `volumeExponent`: Volume curve exponent
+* `updateRate.timeupdate`: UI update throttle for media `timeupdate` events (ms)
+* `updateRate.trickHover`: UI update throttle for trick-hover previews (ms)
+
+Cloud source integration:
+
+* `cloud.onedrive.clientId`
+* `cloud.gdrive.developerKey`
+* `cloud.gdrive.clientId`
+* `cloud.gdrive.appId`
+
+Diagnostics:
+
+* `debug`: Enable non-error console logging (`true`/`false`)
+
+Compatibility notes:
+
+* `subtitles.*` keys are still accepted on load for compatibility, but `settings.*` is the canonical configuration surface for user-facing defaults.
+* Runtime/browser-detected fields may appear in exported files. They are optional and are not required for a hand-authored config file.
+
 <a id="ffmpeg"></a>
 ### Installing ffmpeg
 
@@ -230,6 +316,23 @@ Linux (package manager examples):
 ```
 sudo apt install ffmpeg
 ```
+
+### Build
+The build inlines CSS, JS, SVGs, and assets into a single portable file.
+
+```
+uv run build.py
+```
+
+For continuous rebuilds while editing:
+
+```
+uv run build.py --watch
+```
+
+### Development
+* `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
+* `dist/player.html` is generated output; do not edit it by hand.
 
 ## Supported browsers
 
