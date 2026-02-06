@@ -291,7 +291,19 @@
     }
     .modal.show { transform: translateX(0); }
 
+    .modal:before {
+      display: block;
+      width: 100%;
+      padding: 0.5rem 0.25rem;
+      color: #FFF;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.8rem;
+    }
     .subtitle-selection:before { content: "Select a subtitle below"; }
+    .settings:before { content: "Settings"; }
     .fileinfo:before { content: "File metadata"; }
     .help:before { content: "Keyboard Shortcuts" }
     .playlist:before { content: "Playlist"; }
@@ -317,6 +329,24 @@
     .modal-item .desc { overflow: hidden; }
 
     .subtitle-item { cursor: pointer; }
+    .subtitle-section-heading {
+      pointer-events: none;
+      cursor: default;
+      padding: 0.6rem 0.25rem;
+      background: transparent;
+      border-radius: 0 !important;
+      color: #FFF;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.8rem;
+    }
+    .subtitle-settings-heading {
+      margin-top: 0.75rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
     .help-item { max-width: 320px; }
 
     .fileinfo-item .key, .help-item .key, .setting-item .key {

@@ -1484,8 +1484,18 @@
       if (!$subtitles) return;
       const hasTracks = hasSubtitleTracks();
       const existing = $subtitles.querySelector('.disable-subtitles');
+      const settingsStart = $subtitles.querySelector('.subtitle-settings-heading, .subtitle-setting-item');
       if (hasTracks) {
-        if (!existing) $subtitles.append(createDisableSubtitlesItem());
+        if (!existing) {
+          const $toggle = createDisableSubtitlesItem();
+          if (settingsStart) {
+            $subtitles.insertBefore($toggle, settingsStart);
+          } else {
+            $subtitles.append($toggle);
+          }
+        } else if (settingsStart) {
+          $subtitles.insertBefore(existing, settingsStart);
+        }
       } else if (existing) {
         $(existing).remove();
       }
@@ -1591,6 +1601,7 @@
         });
       })
 
+      renderSubtitleSettingsControls();
       updateSubtitleToggleVisibility();
       maybeAutoLoadSubtitles();
     }
@@ -2278,9 +2289,22 @@
       modals.forEach((el) => $(el).removeClass('show'));
     }
 
-    const renderSettingsControls = (useDefaults) => {
-      const keys = Object.keys(settings);
-      const html = keys.reduce((acc, key) => {
+    const subtitlePersistedSettingKeys = [
+      'auto-subtitles',
+      'subtitle-font',
+      'subtitle-size',
+      'subtitle-position',
+      'subtitle-color',
+      'subtitle-background'
+    ];
+    const subtitleSettingKeys = new Set([
+      ...subtitlePersistedSettingKeys,
+      'subtitle-reset'
+    ]);
+    const isSubtitleSetting = (key) => subtitleSettingKeys.has(key);
+
+    const renderSettingRows = (keys, useDefaults, itemClass = 'setting-item') => {
+      return keys.reduce((acc, key) => {
         const setting = settings[key];
         const type = setting.type || 'checkbox';
         const value = (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
@@ -2324,19 +2348,21 @@
         );
 
         return `${acc}
-          <li class='modal-item setting-item' title='${setting.desc}'><span class='key'>${setting.label}</span>
+          <li class='modal-item ${itemClass}' title='${setting.desc}'><span class='key'>${setting.label}</span>
             <span class='desc'>
               <label>${control}<span class="metadata"></span></label>
             </span>
           </li>`;
       }, '');
+    }
 
-      const $modal = $('.modal.settings')
-      $modal.html(html);
-
+    const bindSettingControls = (keys) => {
       keys.forEach((key) => {
         const setting = settings[key];
         const $el = $(`.setting-${key}`);
+        if (!$el) return;
+        const $item = $el.closest('.modal-item');
+        if ($item) $($item).on('click', (e) => e.stopImmediatePropagation());
 
         const changeEvent = setting.event || 'click';
 
@@ -2351,7 +2377,25 @@
         $el.on('click', (e) => e.stopImmediatePropagation()); // Don't close the modal for clicks on a settings control
         setting.update();
       });
+    }
 
+    const renderSettingsControls = (useDefaults) => {
+      const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key));
+      const html = renderSettingRows(keys, useDefaults, 'setting-item');
+      $settings.html(html);
+      bindSettingControls(keys);
+      return html;
+    }
+
+    const renderSubtitleSettingsControls = (useDefaults) => {
+      if (!$subtitles) return '';
+      const keys = Object.keys(settings).filter((key) => isSubtitleSetting(key));
+      const rows = renderSettingRows(keys, useDefaults, 'setting-item subtitle-setting-item');
+      const html = `<li class='modal-item subtitle-section-heading subtitle-settings-heading'>Subtitle display settings</li>${rows}`;
+      const old = [...$subtitles.querySelectorAll('.subtitle-settings-heading, .subtitle-setting-item')];
+      old.forEach((el) => $(el).remove());
+      $subtitles.insertAdjacentHTML('beforeend', html);
+      bindSettingControls(keys);
       return html;
     }
 
@@ -2553,6 +2597,19 @@
           applySubtitleStyleSettings();
         }
       },
+      'subtitle-reset': {
+        label: 'Reset subtitle settings',
+        buttonLabel: 'Reset',
+        desc: 'Reset subtitle-specific settings to their defaults.',
+        event: 'click',
+        type: 'button',
+        get: () => {},
+        set: () => {
+          subtitlePersistedSettingKeys.forEach((key) => clearSetting(key));
+          renderSubtitleSettingsControls(true);
+        },
+        update: () => {}
+      },
       thumbnailing: {
         label: 'Generate Thumbnails',
         desc: 'Generate thumbnails for video listings. It may use a lot of bandwidth, especially in large folders of videos. Turn off if it causes playback problems.',
@@ -2633,6 +2690,7 @@
         set: () => {
           resetSettings();
           renderSettingsControls(true);
+          renderSubtitleSettingsControls(true);
         },
         update: () => {}
       },
@@ -3122,6 +3180,7 @@
 
       setupControls();
       renderSettingsControls();
+      renderSubtitleSettingsControls();
       applySubtitleStyleSettings();
       createAnimationCSS();
       updateVersionNumber();
