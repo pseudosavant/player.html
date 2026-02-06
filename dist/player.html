@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.14.0'>
+  <meta name='version' content='2.15.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -64,6 +64,11 @@
 
       --transition-base: 300ms;
       --blur-base: 1rem;
+
+      --subtitle-font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
+      --subtitle-font-size: 100%;
+      --subtitle-color: #ffffff;
+      --subtitle-background-color: #000000;
 
       font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
       font-size: 12px;
@@ -224,6 +229,13 @@
       will-change: filter;
     }
 
+    .player::cue {
+      font-family: var(--subtitle-font-family);
+      font-size: var(--subtitle-font-size);
+      color: var(--subtitle-color);
+      background-color: var(--subtitle-background-color);
+    }
+
     body:not(.is-loaded) .player {
       min-height: max(20vw, 33vh);
     }
@@ -374,17 +386,18 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 3.5rem;
+      width: auto;
       height: 2rem;
+      padding: 0 0.25rem 0 0.75rem;
       font-size: 0.9rem;
       color: black;
       border-radius: 2rem;
       outline: none;
       cursor: pointer;
-      background-color: #999;
+      background-color: #FFF;
       border: 0 none;
-      text-align: center;
-      text-align-last: center;
+      text-align: left;
+      text-align-last: left;
     }
     .modal input:checked {
       --input-background-color: var(--theme-color);
@@ -416,6 +429,29 @@
       border: 0 none;
       color: #FFF;
       text-shadow: black 0 0 2px;
+    }
+
+    .modal input[type='color'] {
+      width: 2rem;
+      border: 0 none;
+      padding: 0;
+      background-color: var(--input-background-color);
+    }
+    .modal input.setting-hue { --input-background-color: var(--theme-color); }
+    .modal input.setting-subtitle-color { --input-background-color: var(--subtitle-color); }
+    .modal input.setting-subtitle-background { --input-background-color: var(--subtitle-background-color); }
+
+    .modal input[type='color']::-webkit-color-swatch-wrapper {
+      padding: 0;
+      border-radius: inherit;
+    }
+    .modal input[type='color']::-webkit-color-swatch {
+      border: 0 none;
+      border-radius: inherit;
+    }
+    .modal input[type='color']::-moz-color-swatch {
+      border: 0 none;
+      border-radius: inherit;
     }
 
     .modal input[type='checkbox'] {
@@ -537,25 +573,6 @@
         background-image var(--transition-base),
         color            var(--transition-base),
         fill             var(--transition-base);
-    }
-
-    /* Must be declared twice. A bad selector invalids the entire declartion. */
-    /* input[type='color']:-webkit-color-swatch, */
-    input[type='color']::-webkit-color-swatch-wrapper {
-      display: none;
-    }
-    input[type='color'] {
-      background: var(--theme-color);
-      border-radius: 50%;
-      width: 2rem;
-      height: 2rem;
-      border: 0 none;
-      padding: 0;
-    }
-    input[type='color']:before {
-      content: '';
-      width: 1.5rem;
-      background-color: hsl(var(--theme-hue), 100%, 50%);
     }
 
     .controls {
@@ -4784,6 +4801,72 @@ const fetchBytes = async (url, opts) => {
     }
     const getPlaylistFolderDepth = () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'));
 
+    const subtitleFontDefault = 'sans';
+    const subtitleSizeDefault = '100%';
+    const subtitlePositionDefault = 'author';
+    const subtitleColorDefault = '#ffffff';
+    const subtitleBackgroundDefault = '#000000';
+
+    const subtitleFontOptions = [
+      { value: 'sans', label: 'Sans' },
+      { value: 'serif', label: 'Serif' },
+      { value: 'mono', label: 'Monospace' },
+      { value: 'casual', label: 'Casual' }
+    ];
+    const subtitleSizeOptions = [
+      { value: '90%', label: 'Small' },
+      { value: '100%', label: 'Medium' },
+      { value: '120%', label: 'Large' },
+      { value: '140%', label: 'X-Large' }
+    ];
+    const subtitlePositionOptions = [
+      { value: 'author', label: 'Author default' },
+      { value: 90, label: 'Bottom' },
+      { value: 75, label: 'Lower-middle' },
+      { value: 60, label: 'Middle' },
+      { value: 35, label: 'Upper-middle' },
+      { value: 20, label: 'Top' }
+    ];
+
+    const subtitleFontValues = subtitleFontOptions.map((opt) => opt.value);
+    const subtitleSizeValues = subtitleSizeOptions.map((opt) => opt.value);
+    const subtitlePositionValues = subtitlePositionOptions
+      .map((opt) => opt.value)
+      .filter((value) => value !== 'author');
+
+    const normalizeSubtitleFont = (value) => {
+      const normalized = String(value || '').toLowerCase();
+      return (subtitleFontValues.includes(normalized) ? normalized : subtitleFontDefault);
+    }
+    const normalizeSubtitleSize = (value) => {
+      const normalized = String(value || '').trim();
+      return (subtitleSizeValues.includes(normalized) ? normalized : subtitleSizeDefault);
+    }
+    const normalizeSubtitlePosition = (value) => {
+      const normalized = String(value || '').toLowerCase();
+      if (normalized === 'author') return 'author';
+      const parsed = parseFloat(value);
+      if (!Number.isFinite(parsed)) return subtitlePositionDefault;
+      return (subtitlePositionValues.includes(parsed) ? parsed : subtitlePositionDefault);
+    }
+    const normalizeSubtitleColor = (value, fallback) => {
+      const str = String(value || '').trim();
+      if (/^#[0-9a-f]{6}$/i.test(str) || /^#[0-9a-f]{3}$/i.test(str)) return str;
+      return fallback;
+    }
+    const subtitleFontToFamily = (value) => {
+      switch (normalizeSubtitleFont(value)) {
+        case 'serif':
+          return "Georgia, 'Times New Roman', serif";
+        case 'mono':
+          return "'Courier New', Consolas, monospace";
+        case 'casual':
+          return "'Trebuchet MS', 'Segoe UI', Arial, sans-serif";
+        default:
+          return "system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif";
+      }
+    }
+
     const addPlaylistItems = (urls, shouldPlay = false) => {
       if (!Array.isArray(urls)) return;
       const items = urls
@@ -5579,6 +5662,7 @@ const fetchBytes = async (url, opts) => {
     }
 
     const subtitleDurationCache = new Map();
+    const autoPositionedSubtitleCues = new WeakSet();
     let autoSubtitleAttemptedFor = '';
     let autoSubtitlePlaybackStartedFor = '';
 
@@ -5593,6 +5677,66 @@ const fetchBytes = async (url, opts) => {
       const stored = retrieveSetting('auto-subtitles');
       if (typeof stored !== 'undefined') return stored;
       return getAutoSubtitleDefault();
+    }
+
+    const isSubtitleTrackKind = (kind) => kind === 'subtitles' || kind === 'captions';
+
+    const getSubtitlePositionPreference = () => {
+      return normalizeSubtitlePosition(retrieveSetting('subtitle-position'));
+    }
+
+    const applySubtitleStyleSettings = () => {
+      const font = normalizeSubtitleFont(retrieveSetting('subtitle-font'));
+      const size = normalizeSubtitleSize(retrieveSetting('subtitle-size'));
+      const color = normalizeSubtitleColor(retrieveSetting('subtitle-color'), subtitleColorDefault);
+      const background = normalizeSubtitleColor(retrieveSetting('subtitle-background'), subtitleBackgroundDefault);
+
+      setCSSVariableNumber('--subtitle-font-family', subtitleFontToFamily(font), $html);
+      setCSSVariableNumber('--subtitle-font-size', size, $html);
+      setCSSVariableNumber('--subtitle-color', color, $html);
+      setCSSVariableNumber('--subtitle-background-color', background, $html);
+    }
+
+    const applySubtitlePositionToCue = (cue, preferredLine) => {
+      if (!cue || typeof cue.line === 'undefined') return;
+
+      if (preferredLine === 'author') {
+        if (autoPositionedSubtitleCues.has(cue)) {
+          try {
+            cue.line = 'auto';
+            cue.snapToLines = true;
+          } catch (e) {}
+          autoPositionedSubtitleCues.delete(cue);
+        }
+        return;
+      }
+
+      const hasAuthorPosition = (cue.line !== 'auto' && !autoPositionedSubtitleCues.has(cue));
+      if (hasAuthorPosition) return;
+
+      try {
+        cue.snapToLines = false;
+        cue.line = preferredLine;
+        autoPositionedSubtitleCues.add(cue);
+      } catch (e) {}
+    }
+
+    const applySubtitlePositionToTrack = (textTrack, preferredLine) => {
+      if (!textTrack || !isSubtitleTrackKind(textTrack.kind)) return;
+      const cues = textTrack.cues;
+      if (!cues || !cues.length) return;
+      for (let i = 0; i < cues.length; i++) {
+        applySubtitlePositionToCue(cues[i], preferredLine);
+      }
+    }
+
+    const applySubtitlePositionPreference = () => {
+      const textTracks = $player ? $player.textTracks : null;
+      if (!textTracks || !textTracks.length) return;
+      const preferredLine = getSubtitlePositionPreference();
+      for (let i = 0; i < textTracks.length; i++) {
+        applySubtitlePositionToTrack(textTracks[i], preferredLine);
+      }
     }
 
     const resetAutoSubtitleState = () => {
@@ -5646,7 +5790,7 @@ const fetchBytes = async (url, opts) => {
       if (!textTracks || !textTracks.length) return false;
       for (let i = 0; i < textTracks.length; i++) {
         const kind = textTracks[i].kind;
-        if (kind === 'subtitles' || kind === 'captions') return true;
+        if (isSubtitleTrackKind(kind)) return true;
       }
       return false;
     }
@@ -5676,7 +5820,7 @@ const fetchBytes = async (url, opts) => {
       if (!textTracks || !textTracks.length) return;
       for (let i = 0; i < textTracks.length; i++) {
         const kind = textTracks[i].kind;
-        if (kind === 'subtitles' || kind === 'captions') {
+        if (isSubtitleTrackKind(kind)) {
           textTracks[i].mode = 'disabled';
         }
       }
@@ -5688,12 +5832,12 @@ const fetchBytes = async (url, opts) => {
       let lastIndex = -1;
       for (let i = 0; i < textTracks.length; i++) {
         const kind = textTracks[i].kind;
-        if (kind === 'subtitles' || kind === 'captions') lastIndex = i;
+        if (isSubtitleTrackKind(kind)) lastIndex = i;
       }
       if (lastIndex < 0) return false;
       for (let i = 0; i < textTracks.length; i++) {
         const kind = textTracks[i].kind;
-        if (kind === 'subtitles' || kind === 'captions') {
+        if (isSubtitleTrackKind(kind)) {
           textTracks[i].mode = (i === lastIndex ? 'showing' : 'disabled');
         }
       }
@@ -5787,8 +5931,11 @@ const fetchBytes = async (url, opts) => {
       getSubtitleDurationCached(url);
 
       const $track = $(`<track src='${url}' label='${url}' default>`);
+      $track.on('load', applySubtitlePositionPreference);
       $player.append($track);
       ensureSubtitleTrackEnabled();
+      applySubtitlePositionPreference();
+      setTimeout(applySubtitlePositionPreference, 0);
       updateSubtitleToggleVisibility();
       setAriaPressed('.btn-subtitles', true);
     }
@@ -5799,7 +5946,7 @@ const fetchBytes = async (url, opts) => {
 
       if (tracks) {
         tracks.forEach((track) => {
-          if (track.track && (track.track.kind === 'subtitles' || track.track.kind === 'captions')) {
+          if (track.track && isSubtitleTrackKind(track.track.kind)) {
             track.track.mode = 'disabled';
           }
           $(track).remove();
@@ -6291,6 +6438,8 @@ const fetchBytes = async (url, opts) => {
       $player.on('loadedmetadata', () => {
         updateFileinfo();
         updateSubtitleToggleVisibility();
+        applySubtitlePositionPreference();
+        setTimeout(applySubtitlePositionPreference, 0);
       });
       $player.on('loadeddata', syncTrickSrc);
       $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
@@ -6343,6 +6492,12 @@ const fetchBytes = async (url, opts) => {
         });
       }
       $progressBar.on('keydown', progressKeyHandler);
+
+      if ($player.textTracks && $player.textTracks.addEventListener) {
+        $player.textTracks.addEventListener('addtrack', () => {
+          setTimeout(applySubtitlePositionPreference, 0);
+        });
+      }
     }
 
     const keyboardBroker = (e) => {
@@ -6464,9 +6619,14 @@ const fetchBytes = async (url, opts) => {
           if (setting.type === 'button') {
             valueAttribute = `value="${setting.buttonLabel}"`;
           } else if (setting.type === 'color') {
-            valueAttribute = `value="${HSLToHex(value, 100, 50)}"`;
+            if (typeof value === 'number') {
+              valueAttribute = `value="${HSLToHex(value, 100, 50)}"`;
+            } else {
+              const fallback = (isString(setting.default) ? setting.default : '#ffffff');
+              valueAttribute = `value="${escapeAttr(normalizeSubtitleColor(value, fallback))}"`;
+            }
           } else {
-            valueAttribute = `value="${value}"`;
+            valueAttribute = `value="${escapeAttr(value)}"`;
           }
         }
 
@@ -6632,6 +6792,89 @@ const fetchBytes = async (url, opts) => {
             autoSubtitleAttemptedFor = '';
             maybeAutoLoadSubtitles();
           }
+        }
+      },
+      'subtitle-font': {
+        label: 'Subtitle font',
+        desc: 'Set subtitle font family.',
+        event: 'change',
+        type: 'select',
+        options: subtitleFontOptions,
+        default: subtitleFontDefault,
+        get: () => normalizeSubtitleFont(retrieveSetting('subtitle-font')),
+        set: (val) => persistSetting('subtitle-font', normalizeSubtitleFont(val)),
+        update: () => {
+          const $el = $('.setting-subtitle-font');
+          const val = normalizeSubtitleFont($el.value);
+          $el.value = val;
+          settings['subtitle-font'].set(val);
+          applySubtitleStyleSettings();
+        }
+      },
+      'subtitle-size': {
+        label: 'Subtitle size',
+        desc: 'Set subtitle font size.',
+        event: 'change',
+        type: 'select',
+        options: subtitleSizeOptions,
+        default: subtitleSizeDefault,
+        get: () => normalizeSubtitleSize(retrieveSetting('subtitle-size')),
+        set: (val) => persistSetting('subtitle-size', normalizeSubtitleSize(val)),
+        update: () => {
+          const $el = $('.setting-subtitle-size');
+          const val = normalizeSubtitleSize($el.value);
+          $el.value = val;
+          settings['subtitle-size'].set(val);
+          applySubtitleStyleSettings();
+        }
+      },
+      'subtitle-position': {
+        label: 'Subtitle position',
+        desc: 'Fallback vertical position used only when cues have no authored line setting.',
+        event: 'change',
+        type: 'select',
+        options: subtitlePositionOptions,
+        default: subtitlePositionDefault,
+        get: () => normalizeSubtitlePosition(retrieveSetting('subtitle-position')),
+        set: (val) => persistSetting('subtitle-position', normalizeSubtitlePosition(val)),
+        update: () => {
+          const $el = $('.setting-subtitle-position');
+          const val = normalizeSubtitlePosition($el.value);
+          $el.value = String(val);
+          settings['subtitle-position'].set(val);
+          applySubtitlePositionPreference();
+        }
+      },
+      'subtitle-color': {
+        label: 'Subtitle color',
+        desc: 'Set subtitle text color.',
+        event: 'input',
+        type: 'color',
+        default: subtitleColorDefault,
+        get: () => normalizeSubtitleColor(retrieveSetting('subtitle-color'), subtitleColorDefault),
+        set: (val) => persistSetting('subtitle-color', normalizeSubtitleColor(val, subtitleColorDefault)),
+        update: () => {
+          const $el = $('.setting-subtitle-color');
+          const val = normalizeSubtitleColor($el.value, subtitleColorDefault);
+          $el.value = val;
+          settings['subtitle-color'].set(val);
+          applySubtitleStyleSettings();
+        }
+      },
+      'subtitle-background': {
+        label: 'Subtitle background',
+        desc: 'Set subtitle background color.',
+        event: 'input',
+        type: 'color',
+        default: subtitleBackgroundDefault,
+        get: () => normalizeSubtitleColor(retrieveSetting('subtitle-background'), subtitleBackgroundDefault),
+        set: (val) => persistSetting('subtitle-background', normalizeSubtitleColor(val, subtitleBackgroundDefault)),
+        update: () => {
+          const $el = $('.setting-subtitle-background');
+          const val = normalizeSubtitleColor($el.value, subtitleBackgroundDefault);
+          $el.value = val;
+          settings['subtitle-background'].set(val);
+          applySubtitleStyleSettings();
         }
       },
       thumbnailing: {
@@ -7203,6 +7446,7 @@ const fetchBytes = async (url, opts) => {
 
       setupControls();
       renderSettingsControls();
+      applySubtitleStyleSettings();
       createAnimationCSS();
       updateVersionNumber();
       checkFileHandlerOpen();

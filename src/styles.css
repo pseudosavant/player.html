@@ -52,6 +52,11 @@
       --transition-base: 300ms;
       --blur-base: 1rem;
 
+      --subtitle-font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
+      --subtitle-font-size: 100%;
+      --subtitle-color: #ffffff;
+      --subtitle-background-color: #000000;
+
       font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
       font-size: 12px;
       background-color: var(--base-background-color);
@@ -211,6 +216,13 @@
       will-change: filter;
     }
 
+    .player::cue {
+      font-family: var(--subtitle-font-family);
+      font-size: var(--subtitle-font-size);
+      color: var(--subtitle-color);
+      background-color: var(--subtitle-background-color);
+    }
+
     body:not(.is-loaded) .player {
       min-height: max(20vw, 33vh);
     }
@@ -361,17 +373,18 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 3.5rem;
+      width: auto;
       height: 2rem;
+      padding: 0 0.25rem 0 0.75rem;
       font-size: 0.9rem;
       color: black;
       border-radius: 2rem;
       outline: none;
       cursor: pointer;
-      background-color: #999;
+      background-color: #FFF;
       border: 0 none;
-      text-align: center;
-      text-align-last: center;
+      text-align: left;
+      text-align-last: left;
     }
     .modal input:checked {
       --input-background-color: var(--theme-color);
@@ -403,6 +416,29 @@
       border: 0 none;
       color: #FFF;
       text-shadow: black 0 0 2px;
+    }
+
+    .modal input[type='color'] {
+      width: 2rem;
+      border: 0 none;
+      padding: 0;
+      background-color: var(--input-background-color);
+    }
+    .modal input.setting-hue { --input-background-color: var(--theme-color); }
+    .modal input.setting-subtitle-color { --input-background-color: var(--subtitle-color); }
+    .modal input.setting-subtitle-background { --input-background-color: var(--subtitle-background-color); }
+
+    .modal input[type='color']::-webkit-color-swatch-wrapper {
+      padding: 0;
+      border-radius: inherit;
+    }
+    .modal input[type='color']::-webkit-color-swatch {
+      border: 0 none;
+      border-radius: inherit;
+    }
+    .modal input[type='color']::-moz-color-swatch {
+      border: 0 none;
+      border-radius: inherit;
     }
 
     .modal input[type='checkbox'] {
@@ -524,25 +560,6 @@
         background-image var(--transition-base),
         color            var(--transition-base),
         fill             var(--transition-base);
-    }
-
-    /* Must be declared twice. A bad selector invalids the entire declartion. */
-    /* input[type='color']:-webkit-color-swatch, */
-    input[type='color']::-webkit-color-swatch-wrapper {
-      display: none;
-    }
-    input[type='color'] {
-      background: var(--theme-color);
-      border-radius: 50%;
-      width: 2rem;
-      height: 2rem;
-      border: 0 none;
-      padding: 0;
-    }
-    input[type='color']:before {
-      content: '';
-      width: 1.5rem;
-      background-color: hsl(var(--theme-hue), 100%, 50%);
     }
 
     .controls {
