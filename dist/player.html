@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.16.0'>
+  <meta name='version' content='2.17.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -1645,36 +1645,6 @@
       }
     }
     global.storageRemove = storageRemove;
-
-    const sessionStore = (key, val) => {
-      try {
-        return sessionStorage.setItem(key, val);
-      } catch (e) {
-        console.warn(`Failed to store (session): ${key}`, e);
-        return null;
-      }
-    }
-    global.sessionStore = sessionStore;
-
-    const sessionRetrieve = (key) => {
-      try {
-        return sessionStorage.getItem(key);
-      } catch (e) {
-        console.warn(`Failed to retrieve (session): ${key}`, e);
-        return null;
-      }
-    }
-    global.sessionRetrieve = sessionRetrieve;
-
-    const sessionRemove = (key) => {
-      try {
-        return sessionStorage.removeItem(key);
-      } catch (e) {
-        console.warn(`Failed to remove (session): ${key}`, e);
-        return null;
-      }
-    }
-    global.sessionRemove = sessionRemove;
 
     const secondsToHMS = (totalSecs) => {
       if (Number.isNaN(totalSecs)) return { hours: 0, mins: 0, secs: 0 };
@@ -4373,8 +4343,7 @@ const fetchBytes = async (url, opts) => {
 
   <!-- App code -->
   <script type="module">
-﻿    const global = window;
-    const $html = $('html');
+﻿    const $html = $('html');
     const $body = $('body');
     const $playerContainer = $('.player-container');
     const $progressBar = $('.progress-bar');
@@ -4454,7 +4423,6 @@ const fetchBytes = async (url, opts) => {
       return supported;
     }
 
-    const isSupportedMimeType = (mime) => app.options.supportedTypes.mime.includes(mime);
     app.options.supportedTypes = getSupportedTypes();
     logInfo(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
@@ -4463,7 +4431,6 @@ const fetchBytes = async (url, opts) => {
     app.playlistIndex = -1;
     app.playlistLoop = true;
     const playlistStorageKey = 'playlist-saved';
-    const playlistSessionKey = 'playlist-session';
 
     const urlToFolder = (url) => {
       if (isFolder(url)) return url;
@@ -4523,18 +4490,6 @@ const fetchBytes = async (url, opts) => {
       }
     }
 
-    const urlType = (url) => {
-      if (isHiddenFileOrFolder(url)) {
-        return 'hidden';
-      } else if (url[url.length - 1] === '/') {
-        return 'folder';
-      } else if (isMedia(url) || isSubtitle(url)) {
-        return 'file';
-      } else {
-        return 'unknown';
-      }
-    }
-
     const removeFileExtension = (s) => {
       const supportedMediaExtensions = app.options.supportedTypes.extensions.join('|');
       const re = new RegExp(`\\.+(${supportedMediaExtensions})+$`, 'i');
@@ -4569,11 +4524,6 @@ const fetchBytes = async (url, opts) => {
     const isImage = (url) => {
       const re = /(?:\/)((?:[^/])+\.(?:png|jpeg|jpg|gif|webp))/gi
       return re.test(url);
-    }
-
-    const isHiddenFileOrFolder = (url) => {
-      const reHidden = /\/\..+$/i;
-      return url.toString().match(reHidden);
     }
 
     const linksHash = (links) => {
@@ -5313,33 +5263,25 @@ const fetchBytes = async (url, opts) => {
       storageStore(playlistStorageKey, JSON.stringify(urls));
     }
 
-    const savePlaylistToSession = () => {
-      if (!Array.isArray(app.playlist) || app.playlist.length === 0) {
-        sessionRemove(playlistSessionKey);
-        return;
-      }
-      const urls = app.playlist.map((item) => item.url);
+    const getPlaylistState = () => {
+      if (!Array.isArray(app.playlist) || app.playlist.length === 0) return undefined;
+      const urls = app.playlist
+        .map((item) => item.url)
+        .filter((url) => isString(url));
+      if (urls.length === 0) return undefined;
       const index = getPlaylistCurrentIndex();
-      sessionStore(playlistSessionKey, JSON.stringify({ urls, index }));
+      return { urls, index };
     }
 
-    const restorePlaylistFromSession = () => {
-      const saved = sessionRetrieve(playlistSessionKey);
-      if (!saved) return false;
-      try {
-        const payload = JSON.parse(saved);
-        const urls = (payload && Array.isArray(payload.urls) ? payload.urls : []);
-        const filtered = urls.filter((url) => isString(url));
-        if (filtered.length === 0) return false;
-        app.playlist = filtered.map(playlistItemFromUrl);
-        const index = (Number.isFinite(payload.index) ? payload.index : -1);
-        app.playlistIndex = (index >= 0 && index < app.playlist.length ? index : -1);
-        renderPlaylist();
-        return true;
-      } catch (e) {
-        console.warn('Unable to restore playlist from session', e);
-        return false;
-      }
+    const applyPlaylistState = (payload) => {
+      const urls = (payload && Array.isArray(payload.urls) ? payload.urls : []);
+      const filtered = urls.filter((url) => isString(url));
+      if (filtered.length === 0) return false;
+      app.playlist = filtered.map(playlistItemFromUrl);
+      const index = (Number.isFinite(payload.index) ? payload.index : -1);
+      app.playlistIndex = (index >= 0 && index < app.playlist.length ? index : -1);
+      renderPlaylist();
+      return true;
     }
 
     const restorePlaylistFromStorage = () => {
@@ -5361,7 +5303,6 @@ const fetchBytes = async (url, opts) => {
       const currentIndex = getPlaylistCurrentIndex();
       app.playlistIndex = currentIndex;
       updatePlaylistMultiState();
-      savePlaylistToSession();
 
       var html = `
         <li class='modal-item playlist-controls'>
@@ -5629,7 +5570,9 @@ const fetchBytes = async (url, opts) => {
       const location = hashState.location;
       const media = getMediaUrl();
       const time = $player.currentTime;
-      const state = { location, media, time }
+      const playlist = getPlaylistState();
+      const state = { location, media, time };
+      if (playlist) state.playlist = playlist;
 
       return state;
     }
@@ -5637,27 +5580,95 @@ const fetchBytes = async (url, opts) => {
     const getBaseLocation = (l) => l.protocol + '//' + l.host;
     const getMediaUrl = () => $player.src;
 
-    const encodeHash = (hash) => encodeURIComponent(base64EncodeUTF(JSON.stringify(hash)));
-    const decodeHash = (hash) => JSON.parse(base64DecodeUTF(decodeURIComponent(hash)));
-    const getHash = () => {
+    const compressedHashPrefix = 'dr=';
+
+    const bytesToBase64 = (bytes) => {
+      var binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
+    }
+    const base64ToBytes = (base64) => {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+    const base64ToBase64Url = (base64) => base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    const base64UrlToBase64 = (base64url) => {
+      const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      const padding = base64.length % 4;
+      if (padding === 0) return base64;
+      return `${base64}${'='.repeat(4 - padding)}`;
+    }
+    const compressStringDeflateRaw = async (str) => {
+      if (typeof CompressionStream !== 'function') return undefined;
+      const inputBytes = new TextEncoder().encode(str);
+      const stream = new Blob([inputBytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      const compressed = new Uint8Array(await new Response(stream).arrayBuffer());
+      return base64ToBase64Url(bytesToBase64(compressed));
+    }
+    const decompressStringDeflateRaw = async (base64url) => {
+      if (typeof DecompressionStream !== 'function') {
+        throw new Error('Unable to decode compressed hash: DecompressionStream not supported');
+      }
+      const compressed = base64ToBytes(base64UrlToBase64(base64url));
+      const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      const decompressed = new Uint8Array(await new Response(stream).arrayBuffer());
+      return new TextDecoder().decode(decompressed);
+    }
+
+    const encodeHashLegacy = (hash) => encodeURIComponent(base64EncodeUTF(JSON.stringify(hash)));
+    const decodeHashLegacy = (hash) => JSON.parse(base64DecodeUTF(decodeURIComponent(hash)));
+    const encodeHash = async (hash) => {
+      const json = JSON.stringify(hash);
+      try {
+        const compressed = await compressStringDeflateRaw(json);
+        if (compressed && compressed.length > 0) return `${compressedHashPrefix}${compressed}`;
+      } catch (e) {
+        console.warn('Unable to compress hash state, falling back to legacy encoding', e);
+      }
+      return encodeHashLegacy(hash);
+    }
+    const decodeHash = async (hash) => {
+      if (hash && hash.startsWith(compressedHashPrefix)) {
+        const compressed = hash.substring(compressedHashPrefix.length);
+        const json = await decompressStringDeflateRaw(compressed);
+        return JSON.parse(json);
+      }
+      return decodeHashLegacy(hash);
+    }
+    const getHash = async () => {
       const urlHash = window.location.hash.substr(1);
+      if (!urlHash || urlHash.length === 0) return {};
 
       var hash = {};
       try {
-        hash = decodeHash(urlHash);
-      } catch (e) { }
+        hash = await decodeHash(urlHash);
+      } catch (e) {
+        console.warn('Unable to decode hash state', e);
+      }
 
       return hash;
     }
 
+    let hashWriteQueue = Promise.resolve();
     const updateHash = (opts = {}) => {
-      var url = new URL(location);
-      url.hash = encodeHash(getState());
-      if (opts.push) {
-        history.pushState(null, document.title, url);
-      } else {
-        history.replaceState(null, document.title, url);
-      }
+      const state = getState();
+      hashWriteQueue = hashWriteQueue
+        .then(async () => {
+          const encoded = await encodeHash(state);
+          var url = new URL(location);
+          url.hash = encoded;
+          if (opts.push) {
+            history.pushState(null, document.title, url);
+          } else {
+            history.replaceState(null, document.title, url);
+          }
+        })
+        .catch((e) => console.warn('Unable to update hash state', e));
     }
 
     const updateTitle = () => {
@@ -5783,7 +5794,9 @@ const fetchBytes = async (url, opts) => {
       return gradient;
     }
 
-    const actionPlay = (url) => {
+    const actionPlay = (url, opts = {}) => {
+      const shouldAutoplay = (opts.autoplay !== false);
+
       // Don't restart playback if it is the currently playing media
       if (url === $player.currentSrc && $player.src.length > 0) return;
 
@@ -5792,7 +5805,7 @@ const fetchBytes = async (url, opts) => {
       // Being playback if there is a URL
       if (!!url) {
         logInfo(`Loading media: ${url}`);
-        $player.autoplay = true;
+        $player.autoplay = shouldAutoplay;
 
         $player.once('error', () => {
           console.warn(`Unable to begin playback: ${url}`);
@@ -5821,6 +5834,8 @@ const fetchBytes = async (url, opts) => {
           block: 'center'
         }
         setTimeout(() => $player.scrollIntoView(scrollOpts), 16);
+
+        if (!shouldAutoplay) updatePlaybackState('pause');
 
       } else { // Reset the player if no URL supplied
         updateDuration(0);
@@ -6556,7 +6571,6 @@ const fetchBytes = async (url, opts) => {
     };
 
     const actionOpenLocalFile = () => {
-      const reader = new FileReader();
       const supportedTypes = app.options.supportedTypes.mime.join(',');
       const $input = $(`<input type="file" accept="${supportedTypes}"/>`);
       $input.on('change', () => playFile($input.files[0]));
@@ -7312,7 +7326,7 @@ const fetchBytes = async (url, opts) => {
 
       // Wait a few extra frames to make estimate more accurate
       for (var i = 0; i < 10; i++) {
-        const waitFrame = await requestVideoFrame();
+        await requestVideoFrame();
       }
 
       const frame2 = await requestVideoFrame();
@@ -7648,18 +7662,6 @@ const fetchBytes = async (url, opts) => {
       setCSSVariableNumber('--thumbnail-timestamps', timestamps.length, $('html'));
     }
 
-    const getTransitionDuration = () => {
-      const styles = getComputedStyle($html);
-      const rawDuration = styles.transitionDuration.toLowerCase();
-      const reDuration = /([\d\.]+)(s|ms)+/;
-      const parsed = reDuration.exec(rawDuration);
-
-      const durationValue = parsed[1];
-      const durationUnit = parsed[2];
-
-      return (durationUnit === 's' ? durationValue * 1000 : durationValue);
-    }
-
     // Third-party scripts
     // From: https://css-tricks.com/converting-color-spaces-in-javascript/
     const hexToHSL = (H) => {
@@ -7754,7 +7756,6 @@ const fetchBytes = async (url, opts) => {
         if (isAbortError(event.reason)) event.preventDefault();
       });
 
-      const restoredPlaylist = restorePlaylistFromSession();
       await loadPlayerConfig();
 
       setupControls();
@@ -7765,15 +7766,17 @@ const fetchBytes = async (url, opts) => {
       updateVersionNumber();
       checkFileHandlerOpen();
 
-      const hash = getHash();
+      const hash = await getHash();
 
       if (hash) {
+        const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
+
         if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
-          $player.muted = true; /* Autoplay on load only works if it is muted */
           if (restoredPlaylist) {
-            actionPlay(hash.media);
+            actionPlay(hash.media, { autoplay: false });
           } else {
-            setPlaylistFromUrl(hash.media, true);
+            setPlaylistFromUrl(hash.media, false);
+            actionPlay(hash.media, { autoplay: false });
           }
         }
 
@@ -7787,8 +7790,9 @@ const fetchBytes = async (url, opts) => {
         }
       }
 
-      $(window).on('popstate', (e) => {
-        const hash = getHash();
+      $(window).on('popstate', async (e) => {
+        const hash = await getHash();
+        if (hash && hash.playlist) applyPlaylistState(hash.playlist);
         if (hash && hash.location && hash.location.length > 1) createLinks(hash.location)
       });
     }
@@ -7797,3 +7801,4 @@ const fetchBytes = async (url, opts) => {
 </script>
 </body>
 </html>
+

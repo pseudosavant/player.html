@@ -18,7 +18,7 @@ It can be used as:
 * Load default behavior from `player.html.json` and export your current configuration from the Settings modal.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
 * Play media from OneDrive / Google Drive (HTTPS + app keys required).
-* Share a URL that resumes at the same folder + media + timestamp.
+* Share a URL that resumes at the same folder + playlist + media + timestamp.
 
 ## Contents
 * [Quick Start](#quick-start)
@@ -69,7 +69,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### Playlists
 * Playlist panel: view, add, reorder, previous/next, and looping playback.
 * Import/export `.m3u` playlists.
-* Save/restore playlists via browser storage.
+* Shareable playlist state in the URL hash (restores current playlist, media, and timestamp).
 
 ### Thumbnails
 * Video thumbnails use pre-rendered server-side thumbnails when present (recommended for large libraries).
@@ -79,7 +79,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 
 ### PWA & Sharing
 * Installable as a PWA (inline generated manifest).
-* Shareable URL that resumes `player.html` in the same folder, media item, and timestamp.
+* Shareable URL that resumes `player.html` in the same folder, playlist, media item, and timestamp.
 * Social metadata (`og:*`, `twitter:*`) for link previews.
 
 ### UI & Metadata
@@ -108,10 +108,10 @@ Open the playlist panel using the playlist button next to the file sources. From
 
 Notes:
 
-* Playlists are stored in memory only (they reset on refresh).
+* The current playlist/media/timestamp are encoded in the URL hash for shareable links and refresh restore.
 * Looping is enabled by default and repeats the playlist.
 * Imported `.m3u` files can include relative URLs; they are resolved against the playlist URL (or the current page for local files).
-* Saved playlists live in localStorage and are only restored on demand.
+* Saved playlists in localStorage are optional and restored only on demand.
 
 \* Be careful with concurrency. Increasing the setting above 1 does make it generate thumbnails much faster. But it is very easy for HTTP requests for generating thumbnails to saturate a connection enough that the main video gets starved for bandwidth. Especially if you browse into a folder with many dozens of videos in it. Thumbnails are generated lazily as tiles scroll into view to reduce bandwidth.
 
