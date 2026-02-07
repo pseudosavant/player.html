@@ -31,36 +31,57 @@
       --tile-width: 24rem;
       --tile-height: calc(var(--tile-width) * var(--tile-aspect-ratio));
       --tile-border-radius: 0.6rem / 0.5rem;
-      --tile-font-color: var(--tile-font-color-dark);
-      --tile-title-background-color: var(--tile-title-background-color-dark);
-      --tile-background-color: var(--tile-background-color-dark);
+      --tile-font-color: var(--text-on-tile-title);
+      --tile-title-background-color: var(--bg-tile-title);
+      --tile-background-color: var(--bg-tile);
       --inter-tile-margin: 1rem;
 
-      --modal-font-color: var(--tile-font-color);
+      --modal-font-color: var(--text-primary);
 
-      --progress-bar-background-color: hsl(var(--theme-hue), 100%, 95%);
-      --progress-bar-position-color: var(--theme-color);
+      --progress-bar-background-color: var(--theme-100);
+      --progress-bar-position-color: var(--accent);
       --progress-bar-height: 1rem;
-      --progress-bar-buffer-color: hsl(var(--theme-hue), 40%, 80%);
+      --progress-bar-buffer-color: var(--theme-300);
       --trick-preview-width: max(10vw, 100px);
 
-      --base-background-color: var(--base-background-color-dark);
+      --base-background-color: var(--bg-page);
       --base-overlay-color: 128,128,128;
 
       --default-hue: 323;
       --theme-hue: var(--default-hue);
-      --theme-color-base: var(--theme-hue), 100%, 50%;
-      --theme-color: hsl(var(--theme-color-base));
+      --theme-saturation: 100%;
+      --sat-strong: clamp(0%, var(--theme-saturation), 100%);
+      --sat-soft: clamp(0%, calc(var(--theme-saturation) * 0.35), 100%);
+      --sat-muted: clamp(0%, calc(var(--theme-saturation) * 0.15), 100%);
+      --theme-100: hsl(var(--theme-hue), var(--sat-soft), 95%);
+      --theme-200: hsl(var(--theme-hue), var(--sat-soft), 88%);
+      --theme-300: hsl(var(--theme-hue), var(--sat-soft), 76%);
+      --theme-500: hsl(var(--theme-hue), var(--sat-strong), 50%);
+      --theme-700: hsl(var(--theme-hue), var(--sat-muted), 26%);
+      --theme-900: hsl(var(--theme-hue), var(--sat-muted), 14%);
+      --theme-color-base: var(--theme-hue), var(--sat-strong), 50%;
+      --theme-color: var(--theme-500);
+      --accent: var(--theme-500);
+      --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
+      --accent-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
+      --focus-ring: var(--accent);
 
       --folder-color: hsl(44,100%,68%);
       --file-color: #FFF;
-      --playing-color: hsl(var(--theme-hue), 100%, 85%);
+      --playing-color: var(--theme-300);
 
-      --primary-font-color: var(--primary-font-color-dark);
-      --secondary-font-color: var(--secondary-font-color-dark);
+      --primary-font-color: var(--text-primary);
+      --secondary-font-color: var(--text-secondary);
 
-      --modal-background-color: var(--modal-background-color-dark);
+      --modal-background-color: var(--bg-modal);
       --thumbnail-overlay-color: rgba(64,64,64,0.2);
+      --modal-item-background: rgba(255,255,255,0.08);
+      --modal-divider-color: rgba(255,255,255,0.2);
+      --button-quiet-bg: rgba(255,255,255,0.08);
+      --button-quiet-hover: rgba(255,255,255,0.16);
+      --button-quiet-active: rgba(255,255,255,0.24);
+      --text-on-accent: #ffffff;
+      --text-on-tile-title: #ffffff;
 
       --transition-base: 300ms;
       --blur-base: 1rem;
@@ -95,29 +116,29 @@
     }
 
     html {
-      /* Light mode colors */
-      --base-background-color-light: white;
-      --primary-font-color-light: hsl(var(--theme-hue), 10%, 40%);
-      --secondary-font-color-light: hsl(var(--theme-hue), 25%, 75%);
-      --tile-font-color-light: white;
-      --tile-title-background-color-light: hsla(var(--theme-hue), 15%, 50%, 80%);
-      --tile-background-color-light: hsl(var(--theme-hue), 50%, 97%);
-      --modal-background-color-light: hsla(var(--theme-hue), 100%, 95%, 0.5);
-
-      /* Dark mode colors */
-      --base-background-color-dark: black;
-      --primary-font-color-dark: hsl(var(--theme-hue), 50%, 90%);
-      --secondary-font-color-dark: hsl(var(--theme-hue), 10%, 40%);
-      --tile-font-color-dark: hsl(var(--theme-hue), 50%, 95%);
-      --tile-title-background-color-dark: hsla(var(--theme-hue), 15%, 20%, 80%);
-      --tile-background-color-dark: hsl(var(--theme-hue), 10%, 12.5%);
-      --modal-background-color-dark: hsla(var(--theme-hue), 30%, 15%, 0.5);
+      /* Dark mode defaults */
+      --bg-page: #0a0b0e;
+      --bg-elevated: #111317;
+      --bg-modal: hsla(var(--theme-hue), var(--sat-muted), 14%, 0.5);
+      --bg-tile: var(--theme-900);
+      --bg-tile-title: var(--theme-700);
+      --text-primary: #f5f7fa;
+      --text-secondary: #c7ccd4;
+      --text-on-tile-title: #ffffff;
+      --text-on-accent: #ffffff;
+      --modal-item-background: rgba(255,255,255,0.08);
+      --modal-divider-color: rgba(255,255,255,0.2);
+      --button-quiet-bg: rgba(255,255,255,0.08);
+      --button-quiet-hover: rgba(255,255,255,0.16);
+      --button-quiet-active: rgba(255,255,255,0.24);
+      --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
+      --accent-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
     }
 
-    :fullscreen html      { --base-background-color: hsl(var(--theme-hue), 100%, 4%); }
+    :fullscreen html      { --base-background-color: hsl(var(--theme-hue), var(--sat-strong), 4%); }
 
     :fullscreen, :fullscreen * {
-      --modal-background-color: hsla(var(--theme-hue), 30%, 15%, 0.5);
+      --modal-background-color: var(--bg-modal);
     }
 
     body {
@@ -319,8 +340,8 @@
       display: block;
       width: 100%;
       padding: 0.5rem 0.25rem;
-      color: #FFF;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      color: var(--text-primary);
+      text-shadow: none;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -340,7 +361,7 @@
       width: 100%;
       position: relative;
       margin: 0;
-      background-color: rgba(0,0,0,0.25);
+      background-color: var(--modal-item-background);
     }
     .modal-item:first-of-type {
       border-top-left-radius: 0.75rem;
@@ -350,7 +371,7 @@
       border-bottom-left-radius: 0.75rem;
       border-bottom-right-radius: 0.75rem;
     }
-    .modal-item .desc { overflow: hidden; }
+    .modal-item .desc { overflow: visible; }
 
     .subtitle-item { cursor: pointer; }
     .subtitle-section-heading {
@@ -359,8 +380,8 @@
       padding: 0.6rem 0.25rem;
       background: transparent;
       border-radius: 0 !important;
-      color: #FFF;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      color: var(--text-primary);
+      text-shadow: none;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -369,7 +390,7 @@
     .subtitle-settings-heading {
       margin-top: 0.75rem;
       padding-top: 0.85rem;
-      border-top: 1px solid rgba(255,255,255,0.2);
+      border-top: 1px solid var(--modal-divider-color);
     }
     .help-item { max-width: 320px; }
 
@@ -448,14 +469,20 @@
 
     .modal .reset-defaults {
       border: 0 none;
-      background-color: var(--theme-color);
-      color: #FFF;
+      background-color: var(--accent);
+      color: var(--text-on-accent);
+    }
+    .modal button {
+      transition:
+        background-color var(--transition-base),
+        color var(--transition-base),
+        transform var(--transition-base);
     }
     .modal .reset-defaults:hover {
-      background-color: hsl(var(--theme-hue), 50%, 60%);
+      background-color: var(--accent-hover);
     }
     .modal .reset-defaults:active {
-      background-color: hsl(var(--theme-hue), 50%, 40%);
+      background-color: var(--accent-active);
       padding-top: 0.25rem;
     }
 
@@ -467,11 +494,19 @@
       content: 'KB';
     }
 
-    .modal input[type=button] {
-      background-color: var(--theme-color);
+    .modal .setting-item button:not(:has(svg)) {
+      background-color: var(--accent);
       border: 0 none;
-      color: #FFF;
-      text-shadow: black 0 0 2px;
+      color: var(--text-on-accent);
+      text-shadow: none;
+    }
+    .modal .setting-item button:not(:has(svg)):hover,
+    .modal .setting-item button:not(:has(svg)):focus-visible {
+      background-color: var(--accent-hover);
+    }
+    .modal .setting-item button:not(:has(svg)):active {
+      background-color: var(--accent-active);
+      transform: translateY(1px);
     }
 
     .modal input[type='color'] {
@@ -516,7 +551,7 @@
         left var(--transition-base),
         background-color var(--transition-base);
       will-change: left, background-color;
-      color: hsl(var(--theme-hue), 100%, 4%);
+      color: hsl(var(--theme-hue), calc(var(--theme-saturation) * 1), 4%);
     }
 
     /* Checkbox slider */
@@ -551,15 +586,29 @@
       justify-content: flex-start;
     }
 
-    .playlist .playlist-controls button {
+    .playlist .playlist-controls button:not(:has(> svg:only-child)) {
       width: auto;
       height: auto;
       padding: 0.35rem 0.75rem;
       border-radius: 1rem;
-      background-color: rgba(0,0,0,0.2);
+      background-color: var(--button-quiet-bg);
       color: var(--modal-font-color);
       border: 0 none;
       gap: 0.35rem;
+      transition:
+        background-color var(--transition-base),
+        color var(--transition-base),
+        transform var(--transition-base);
+    }
+    .playlist .playlist-controls button:not(:has(> svg:only-child)):hover {
+      background-color: var(--button-quiet-hover);
+    }
+    .playlist .playlist-controls button:not(:has(> svg:only-child)):active {
+      background-color: var(--button-quiet-active);
+      transform: translateY(1px);
+    }
+    .playlist .playlist-controls button:not(:has(> svg:only-child)):focus-visible {
+      background-color: var(--button-quiet-hover);
     }
 
     .playlist .playlist-controls button svg {
@@ -596,6 +645,26 @@
       border-radius: 999px;
       border: 0 none;
       background-color: transparent;
+      transition:
+        background-color var(--transition-base),
+        transform var(--transition-base);
+    }
+    .playlist-item .playlist-actions button:has(> svg:only-child) {
+      background-color: transparent;
+    }
+    .playlist-item .playlist-actions button:has(> svg:only-child):hover {
+      background-color: transparent;
+    }
+    .playlist-item .playlist-actions button:has(> svg:only-child):active {
+      background-color: transparent;
+      transform: translateY(1px);
+    }
+    .playlist-item .playlist-actions button:has(> svg:only-child):hover svg,
+    .playlist-item .playlist-actions button:has(> svg:only-child):focus-visible svg {
+      fill: var(--accent-hover);
+    }
+    .playlist-item .playlist-actions button:has(> svg:only-child):active svg {
+      fill: var(--accent-active);
     }
 
     .playlist-item .playlist-actions svg {
@@ -679,17 +748,18 @@
 
     .controls button:focus-visible,
     .modal input:focus-visible,
+    .modal select:focus-visible,
     .modal button:focus-visible,
     .links a:focus-visible,
     .links .btn-add-to-playlist:focus-visible,
+    .playlist .playlist-controls button:focus-visible,
     .playlist .playlist-actions button:focus-visible {
-      outline: 2px solid var(--theme-color);
-      outline-offset: 3px;
-      border-radius: 3px;
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 1px;
     }
 
     .controls button svg {
-      fill: var(--theme-color);
+      fill: var(--accent);
       min-width: 100%;
       min-height: 100%;
       max-width: 100%;
@@ -698,8 +768,39 @@
 
     .no-subtitles .btn-subtitles svg { fill: hsl(var(--theme-hue), 0%, 50%); }
     .is-audio .btn-subtitles         { display: none !important; }
-    .controls button:hover       svg { fill: hsl(var(--theme-hue), 70%, 75%); }
-    .controls button:active      svg { fill: hsl(var(--theme-hue), 100%, 33%); }
+    .controls button:has(svg) {
+      background-color: transparent;
+      border-radius: 0.5rem;
+    }
+    .controls button:not(:has(svg)):hover,
+    .controls button:not(:has(svg)):focus-visible {
+      background-color: var(--button-quiet-hover);
+      border-radius: 999px;
+    }
+    .controls button:not(:has(svg)):active {
+      background-color: var(--button-quiet-active);
+      border-radius: 999px;
+      transform: translateY(1px);
+    }
+    .controls button:has(svg):hover,
+    .controls button:has(svg):focus-visible,
+    .controls button:has(svg):active {
+      background-color: transparent;
+    }
+    .controls button:has(svg):hover svg,
+    .controls button:has(svg):focus-visible svg {
+      fill: var(--accent-hover);
+    }
+    .controls button:has(svg):active svg {
+      fill: var(--accent-active);
+    }
+    .controls button:not(:has(svg)):hover svg,
+    .controls button:not(:has(svg)):focus-visible svg {
+      fill: var(--accent-hover);
+    }
+    .controls button:not(:has(svg)):active svg {
+      fill: var(--accent-active);
+    }
     .controls .stop svg { margin: 0 0.5rem; }
 
     .primary-buttons .level-0, .primary-buttons .level-1, .primary-buttons .level-2, .primary-buttons .level-3 {
@@ -847,8 +948,8 @@
 
       margin-left: calc(var(--indicator-size) * -0.5);
 
-      background: hsl(var(--theme-hue), 100%, 95%);
-      border: calc(var(--indicator-size) / 4) solid var(--theme-color);
+      background: var(--theme-100);
+      border: calc(var(--indicator-size) / 4) solid var(--accent);
       border-radius: 50%;
       filter: drop-shadow(0px 0px 1px black);
     }
@@ -1136,7 +1237,7 @@
       position: absolute;
       top: 0;
       left: 0;
-      background-color: hsla(var(--theme-hue), 50%, 20%, 0.25);
+      background-color: color-mix(in srgb, var(--accent) 25%, transparent);
     }
 
     .file:hover .arrow svg,
@@ -1200,16 +1301,22 @@
 
     @media (prefers-color-scheme: light) {
       html {
-        --base-background-color: var(--base-background-color-light);
-        --primary-font-color: var(--primary-font-color-light);
-        --secondary-font-color-light: var(--secondary-font-color);
-        --tile-font-color: var(--tile-font-color-light);
-        --tile-title-background-color: var(--tile-title-background-color-light);
-        --tile-background-color: var(--tile-background-color-light);
-      }
-
-      .modal {
-        --modal-background-color: var(--modal-background-color-light);
+        --bg-page: #f8f9fb;
+        --bg-elevated: #ffffff;
+        --bg-modal: hsla(var(--theme-hue), var(--sat-soft), 95%, 0.5);
+        --bg-tile: var(--theme-100);
+        --bg-tile-title: var(--theme-700);
+        --text-primary: #111111;
+        --text-secondary: #3a3a3a;
+        --text-on-tile-title: #ffffff;
+        --text-on-accent: #ffffff;
+        --modal-item-background: rgba(0,0,0,0.08);
+        --modal-divider-color: rgba(0,0,0,0.2);
+        --button-quiet-bg: rgba(0,0,0,0.08);
+        --button-quiet-hover: rgba(0,0,0,0.14);
+        --button-quiet-active: rgba(0,0,0,0.22);
+        --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
+        --accent-active: hsl(var(--theme-hue), var(--sat-strong), 36%);
       }
     }
 
@@ -1218,30 +1325,42 @@
 
     /* Light mode override */
     html[data-color-scheme="light"] {
-      --base-background-color: var(--base-background-color-light);
-      --primary-font-color: var(--primary-font-color-light);
-      --secondary-font-color: var(--secondary-font-color-light);
-      --tile-font-color: var(--tile-font-color-light);
-      --tile-title-background-color: var(--tile-title-background-color-light);
-      --tile-background-color: var(--tile-background-color-light);
-    }
-
-    [data-color-scheme="light"] .modal {
-      --modal-background-color: var(--modal-background-color-light);
+      --bg-page: #f8f9fb;
+      --bg-elevated: #ffffff;
+      --bg-modal: hsla(var(--theme-hue), var(--sat-soft), 95%, 0.5);
+      --bg-tile: var(--theme-100);
+      --bg-tile-title: var(--theme-700);
+      --text-primary: #111111;
+      --text-secondary: #3a3a3a;
+      --text-on-tile-title: #ffffff;
+      --text-on-accent: #ffffff;
+      --modal-item-background: rgba(0,0,0,0.08);
+      --modal-divider-color: rgba(0,0,0,0.2);
+      --button-quiet-bg: rgba(0,0,0,0.08);
+      --button-quiet-hover: rgba(0,0,0,0.14);
+      --button-quiet-active: rgba(0,0,0,0.22);
+      --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
+      --accent-active: hsl(var(--theme-hue), var(--sat-strong), 36%);
     }
 
     /* Dark mode override */
     html[data-color-scheme="dark"] {
-      --base-background-color: var(--base-background-color-dark);
-      --primary-font-color: var(--primary-font-color-dark);
-      --secondary-font-color: var(--secondary-font-color-dark);
-      --tile-font-color: var(--tile-font-color-dark);
-      --tile-title-background-color: var(--tile-title-background-color-dark);
-      --tile-background-color: var(--tile-background-color-dark);
-    }
-
-    [data-color-scheme="dark"] .modal {
-      --modal-background-color: var(--modal-background-color-dark);
+      --bg-page: #0a0b0e;
+      --bg-elevated: #111317;
+      --bg-modal: hsla(var(--theme-hue), var(--sat-muted), 14%, 0.5);
+      --bg-tile: var(--theme-900);
+      --bg-tile-title: var(--theme-700);
+      --text-primary: #f5f7fa;
+      --text-secondary: #c7ccd4;
+      --text-on-tile-title: #ffffff;
+      --text-on-accent: #ffffff;
+      --modal-item-background: rgba(255,255,255,0.08);
+      --modal-divider-color: rgba(255,255,255,0.2);
+      --button-quiet-bg: rgba(255,255,255,0.08);
+      --button-quiet-hover: rgba(255,255,255,0.16);
+      --button-quiet-active: rgba(255,255,255,0.24);
+      --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
+      --accent-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
     }</style>
 </head>
 <body class='no-subtitles is-stopped'>
@@ -1477,6 +1596,7 @@
         },
         settings: {
           hue: 323,
+          saturation: 100,
           blur: true,
           transitions: true,
           'auto-subtitles': false,
@@ -4899,10 +5019,17 @@ const fetchBytes = async (url, opts) => {
 
       return source;
     }
+    const normalizeConfigThemeSettings = (source) => {
+      if (!isObjectRecord(source)) return source;
+      if (!isObjectRecord(source.settings)) source.settings = {};
+      return source;
+    }
     const applyPlayerConfigObject = (config) => {
       if (!isObjectRecord(config)) return false;
-      const source = normalizeConfigSubtitleSettings(
-        isObjectRecord(config.options) ? config.options : config
+      const source = normalizeConfigThemeSettings(
+        normalizeConfigSubtitleSettings(
+          isObjectRecord(config.options) ? config.options : config
+        )
       );
       if (!isObjectRecord(source)) return false;
       deepMergeObjects(app.options, source);
@@ -5018,6 +5145,38 @@ const fetchBytes = async (url, opts) => {
       const str = String(value || '').trim();
       if (/^#[0-9a-f]{6}$/i.test(str) || /^#[0-9a-f]{3}$/i.test(str)) return str;
       return fallback;
+    }
+    const normalizeThemeHue = (value, fallback) => {
+      const parsed = parseFloat(value);
+      if (!Number.isFinite(parsed)) return fallback;
+      const wrapped = ((parsed % 360) + 360) % 360;
+      return Math.round(wrapped * 100) / 100;
+    }
+    const normalizeThemeSaturation = (value, fallback = 100) => {
+      const parsed = parseFloat(value);
+      if (!Number.isFinite(parsed)) return fallback;
+      const clamped = Math.max(0, Math.min(100, parsed));
+      return Math.round(clamped * 100) / 100;
+    }
+    const getThemeHueDefault = () => normalizeThemeHue(
+      getOptionSettingDefault('hue', getCSSVariable('--default-hue')),
+      getCSSVariable('--default-hue')
+    );
+    const getThemeSaturationDefault = () => normalizeThemeSaturation(
+      getOptionSettingDefault('saturation', 100),
+      100
+    );
+    const getStoredThemeHSL = (fallbackHue, fallbackSaturation) => {
+      const storedHue = retrieveSetting('hue');
+      const storedSaturation = retrieveSetting('saturation');
+      if (typeof storedHue !== 'undefined' || typeof storedSaturation !== 'undefined') {
+        return {
+          h: normalizeThemeHue(storedHue, fallbackHue),
+          s: normalizeThemeSaturation(storedSaturation, fallbackSaturation)
+        };
+      }
+
+      return { h: fallbackHue, s: fallbackSaturation };
     }
     const getOptionSubtitleDefault = (subtitleKey, settingKey, fallback) => {
       const fromSettings = getOptionSettingDefault(settingKey, undefined);
@@ -6924,7 +7083,8 @@ const fetchBytes = async (url, opts) => {
             valueAttribute = `value="${setting.buttonLabel}"`;
           } else if (setting.type === 'color') {
             if (typeof value === 'number') {
-              valueAttribute = `value="${HSLToHex(value, 100, 50)}"`;
+              const sat = (key === 'hue' ? settings.saturation.get() : 100);
+              valueAttribute = `value="${HSLToHex(value, sat, 50)}"`;
             } else {
               const fallback = (isString(setting.default) ? setting.default : '#ffffff');
               valueAttribute = `value="${escapeAttr(normalizeSubtitleColor(value, fallback))}"`;
@@ -6955,7 +7115,10 @@ const fetchBytes = async (url, opts) => {
                 .join('');
               return `<select class='setting-${key}'${attrs}>${options}</select>`;
             })()
-          : `<input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}>`
+          : (type === 'button'
+            ? `<button type="button" class='setting-${key}'${attrs}>${escapeHtml(setting.buttonLabel || 'Action')}</button>`
+            : `<input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}>`
+          )
         );
 
         return `${acc}
@@ -7001,7 +7164,7 @@ const fetchBytes = async (url, opts) => {
 
     const renderSettingsControls = (useDefaults) => {
       refreshSettingDefaultsFromOptions();
-      const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key));
+      const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key) && !settings[key].hidden);
       const html = renderSettingRows(keys, useDefaults, 'setting-item');
       $settings.html(html);
       bindSettingControls(keys);
@@ -7065,21 +7228,35 @@ const fetchBytes = async (url, opts) => {
     const settings = {
       hue: {
         label: 'Theme color',
-        desc: 'Set the theme color for player.html',
+        desc: 'Set the theme color for player.html, including grayscale values.',
         event: 'input',
         type: 'color',
-        default: normalizeNumberSetting(getOptionSettingDefault('hue', getCSSVariable('--default-hue')), getCSSVariable('--default-hue')),
-        get: () => (typeof retrieveSetting('hue') !== 'undefined' ? retrieveSetting('hue') : settings.hue.default),
-        set: async (val) => {
-          persistSetting('hue', val);
-          await updateHue(val);
+        default: getThemeHueDefault(),
+        get: () => getStoredThemeHSL(settings.hue.default, settings.saturation.default).h,
+        set: async (val, optSaturation) => {
+          const hue = normalizeThemeHue(val, settings.hue.default);
+          const saturation = normalizeThemeSaturation(
+            optSaturation,
+            getStoredThemeHSL(settings.hue.default, settings.saturation.default).s
+          );
+          persistSetting('hue', hue);
+          persistSetting('saturation', saturation);
+          await applyTheme(hue, saturation);
         },
         update: async () => {
           const $el = $('.setting-hue');
-          const hex = $el.value;
-          const hsl = hexToHSL(hex);
-          await settings.hue.set(hsl.h);
+          const color = normalizeSubtitleColor($el.value, '#ff0099');
+          $el.value = color;
+          const hsl = hexToHSL(color);
+          await settings.hue.set(hsl.h, hsl.s);
         }
+      },
+      saturation: {
+        hidden: true,
+        default: getThemeSaturationDefault(),
+        get: () => getStoredThemeHSL(settings.hue.default, settings.saturation.default).s,
+        set: (val) => persistSetting('saturation', normalizeThemeSaturation(val, settings.saturation.default)),
+        update: () => {}
       },
       blur: {
         label: 'UI Blur Effects',
@@ -7347,7 +7524,8 @@ const fetchBytes = async (url, opts) => {
     }
 
     const refreshSettingDefaultsFromOptions = () => {
-      settings.hue.default = normalizeNumberSetting(getOptionSettingDefault('hue', getCSSVariable('--default-hue')), getCSSVariable('--default-hue'));
+      settings.hue.default = getThemeHueDefault();
+      settings.saturation.default = getThemeSaturationDefault();
       settings.blur.default = normalizeBooleanSetting(getOptionSettingDefault('blur', true), true);
       settings.transitions.default = normalizeBooleanSetting(getOptionSettingDefault('transitions', true), true);
       settings['auto-subtitles'].default = getAutoSubtitleDefault();
@@ -7510,9 +7688,10 @@ const fetchBytes = async (url, opts) => {
     }
     $player.on('loadstart', resetFileinfo);
 
-    const getSVGPoster = (hue) => {
-      const h = (typeof hue === 'number' ? hue : getCSSVariable('--theme-hue'))
-      const color = `hsl(${h}, 100%, 50%)`;
+    const getSVGPoster = (colorValue) => {
+      const color = (isString(colorValue) && colorValue.trim().length > 0
+        ? colorValue.trim()
+        : String(getCSSVariable('--theme-color')).trim());
 
       const svg = `<?xml version='1.0' encoding='UTF-8' standalone='no'?>
         <svg  width='32' height='32' viewBox='9 7 32 33' version='1.1' xmlns='http://www.w3.org/2000/svg'>
@@ -7523,9 +7702,11 @@ const fetchBytes = async (url, opts) => {
       return `data:image/svg+xml;base64,${base64}`;
     }
 
-    const updatePlayerBackground = (hue) => {
-      hue = (typeof hue === 'number' ? hue : retrieveSetting('hue'));
-      const dataUri = getSVGPoster(hue);
+    const updatePlayerBackground = (themeColor) => {
+      const color = (isString(themeColor) && themeColor.trim().length > 0
+        ? themeColor.trim()
+        : HSLToHex(settings.hue.get(), settings.saturation.get(), 50));
+      const dataUri = getSVGPoster(color);
       $player.style.backgroundImage = `url('${dataUri}')`;
     }
 
@@ -7628,23 +7809,42 @@ const fetchBytes = async (url, opts) => {
       updatePlayerBackground();
     };
 
-    const getThemeColorBaseHSL = () => {
-      const themeColorBase = getCSSVariable('--theme-color-base')
-        .split(',')
-        .map((s) => s.replace('%', '').trim());
-      const h = +themeColorBase[0];
-      const s = +themeColorBase[1];
-      const l = +themeColorBase[2];
-
-      return {h,s,l};
-    }
-
-    const updateHue = async (val) => {
-      const hue = (isUndefined(val) ? retrieveSetting('hue') : val);
+    const applyTheme = async (hueValue, saturationValue) => {
+      const hue = normalizeThemeHue(hueValue, settings.hue.default);
+      const saturation = normalizeThemeSaturation(saturationValue, settings.saturation.default);
       setCSSVariableNumber('--theme-hue', hue, $html);
-
-      const baseColor = getThemeColorBaseHSL();
-      const hex = HSLToHex(hue, baseColor.s, baseColor.l);
+      setCSSVariableNumber('--theme-saturation', `${saturation}%`, $html);
+      setCSSVariableNumber('--theme-color-base', `${hue}, ${saturation}%, 50%`, $html);
+      const hex = HSLToHex(hue, saturation, 50);
+      const textOnAccent = (() => {
+        const parseHex = (value) => {
+          const normalized = (String(value || '').trim().length === 4)
+            ? `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`
+            : String(value || '').trim();
+          const match = normalized.match(/^#([0-9a-f]{6})$/i);
+          if (!match) return null;
+          return {
+            r: parseInt(match[1].slice(0, 2), 16),
+            g: parseInt(match[1].slice(2, 4), 16),
+            b: parseInt(match[1].slice(4, 6), 16)
+          };
+        }
+        const toLinear = (channel) => {
+          const s = channel / 255;
+          return (s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4);
+        }
+        const rgb = parseHex(hex);
+        if (!rgb) return '#ffffff';
+        const luminance = (
+          (0.2126 * toLinear(rgb.r)) +
+          (0.7152 * toLinear(rgb.g)) +
+          (0.0722 * toLinear(rgb.b))
+        );
+        const contrastWhite = (1.05 / (luminance + 0.05));
+        const contrastBlack = ((luminance + 0.05) / 0.05);
+        return (contrastBlack >= contrastWhite ? '#000000' : '#ffffff');
+      })();
+      setCSSVariableNumber('--text-on-accent', textOnAccent, $html);
 
       const meta = $('meta[name="theme-color"]');
 
@@ -7654,7 +7854,7 @@ const fetchBytes = async (url, opts) => {
         $('head').append(`<meta name="theme-color" content="${hex}">`);
       }
 
-      if (!audioArtworkActive) updatePlayerBackground();
+      if (!audioArtworkActive) updatePlayerBackground(hex);
     }
 
     const isPlaying = () => (
@@ -7798,7 +7998,7 @@ const fetchBytes = async (url, opts) => {
       }
 
       // From: https://css-tricks.com/converting-color-spaces-in-javascript/
-      const HSLToHex = (h, s, l) => {
+      function HSLToHex(h, s, l) {
         s /= 100;
         l /= 100;
 
@@ -7849,6 +8049,7 @@ const fetchBytes = async (url, opts) => {
       setupControls();
       renderSettingsControls();
       renderSubtitleSettingsControls();
+      await applyTheme(settings.hue.get(), settings.saturation.get());
       applySubtitleStyleSettings();
       createAnimationCSS();
       updateVersionNumber();

@@ -541,10 +541,17 @@
 
       return source;
     }
+    const normalizeConfigThemeSettings = (source) => {
+      if (!isObjectRecord(source)) return source;
+      if (!isObjectRecord(source.settings)) source.settings = {};
+      return source;
+    }
     const applyPlayerConfigObject = (config) => {
       if (!isObjectRecord(config)) return false;
-      const source = normalizeConfigSubtitleSettings(
-        isObjectRecord(config.options) ? config.options : config
+      const source = normalizeConfigThemeSettings(
+        normalizeConfigSubtitleSettings(
+          isObjectRecord(config.options) ? config.options : config
+        )
       );
       if (!isObjectRecord(source)) return false;
       deepMergeObjects(app.options, source);
@@ -660,6 +667,38 @@
       const str = String(value || '').trim();
       if (/^#[0-9a-f]{6}$/i.test(str) || /^#[0-9a-f]{3}$/i.test(str)) return str;
       return fallback;
+    }
+    const normalizeThemeHue = (value, fallback) => {
+      const parsed = parseFloat(value);
+      if (!Number.isFinite(parsed)) return fallback;
+      const wrapped = ((parsed % 360) + 360) % 360;
+      return Math.round(wrapped * 100) / 100;
+    }
+    const normalizeThemeSaturation = (value, fallback = 100) => {
+      const parsed = parseFloat(value);
+      if (!Number.isFinite(parsed)) return fallback;
+      const clamped = Math.max(0, Math.min(100, parsed));
+      return Math.round(clamped * 100) / 100;
+    }
+    const getThemeHueDefault = () => normalizeThemeHue(
+      getOptionSettingDefault('hue', getCSSVariable('--default-hue')),
+      getCSSVariable('--default-hue')
+    );
+    const getThemeSaturationDefault = () => normalizeThemeSaturation(
+      getOptionSettingDefault('saturation', 100),
+      100
+    );
+    const getStoredThemeHSL = (fallbackHue, fallbackSaturation) => {
+      const storedHue = retrieveSetting('hue');
+      const storedSaturation = retrieveSetting('saturation');
+      if (typeof storedHue !== 'undefined' || typeof storedSaturation !== 'undefined') {
+        return {
+          h: normalizeThemeHue(storedHue, fallbackHue),
+          s: normalizeThemeSaturation(storedSaturation, fallbackSaturation)
+        };
+      }
+
+      return { h: fallbackHue, s: fallbackSaturation };
     }
     const getOptionSubtitleDefault = (subtitleKey, settingKey, fallback) => {
       const fromSettings = getOptionSettingDefault(settingKey, undefined);
@@ -2566,7 +2605,8 @@
             valueAttribute = `value="${setting.buttonLabel}"`;
           } else if (setting.type === 'color') {
             if (typeof value === 'number') {
-              valueAttribute = `value="${HSLToHex(value, 100, 50)}"`;
+              const sat = (key === 'hue' ? settings.saturation.get() : 100);
+              valueAttribute = `value="${HSLToHex(value, sat, 50)}"`;
             } else {
               const fallback = (isString(setting.default) ? setting.default : '#ffffff');
               valueAttribute = `value="${escapeAttr(normalizeSubtitleColor(value, fallback))}"`;
@@ -2597,7 +2637,10 @@
                 .join('');
               return `<select class='setting-${key}'${attrs}>${options}</select>`;
             })()
-          : `<input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}>`
+          : (type === 'button'
+            ? `<button type="button" class='setting-${key}'${attrs}>${escapeHtml(setting.buttonLabel || 'Action')}</button>`
+            : `<input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}>`
+          )
         );
 
         return `${acc}
@@ -2643,7 +2686,7 @@
 
     const renderSettingsControls = (useDefaults) => {
       refreshSettingDefaultsFromOptions();
-      const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key));
+      const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key) && !settings[key].hidden);
       const html = renderSettingRows(keys, useDefaults, 'setting-item');
       $settings.html(html);
       bindSettingControls(keys);
@@ -2707,21 +2750,35 @@
     const settings = {
       hue: {
         label: 'Theme color',
-        desc: 'Set the theme color for player.html',
+        desc: 'Set the theme color for player.html, including grayscale values.',
         event: 'input',
         type: 'color',
-        default: normalizeNumberSetting(getOptionSettingDefault('hue', getCSSVariable('--default-hue')), getCSSVariable('--default-hue')),
-        get: () => (typeof retrieveSetting('hue') !== 'undefined' ? retrieveSetting('hue') : settings.hue.default),
-        set: async (val) => {
-          persistSetting('hue', val);
-          await updateHue(val);
+        default: getThemeHueDefault(),
+        get: () => getStoredThemeHSL(settings.hue.default, settings.saturation.default).h,
+        set: async (val, optSaturation) => {
+          const hue = normalizeThemeHue(val, settings.hue.default);
+          const saturation = normalizeThemeSaturation(
+            optSaturation,
+            getStoredThemeHSL(settings.hue.default, settings.saturation.default).s
+          );
+          persistSetting('hue', hue);
+          persistSetting('saturation', saturation);
+          await applyTheme(hue, saturation);
         },
         update: async () => {
           const $el = $('.setting-hue');
-          const hex = $el.value;
-          const hsl = hexToHSL(hex);
-          await settings.hue.set(hsl.h);
+          const color = normalizeSubtitleColor($el.value, '#ff0099');
+          $el.value = color;
+          const hsl = hexToHSL(color);
+          await settings.hue.set(hsl.h, hsl.s);
         }
+      },
+      saturation: {
+        hidden: true,
+        default: getThemeSaturationDefault(),
+        get: () => getStoredThemeHSL(settings.hue.default, settings.saturation.default).s,
+        set: (val) => persistSetting('saturation', normalizeThemeSaturation(val, settings.saturation.default)),
+        update: () => {}
       },
       blur: {
         label: 'UI Blur Effects',
@@ -2989,7 +3046,8 @@
     }
 
     const refreshSettingDefaultsFromOptions = () => {
-      settings.hue.default = normalizeNumberSetting(getOptionSettingDefault('hue', getCSSVariable('--default-hue')), getCSSVariable('--default-hue'));
+      settings.hue.default = getThemeHueDefault();
+      settings.saturation.default = getThemeSaturationDefault();
       settings.blur.default = normalizeBooleanSetting(getOptionSettingDefault('blur', true), true);
       settings.transitions.default = normalizeBooleanSetting(getOptionSettingDefault('transitions', true), true);
       settings['auto-subtitles'].default = getAutoSubtitleDefault();
@@ -3152,9 +3210,10 @@
     }
     $player.on('loadstart', resetFileinfo);
 
-    const getSVGPoster = (hue) => {
-      const h = (typeof hue === 'number' ? hue : getCSSVariable('--theme-hue'))
-      const color = `hsl(${h}, 100%, 50%)`;
+    const getSVGPoster = (colorValue) => {
+      const color = (isString(colorValue) && colorValue.trim().length > 0
+        ? colorValue.trim()
+        : String(getCSSVariable('--theme-color')).trim());
 
       const svg = `<?xml version='1.0' encoding='UTF-8' standalone='no'?>
         <svg  width='32' height='32' viewBox='9 7 32 33' version='1.1' xmlns='http://www.w3.org/2000/svg'>
@@ -3165,9 +3224,11 @@
       return `data:image/svg+xml;base64,${base64}`;
     }
 
-    const updatePlayerBackground = (hue) => {
-      hue = (typeof hue === 'number' ? hue : retrieveSetting('hue'));
-      const dataUri = getSVGPoster(hue);
+    const updatePlayerBackground = (themeColor) => {
+      const color = (isString(themeColor) && themeColor.trim().length > 0
+        ? themeColor.trim()
+        : HSLToHex(settings.hue.get(), settings.saturation.get(), 50));
+      const dataUri = getSVGPoster(color);
       $player.style.backgroundImage = `url('${dataUri}')`;
     }
 
@@ -3270,23 +3331,42 @@
       updatePlayerBackground();
     };
 
-    const getThemeColorBaseHSL = () => {
-      const themeColorBase = getCSSVariable('--theme-color-base')
-        .split(',')
-        .map((s) => s.replace('%', '').trim());
-      const h = +themeColorBase[0];
-      const s = +themeColorBase[1];
-      const l = +themeColorBase[2];
-
-      return {h,s,l};
-    }
-
-    const updateHue = async (val) => {
-      const hue = (isUndefined(val) ? retrieveSetting('hue') : val);
+    const applyTheme = async (hueValue, saturationValue) => {
+      const hue = normalizeThemeHue(hueValue, settings.hue.default);
+      const saturation = normalizeThemeSaturation(saturationValue, settings.saturation.default);
       setCSSVariableNumber('--theme-hue', hue, $html);
-
-      const baseColor = getThemeColorBaseHSL();
-      const hex = HSLToHex(hue, baseColor.s, baseColor.l);
+      setCSSVariableNumber('--theme-saturation', `${saturation}%`, $html);
+      setCSSVariableNumber('--theme-color-base', `${hue}, ${saturation}%, 50%`, $html);
+      const hex = HSLToHex(hue, saturation, 50);
+      const textOnAccent = (() => {
+        const parseHex = (value) => {
+          const normalized = (String(value || '').trim().length === 4)
+            ? `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`
+            : String(value || '').trim();
+          const match = normalized.match(/^#([0-9a-f]{6})$/i);
+          if (!match) return null;
+          return {
+            r: parseInt(match[1].slice(0, 2), 16),
+            g: parseInt(match[1].slice(2, 4), 16),
+            b: parseInt(match[1].slice(4, 6), 16)
+          };
+        }
+        const toLinear = (channel) => {
+          const s = channel / 255;
+          return (s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4);
+        }
+        const rgb = parseHex(hex);
+        if (!rgb) return '#ffffff';
+        const luminance = (
+          (0.2126 * toLinear(rgb.r)) +
+          (0.7152 * toLinear(rgb.g)) +
+          (0.0722 * toLinear(rgb.b))
+        );
+        const contrastWhite = (1.05 / (luminance + 0.05));
+        const contrastBlack = ((luminance + 0.05) / 0.05);
+        return (contrastBlack >= contrastWhite ? '#000000' : '#ffffff');
+      })();
+      setCSSVariableNumber('--text-on-accent', textOnAccent, $html);
 
       const meta = $('meta[name="theme-color"]');
 
@@ -3296,7 +3376,7 @@
         $('head').append(`<meta name="theme-color" content="${hex}">`);
       }
 
-      if (!audioArtworkActive) updatePlayerBackground();
+      if (!audioArtworkActive) updatePlayerBackground(hex);
     }
 
     const isPlaying = () => (
@@ -3440,7 +3520,7 @@
       }
 
       // From: https://css-tricks.com/converting-color-spaces-in-javascript/
-      const HSLToHex = (h, s, l) => {
+      function HSLToHex(h, s, l) {
         s /= 100;
         l /= 100;
 
@@ -3491,6 +3571,7 @@
       setupControls();
       renderSettingsControls();
       renderSubtitleSettingsControls();
+      await applyTheme(settings.hue.get(), settings.saturation.get());
       applySubtitleStyleSettings();
       createAnimationCSS();
       updateVersionNumber();

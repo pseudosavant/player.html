@@ -220,6 +220,7 @@ Priority order (highest to lowest):
 {
   "settings": {
     "hue": 323,
+    "saturation": 100,
     "auto-subtitles": false,
     "subtitle-font": "sans",
     "subtitle-size": "100%",
@@ -247,6 +248,7 @@ Priority order (highest to lowest):
 User-facing display and subtitle defaults (most commonly customized):
 
 * `settings.hue`: Theme hue (number)
+* `settings.saturation`: Theme saturation from `0` to `100` (use `0` for grayscale themes)
 * `settings.auto-subtitles`: Auto-load matching subtitle file (`true`/`false`)
 * `settings.subtitle-font`: `sans`, `serif`, `mono`, `casual`
 * `settings.subtitle-size`: Percentage string. Presets in UI: `50%`, `75%`, `100%`, `150%`, `200%`. Arbitrary percentages are accepted (clamped to `25%`-`400%`).

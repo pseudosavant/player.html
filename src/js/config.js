@@ -48,6 +48,7 @@
         },
         settings: {
           hue: 323,
+          saturation: 100,
           blur: true,
           transitions: true,
           'auto-subtitles': false,
