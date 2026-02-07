@@ -367,6 +367,7 @@
       text-align: left;
       background: transparent;
       border: 0 none;
+      border-radius: 0.25rem;
       color: var(--modal-font-color);
       padding: 0;
       margin: 0;
