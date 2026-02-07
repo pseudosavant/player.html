@@ -80,7 +80,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### PWA & Sharing
 * Installable as a PWA (inline generated manifest).
 * Shareable URL that resumes `player.html` in the same folder, playlist, media item, timestamp, and subtitle selection.
-* Social metadata (`og:*`, `twitter:*`) for link previews.
+* Standard page metadata (`title`, `description`) plus favicon and PWA manifest support.
 
 ### UI & Metadata
 * Select your own theme color with hue+saturation theming (including grayscale themes at `saturation: 0`).
@@ -387,3 +387,5 @@ The latest version of these web servers (others may work as well):
 * [MIT](./LICENSE)
 
 &copy; 2026 Paul Ellis
+
+
