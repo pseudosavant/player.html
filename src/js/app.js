@@ -299,6 +299,14 @@
     }
 
     const clickLink = (e) => {
+      const isPlainLeftClick = (
+        e.button === 0 &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.shiftKey &&
+        !e.altKey
+      );
+      if (!isPlainLeftClick) return;
       e.preventDefault();
 
       // Find `a.file` or `a.folder` element. `e.target` can be children too instead.
@@ -2601,7 +2609,10 @@
       }
     }
     window.addEventListener('keydown', keyboardBroker);
-    $html.on('contextmenu', (e) => e.preventDefault());
+    $html.on('contextmenu', (e) => {
+      if (e.target && e.target.closest && e.target.closest('.links a')) return;
+      e.preventDefault();
+    });
 
     const toggleModal = ($el) => {
       if ($el.hasClass('show')) {
