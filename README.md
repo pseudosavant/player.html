@@ -10,7 +10,7 @@ It can be used as:
 
 ## What player.html can do
 * Play videos with external subtitles (`.srt` / `.vtt`).
-* Customize subtitle display (font, size, position hint, text color, and background color).
+* Customize subtitle display (font, size, position hint, text color, background color, and optional text-shadow mode).
 * Play audio (not just video) and use cover art thumbnails when available.
 * Build playlists from folders/albums, reorder them, and loop playback.
 * Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
@@ -52,7 +52,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### Playback (Video)
 * Video playback in the browser media engine (`MP4`, `M4V`, `MOV`, `MKV`, `WEBM`, `OGG`, etc).
 * External subtitle support (`.srt` and `.vtt`).
-* Subtitle display settings in the subtitles modal: font, size, fallback vertical position, text color, and background color.
+* Subtitle display settings in the subtitles modal: font, size, fallback vertical position, text color, background color, and optional text-shadow background mode.
 * Authored subtitle cue positioning is preserved. The subtitle position setting is only used as a fallback for cues without authored position.
 * Picture-in-picture support.
 * Playback controls: play/pause, seek, stop, volume, playback rate, fullscreen, PiP.
@@ -226,6 +226,7 @@ Priority order (highest to lowest):
     "subtitle-position": "author",
     "subtitle-color": "#ffffff",
     "subtitle-background": "#000000",
+    "subtitle-shadow": false,
     "thumbnailing": true,
     "animate": true
   },
@@ -252,6 +253,7 @@ User-facing display and subtitle defaults (most commonly customized):
 * `settings.subtitle-position`: `author`, `90`, `75`, `60`, `35`, `20`
 * `settings.subtitle-color`: Hex color (for example `#ffffff`)
 * `settings.subtitle-background`: Hex color (for example `#000000`)
+* `settings.subtitle-shadow`: `true` uses transparent cue backgrounds with offset text shadow based on `settings.subtitle-background`; `false` uses solid cue background
 * `settings.blur`: Enable UI blur effects (`true`/`false`)
 * `settings.transitions`: Enable UI transitions (`true`/`false`)
 * `settings.thumbnailing`: Enable video thumbnail generation (`true`/`false`)

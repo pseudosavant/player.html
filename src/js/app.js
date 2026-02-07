@@ -535,6 +535,9 @@
       if (Object.prototype.hasOwnProperty.call(subtitles, 'background') && typeof source.settings['subtitle-background'] === 'undefined') {
         source.settings['subtitle-background'] = subtitles.background;
       }
+      if (Object.prototype.hasOwnProperty.call(subtitles, 'shadow') && typeof source.settings['subtitle-shadow'] === 'undefined') {
+        source.settings['subtitle-shadow'] = subtitles.shadow;
+      }
 
       return source;
     }
@@ -584,6 +587,7 @@
     const subtitlePositionFallback = 'author';
     const subtitleColorFallback = '#ffffff';
     const subtitleBackgroundFallback = '#000000';
+    const subtitleShadowFallback = false;
 
     const subtitleFontOptions = [
       { value: 'sans', label: 'Sans' },
@@ -689,6 +693,11 @@
     const getSubtitleBackgroundDefault = () => normalizeSubtitleColor(
       getOptionSubtitleDefault('background', 'subtitle-background', subtitleBackgroundFallback),
       subtitleBackgroundFallback
+    );
+    const normalizeSubtitleShadow = (value, fallback = subtitleShadowFallback) => normalizeBooleanSetting(value, fallback);
+    const getSubtitleShadowDefault = () => normalizeSubtitleShadow(
+      getOptionSubtitleDefault('shadow', 'subtitle-shadow', subtitleShadowFallback),
+      subtitleShadowFallback
     );
     const subtitleFontToFamily = (value) => {
       switch (normalizeSubtitleFont(value)) {
@@ -1595,11 +1604,14 @@
       const size = normalizeSubtitleSize(retrieveSetting('subtitle-size'), getSubtitleSizeDefault());
       const color = normalizeSubtitleColor(retrieveSetting('subtitle-color'), getSubtitleColorDefault());
       const background = normalizeSubtitleColor(retrieveSetting('subtitle-background'), getSubtitleBackgroundDefault());
+      const shadow = normalizeSubtitleShadow(retrieveSetting('subtitle-shadow'), getSubtitleShadowDefault());
 
       setCSSVariableNumber('--subtitle-font-family', subtitleFontToFamily(font), $html);
       setCSSVariableNumber('--subtitle-size-scale', subtitleSizeToScale(size), $html);
       setCSSVariableNumber('--subtitle-color', color, $html);
       setCSSVariableNumber('--subtitle-background-color', background, $html);
+      setCSSVariableNumber('--subtitle-cue-background-color', shadow ? 'transparent' : 'var(--subtitle-background-color)', $html);
+      setCSSVariableNumber('--subtitle-text-shadow', shadow ? '0.04em 0.04em 1px var(--subtitle-background-color)' : 'none', $html);
     }
 
     const applySubtitlePositionToCue = (cue, preferredLine) => {
@@ -2528,7 +2540,8 @@
       'subtitle-size',
       'subtitle-position',
       'subtitle-color',
-      'subtitle-background'
+      'subtitle-background',
+      'subtitle-shadow'
     ];
     const subtitleSettingKeys = new Set([
       ...subtitlePersistedSettingKeys,
@@ -2852,6 +2865,20 @@
           applySubtitleStyleSettings();
         }
       },
+      'subtitle-shadow': {
+        label: 'Text shadow background',
+        desc: 'Use transparent subtitle backgrounds with a drop shadow offset down and right.',
+        event: 'change',
+        default: getSubtitleShadowDefault(),
+        get: () => normalizeSubtitleShadow(retrieveSetting('subtitle-shadow'), settings['subtitle-shadow'].default),
+        set: (val) => persistSetting('subtitle-shadow', normalizeSubtitleShadow(val, settings['subtitle-shadow'].default)),
+        update: () => {
+          const $el = $('.setting-subtitle-shadow');
+          const val = $el.checked;
+          settings['subtitle-shadow'].set(val);
+          applySubtitleStyleSettings();
+        }
+      },
       'subtitle-reset': {
         label: 'Reset subtitle settings',
         buttonLabel: 'Reset',
@@ -2971,6 +2998,7 @@
       settings['subtitle-position'].default = getSubtitlePositionDefault();
       settings['subtitle-color'].default = getSubtitleColorDefault();
       settings['subtitle-background'].default = getSubtitleBackgroundDefault();
+      settings['subtitle-shadow'].default = getSubtitleShadowDefault();
       settings.thumbnailing.default = normalizeBooleanSetting(getOptionSettingDefault('thumbnailing', true), true);
       settings.animate.default = normalizeBooleanSetting(getOptionSettingDefault('animate', true), true);
       settings['playlist-depth'].default = getPlaylistFolderDepthDefault();

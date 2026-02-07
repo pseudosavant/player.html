@@ -64,6 +64,8 @@
       );
       --subtitle-color: #ffffff;
       --subtitle-background-color: #000000;
+      --subtitle-cue-background-color: var(--subtitle-background-color);
+      --subtitle-text-shadow: none;
 
       font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
       font-size: 12px;
@@ -228,7 +230,8 @@
       font-family: var(--subtitle-font-family);
       font-size: var(--subtitle-font-size);
       color: var(--subtitle-color);
-      background-color: var(--subtitle-background-color);
+      background-color: var(--subtitle-cue-background-color);
+      text-shadow: var(--subtitle-text-shadow);
     }
 
     body:not(.is-loaded) .player {

@@ -43,7 +43,8 @@
           size: '100%', // Percentage string (e.g. 50%, 75%, 100%, 150%, 200%)
           position: 'author', // author | 90 | 75 | 60 | 35 | 20
           color: '#ffffff', // Subtitle text color in hex.
-          background: '#000000' // Subtitle background color in hex.
+          background: '#000000', // Subtitle background color in hex.
+          shadow: false // Use transparent background + text drop shadow.
         },
         settings: {
           hue: 323,
@@ -55,6 +56,7 @@
           'subtitle-position': 'author',
           'subtitle-color': '#ffffff',
           'subtitle-background': '#000000',
+          'subtitle-shadow': false,
           thumbnailing: true,
           animate: true,
           'playlist-depth': 2
