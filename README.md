@@ -83,7 +83,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 * Social metadata (`og:*`, `twitter:*`) for link previews.
 
 ### UI & Metadata
-* Select your own theme color.
+* Select your own theme color with hue+saturation theming (including grayscale themes at `saturation: 0`).
 * Media file metadata (bitrate, resolution, etc).
 * Settings can be configured by file (`player.html.json`) and exported from the UI. See [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson).
 
@@ -249,6 +249,7 @@ User-facing display and subtitle defaults (most commonly customized):
 
 * `settings.hue`: Theme hue (number)
 * `settings.saturation`: Theme saturation from `0` to `100` (use `0` for grayscale themes)
+* The Theme color picker in Settings updates `settings.hue` and `settings.saturation` together.
 * `settings.auto-subtitles`: Auto-load matching subtitle file (`true`/`false`)
 * `settings.subtitle-font`: `sans`, `serif`, `mono`, `casual`
 * `settings.subtitle-size`: Percentage string. Presets in UI: `50%`, `75%`, `100%`, `150%`, `200%`. Arbitrary percentages are accepted (clamped to `25%`-`400%`).
