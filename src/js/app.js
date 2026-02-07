@@ -579,6 +579,9 @@
     const downloadJSON = (filename, data) => {
       const json = `${JSON.stringify(data, null, 2)}\n`;
       const blob = new Blob([json], { type: 'application/json' });
+      return downloadBlob(filename, blob);
+    }
+    const downloadBlob = (filename, blob) => {
       const url = URL.createObjectURL(blob);
       const $a = $('<a>');
       $a.attr('href', url);
@@ -587,6 +590,13 @@
       $a.click();
       $($a).remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    const sanitizeFilename = (value, fallback = 'screenshot') => {
+      const sanitized = String(value || '')
+        .replace(/[\\/:*?"<>|]/g, '-')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return (sanitized.length > 0 ? sanitized : fallback);
     }
 
     const subtitleFontFallback = 'sans';
@@ -1459,6 +1469,47 @@
         logInfo(`Playing media from clipboard: ${clipboard}`);
         setPlaylistFromUrl(url, true);
       }
+    }
+    const actionCaptureScreenshot = async () => {
+      if (!$player || !$player.src || !$player.videoWidth || !$player.videoHeight) return;
+
+      const width = $player.videoWidth;
+      const height = $player.videoHeight;
+      const currentTime = (Number.isFinite($player.currentTime) ? $player.currentTime : 0);
+      const roundedTimeMs = Math.max(0, Math.round(currentTime * 1000));
+      const label = sanitizeFilename(urlToLabel($player.currentSrc || $player.src), 'screenshot');
+      const filename = `${label}-${roundedTimeMs}ms.png`;
+      const $canvas = document.createElement('canvas');
+      $canvas.width = width;
+      $canvas.height = height;
+
+      try {
+        const ctx = $canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage($player, 0, 0, width, height);
+        const blob = await new Promise((resolve) => $canvas.toBlob(resolve, 'image/png'));
+        if (!blob) return;
+        downloadBlob(filename, blob);
+      } catch (e) {
+        console.warn('Unable to capture screenshot from current frame', e);
+      }
+    }
+    const getFileinfoActionSectionHtml = () => {
+      return `
+        <li class='modal-item modal-section-heading fileinfo-actions-heading'>Actions</li>
+        <li class='modal-item setting-item fileinfo-action-item'>
+          <span class='key'>Take screenshot (Shift+S)</span>
+          <button type='button' class='fileinfo-screenshot'>Capture</button>
+        </li>
+      `;
+    }
+    const bindFileinfoActionHandlers = () => {
+      const $btn = $('.fileinfo-screenshot');
+      if (!$btn) return;
+      $btn.on('click', (e) => {
+        e.stopImmediatePropagation();
+        actionCaptureScreenshot();
+      });
     }
 
     const resetPlayer = () => {
@@ -2386,7 +2437,8 @@
       $fileinfo.on('click', (e) => {
         // Only hide the fileinfo if the target element isn't `<span class="value"/>` so that you can copy value text
         const isValue = $(e.target).hasClass('value');
-        if (!isValue) hideModals();
+        const isControl = !!e.target.closest('button, input, select, textarea');
+        if (!isValue && !isControl) hideModals();
       });
       $help.on('click', hideModals);
       $playlist.on('click', (e) => e.stopImmediatePropagation());
@@ -2527,6 +2579,10 @@
           break;
         case 's':
           toggleModal($subtitles);
+          break;
+        case 'S':
+          e.preventDefault();
+          actionCaptureScreenshot();
           break;
         case 'Escape':
           hideModals();
@@ -3187,7 +3243,8 @@
         html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
       });
 
-      $fileinfo.html(html);
+      $fileinfo.html(`${html}${getFileinfoActionSectionHtml()}`);
+      bindFileinfoActionHandlers();
     }
 
     const dateFormat = (d) => {
@@ -3203,7 +3260,8 @@
     }
 
     const resetFileinfo = () => {
-      $fileinfo.html('<li class="fileinfo-item modal-item">Metadata not yet loaded</li>');
+      $fileinfo.html(`<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
+      bindFileinfoActionHandlers();
       app.metadata = {};
     }
     $player.on('loadstart', resetFileinfo);

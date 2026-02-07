@@ -380,6 +380,7 @@
     .subtitle-item:has(.subtitle-choice:active) {
       background-color: var(--button-quiet-active);
     }
+    .modal-section-heading,
     .subtitle-section-heading {
       pointer-events: none;
       cursor: default;
@@ -393,7 +394,8 @@
       letter-spacing: 0.05em;
       font-size: 0.8rem;
     }
-    .subtitle-settings-heading {
+    .subtitle-settings-heading,
+    .fileinfo-actions-heading {
       margin-top: 0.75rem;
       padding-top: 0.85rem;
       border-top: 1px solid var(--modal-divider-color);
@@ -437,7 +439,7 @@
       margin: 0;
       align-items: center;
       justify-content: center;
-      width: 3.5rem;
+      min-width: 3.5rem;
       height: 2rem;
       z-index: 50;
       cursor: pointer;
