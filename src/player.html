@@ -18,8 +18,8 @@
     <div class='media-container'>
       <video class='player' data-volume="3" crossorigin="anonymous" playsinline></video>
       <div class="media-title"></div>
-      <ul class='fileinfo modal'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
-      <ul class='help modal'>
+      <ul class='fileinfo modal' inert aria-hidden='true'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
+      <ul class='help modal' inert aria-hidden='true'>
         <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
         <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
         <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
@@ -36,9 +36,9 @@
         <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
         <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
       </ul>
-      <ul class='subtitle-selection modal'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
-      <ul class='playlist modal'></ul>
-      <ul class='settings modal'></ul>
+      <ul class='subtitle-selection modal' inert aria-hidden='true'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
+      <ul class='playlist modal' inert aria-hidden='true'></ul>
+      <ul class='settings modal' inert aria-hidden='true'></ul>
       <div class="modal-background-overlay"></div>
     </div>
     <section class='controls'>
@@ -46,9 +46,11 @@
       <div class='trick-container' style='--trick-position: 0%'>
         <video class='trick'></video>
       </div>
-      <section class='controls-settings'>
-        <button class='btn-fileinfo' type='button' title='Show media file information' aria-label='Show media file information'><svg><use xlink:href='#svg-info'/></svg></button>
-        <button class='btn-settings' type='button' title='Open settings' aria-label='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
+      <section class='controls-sources'>
+        <button class='btn-playlist' type='button' title='Open playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
+        <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive' aria-label='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
+        <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive' aria-label='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
+        <button class='btn-local-file' type='button' title='Open local media file' aria-label='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
         <button class='btn-previous' type='button' title='Previous track [Page Up]' aria-label='Previous track'><svg><use xlink:href='#svg-previous'/></svg></button>
@@ -72,11 +74,9 @@
         <button class='btn-pip' type='button' title='Toggle picture-in-picture mode' aria-label='Toggle picture-in-picture' aria-pressed='false'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
         <button class='btn-subtitles' type='button' title='Toggle Subtitles' aria-label='Select subtitles' aria-pressed='false'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
       </section>
-      <section class='controls-sources'>
-        <button class='btn-playlist' type='button' title='Open playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
-        <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive' aria-label='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
-        <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive' aria-label='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
-        <button class='btn-local-file' type='button' title='Open local media file' aria-label='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
+      <section class='controls-settings'>
+        <button class='btn-fileinfo' type='button' title='Show media file information' aria-label='Show media file information'><svg><use xlink:href='#svg-info'/></svg></button>
+        <button class='btn-settings' type='button' title='Open settings' aria-label='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
       </section>
     <div class='current-timestamp' style='--duration: "0:00"; --absolute-position: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>

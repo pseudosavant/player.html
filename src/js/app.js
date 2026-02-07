@@ -10,6 +10,7 @@
     const $subtitles = $('.subtitle-selection');
     const $playlist = $('.playlist');
     const $currentTimestamp = $('.current-timestamp');
+    let lastModalTrigger = null;
 
     const isDebug = () => !!(app && app.options && app.options.debug);
     const logInfo = (...args) => { if (isDebug()) console.info(...args); }
@@ -2532,10 +2533,14 @@
     const keyboardBroker = (e) => {
       // Don't handle keyboard combinations
       if (e.ctrlKey || e.altKey) return;
+      const $openModal = document.querySelector('.modal.show');
+      if ($openModal) {
+        if (e.key === 'Tab' && trapModalFocus(e, $openModal)) return;
+        if (e.key !== 'Escape') return;
+      }
       const target = e.target;
       if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
       if (target && target.classList && target.classList.contains('progress-bar')) return;
-      if (document.querySelector('.modal.show') && e.key !== 'Escape') return;
 
       switch (e.key) {
         case '0':
@@ -2618,24 +2623,105 @@
       if ($el.hasClass('show')) {
         hideModals();
       } else if ($('.modal.show')) {
-        hideModals();
+        hideModals(undefined, { suppressRestoreFocus: true });
         showModal($el);
       } else {
         showModal($el);
       }
     }
 
-    const showModal = ($el) => {
+    const setModalAccessibilityState = ($el, shown) => {
+      if (!$el) return;
+      if (shown) {
+        $el.removeAttribute('inert');
+        $el.setAttribute('aria-hidden', 'false');
+        $el.setAttribute('role', 'dialog');
+        $el.setAttribute('aria-modal', 'true');
+      } else {
+        $el.setAttribute('inert', '');
+        $el.setAttribute('aria-hidden', 'true');
+        $el.removeAttribute('role');
+        $el.removeAttribute('aria-modal');
+      }
+    }
+    const getModalFirstFocusable = ($el) => {
+      if (!$el) return null;
+      const selector = [
+        'button:not([disabled])',
+        'a[href]',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])'
+      ].join(', ');
+      return $el.querySelector(selector);
+    }
+    const getModalFocusableElements = ($el) => {
+      if (!$el) return [];
+      const selector = [
+        'button:not([disabled])',
+        'a[href]',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])'
+      ].join(', ');
+      const items = [...$el.querySelectorAll(selector)];
+      return items.filter((el) => !el.hasAttribute('inert') && el.offsetParent !== null);
+    }
+    const trapModalFocus = (e, $el) => {
+      if (e.key !== 'Tab') return false;
+      const items = getModalFocusableElements($el);
+      if (items.length === 0) return true;
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+
+      if (!items.includes(active)) {
+        e.preventDefault();
+        first.focus();
+        return true;
+      }
+
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+        return true;
+      }
+
+      if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+        return true;
+      }
+
+      return true;
+    }
+    const showModal = ($el, trigger = null) => {
+      const active = (trigger || document.activeElement);
+      if (active && typeof active.focus === 'function') lastModalTrigger = active;
+      setModalAccessibilityState($el, true);
       $el.addClass('show');
       if ($el === $subtitles) updateSubtitleDurations();
       $el.once('click', hideModals);
+      const $focus = getModalFirstFocusable($el);
+      if ($focus && typeof $focus.focus === 'function') $focus.focus();
     }
 
-    const hideModals = (e) => {
+    const hideModals = (e, opts = {}) => {
       if (e && $(e.target).hasClass('value')) return;
 
       const modals = [...document.querySelectorAll('.modal.show')];
-      modals.forEach((el) => $(el).removeClass('show'));
+      modals.forEach((el) => {
+        $(el).removeClass('show');
+        setModalAccessibilityState(el, false);
+      });
+
+      if (!opts.suppressRestoreFocus && lastModalTrigger && typeof lastModalTrigger.focus === 'function') {
+        try { lastModalTrigger.focus(); } catch (err) { /* noop */ }
+      }
+      if (!opts.suppressRestoreFocus) lastModalTrigger = null;
     }
 
     const subtitlePersistedSettingKeys = [
