@@ -4,14 +4,15 @@
       const metadata = await imageMetadata(icon);
       const startUrl = window.location.href.split('#')[0];
       const scopeUrl = new URL('./', startUrl).toString();
+      const themeColor = resolveManifestColor(getCSSVariable('--theme-color'));
 
       const manifest = {
         short_name: document.title,
         name: document.title,
         description: document.querySelector('meta[name="description"]').content,
         background_color: '#FFFFFF',
-        theme_color: getCSSVariable('--theme-color'),
-        color: getCSSVariable('--theme-color'),
+        theme_color: themeColor,
+        color: themeColor,
         icons: [
           {
             src: icon,
@@ -33,6 +34,28 @@
         ]
       }
       setPWAManifest(manifest);
+    }
+
+    function resolveManifestColor(value) {
+      const fallback = '#ff0099';
+      const candidate = String(value || '').trim();
+      if (!candidate) return fallback;
+
+      const probe = document.createElement('span');
+      probe.style.color = '';
+      probe.style.color = candidate;
+
+      if (!probe.style.color) {
+        return fallback;
+      }
+
+      probe.style.position = 'absolute';
+      probe.style.left = '-9999px';
+      document.body.appendChild(probe);
+      const computed = getComputedStyle(probe).color;
+      probe.remove();
+
+      return (computed ? computed : fallback);
     }
 
     function setPWAManifest(manifest) {
