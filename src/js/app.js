@@ -584,10 +584,11 @@
       { value: 'casual', label: 'Casual' }
     ];
     const subtitleSizeOptions = [
-      { value: '90%', label: 'Small' },
-      { value: '100%', label: 'Medium' },
-      { value: '120%', label: 'Large' },
-      { value: '140%', label: 'X-Large' }
+      { value: '50%', label: '50%' },
+      { value: '75%', label: '75%' },
+      { value: '100%', label: '100%' },
+      { value: '150%', label: '150%' },
+      { value: '200%', label: '200%' }
     ];
     const subtitlePositionOptions = [
       { value: 'author', label: 'Author default' },
@@ -600,6 +601,17 @@
 
     const subtitleFontValues = subtitleFontOptions.map((opt) => opt.value);
     const subtitleSizeValues = subtitleSizeOptions.map((opt) => opt.value);
+    const subtitleSizeMinPercent = 25;
+    const subtitleSizeMaxPercent = 400;
+    const subtitleSizeLegacyMap = {
+      small: '75%',
+      medium: '100%',
+      large: '100%',
+      xlarge: '150%',
+      '90%': '75%',
+      '120%': '100%',
+      '140%': '150%'
+    };
     const subtitlePositionValues = subtitlePositionOptions
       .map((opt) => opt.value)
       .filter((value) => value !== 'author');
@@ -609,8 +621,21 @@
       return (subtitleFontValues.includes(normalized) ? normalized : fallback);
     }
     const normalizeSubtitleSize = (value, fallback = subtitleSizeFallback) => {
-      const normalized = String(value || '').trim();
-      return (subtitleSizeValues.includes(normalized) ? normalized : fallback);
+      const normalized = String(value || '').trim().toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(subtitleSizeLegacyMap, normalized)) {
+        return subtitleSizeLegacyMap[normalized];
+      }
+      if (subtitleSizeValues.includes(normalized)) return normalized;
+
+      const match = normalized.match(/^(\d+(?:\.\d+)?)%$/);
+      if (!match) return fallback;
+
+      const parsed = parseFloat(match[1]);
+      if (!Number.isFinite(parsed)) return fallback;
+
+      const clamped = Math.max(subtitleSizeMinPercent, Math.min(subtitleSizeMaxPercent, parsed));
+      const rounded = Math.round(clamped * 100) / 100;
+      return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded}%`;
     }
     const normalizeSubtitlePosition = (value, fallback = subtitlePositionFallback) => {
       const normalized = String(value || '').toLowerCase();
@@ -669,6 +694,7 @@
           return "system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif";
       }
     }
+    const subtitleSizeToScale = (value) => parseFloat(normalizeSubtitleSize(value, subtitleSizeFallback)) / 100;
 
     const addPlaylistItems = (urls, shouldPlay = false) => {
       if (!Array.isArray(urls)) return;
@@ -1562,7 +1588,7 @@
       const background = normalizeSubtitleColor(retrieveSetting('subtitle-background'), getSubtitleBackgroundDefault());
 
       setCSSVariableNumber('--subtitle-font-family', subtitleFontToFamily(font), $html);
-      setCSSVariableNumber('--subtitle-font-size', size, $html);
+      setCSSVariableNumber('--subtitle-size-scale', subtitleSizeToScale(size), $html);
       setCSSVariableNumber('--subtitle-color', color, $html);
       setCSSVariableNumber('--subtitle-background-color', background, $html);
     }
@@ -2525,7 +2551,14 @@
 
         const control = (isSelect
           ? (() => {
-              const options = (setting.options || [])
+              const hasSelectedOption = (setting.options || []).some((opt) => {
+                const optValue = (opt && typeof opt === 'object' ? opt.value : opt);
+                return String(value) === String(optValue);
+              });
+              const customOption = (!hasSelectedOption && key === 'subtitle-size')
+                ? `<option value="${escapeAttr(value)}" selected>${escapeHtml(value)}</option>`
+                : '';
+              const options = customOption + (setting.options || [])
                 .map((opt) => {
                   const optValue = (opt && typeof opt === 'object' ? opt.value : opt);
                   const optLabel = (opt && typeof opt === 'object' ? opt.label : opt);

@@ -53,7 +53,15 @@
       --blur-base: 1rem;
 
       --subtitle-font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
-      --subtitle-font-size: 100%;
+      --subtitle-size-min-base: 25.5px;
+      --subtitle-size-fluid-base: 4.35vmin;
+      --subtitle-size-max-base: 51px;
+      --subtitle-size-scale: 1;
+      --subtitle-font-size: clamp(
+        calc(var(--subtitle-size-min-base) * var(--subtitle-size-scale)),
+        calc(var(--subtitle-size-fluid-base) * var(--subtitle-size-scale)),
+        calc(var(--subtitle-size-max-base) * var(--subtitle-size-scale))
+      );
       --subtitle-color: #ffffff;
       --subtitle-background-color: #000000;
 

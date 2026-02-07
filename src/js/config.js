@@ -40,7 +40,7 @@
         subtitles: {
           autoMatch: false, // Auto-load matching .vtt/.srt subtitles after playback starts.
           font: 'sans', // sans | serif | mono | casual
-          size: '100%', // 90% | 100% | 120% | 140%
+          size: '100%', // Percentage string (e.g. 50%, 75%, 100%, 150%, 200%)
           position: 'author', // author | 90 | 75 | 60 | 35 | 20
           color: '#ffffff', // Subtitle text color in hex.
           background: '#000000' // Subtitle background color in hex.
