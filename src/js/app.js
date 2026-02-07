@@ -81,7 +81,7 @@
     app.options.supportedTypes = getSupportedTypes();
     logInfo(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
-    const hashState = { location: '', media: '' };
+    const hashState = { location: '', media: '', subtitle: '' };
     app.playlist = [];
     app.playlistIndex = -1;
     app.playlistLoop = true;
@@ -197,6 +197,7 @@
     const createLinks = async (url) => {
       const targetUrl = url || window.location.href;
       const folder = urlToFolder(targetUrl);
+      hashState.location = folder;
       const links = await folderApiRequest(folder);
 
       if (Array.isArray(links.folders)) {
@@ -221,6 +222,13 @@
 
       // Only show the links if they have changed
       if (oldLinksHash !== newLinksHash) showLinks(links);
+    }
+    const createLinksSafe = async (url) => {
+      try {
+        await createLinks(url);
+      } catch (e) {
+        console.warn('Unable to load folder links', e);
+      }
     }
 
     const showLinks = async (links) => {
@@ -1253,6 +1261,7 @@
       const time = $player.currentTime;
       const playlist = getPlaylistState();
       const state = { location, media, time };
+      if (hashState.subtitle) state.subtitle = hashState.subtitle;
       if (playlist) state.playlist = playlist;
 
       return state;
@@ -1695,7 +1704,7 @@
       const $toggle = $(`<li class='subtitle-item modal-item disable-subtitles'>Turn off subtitles</li>`);
       $toggle.on('click', (e) => {
         e.preventDefault();
-        clearSubtitles();
+        clearSubtitles({ updateHash: true });
       });
       return $toggle;
     }
@@ -1827,6 +1836,7 @@
     }
 
     const loadSubtitle = async (url) => {
+      const selectedSubtitleUrl = url;
       clearSubtitles();
 
       if (isSRT(url)) {
@@ -1840,14 +1850,16 @@
       const $track = $(`<track src='${url}' label='${url}' default>`);
       $track.on('load', applySubtitlePositionPreference);
       $player.append($track);
+      hashState.subtitle = selectedSubtitleUrl;
       ensureSubtitleTrackEnabled();
       applySubtitlePositionPreference();
       setTimeout(applySubtitlePositionPreference, 0);
       updateSubtitleToggleVisibility();
       setAriaPressed('.btn-subtitles', true);
+      updateHash();
     }
 
-    const clearSubtitles = () => {
+    const clearSubtitles = (opts = {}) => {
       disableAllTextTracks();
       const tracks = [...document.querySelectorAll('track')];
 
@@ -1859,8 +1871,10 @@
           $(track).remove();
         });
       }
+      hashState.subtitle = undefined;
       updateSubtitleToggleVisibility();
       setAriaPressed('.btn-subtitles', false);
+      if (opts.updateHash) updateHash();
     }
 
     const isSubtitle = (url) => url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
@@ -3458,6 +3472,14 @@
 
       if (hash) {
         const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
+        const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
+        const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
+
+        if (hasHashSubtitle) {
+          hashState.subtitle = hash.subtitle;
+        } else {
+          hashState.subtitle = undefined;
+        }
 
         if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
           if (restoredPlaylist) {
@@ -3470,18 +3492,43 @@
 
         if (hash.time && hash.time > 0) $player.currentTime = hash.time;
 
-        if (hash.location && hash.location.length > 1) {
-          hashState.location = hash.location;
-          createLinks(hash.location);
+        if (hasHashLocation) {
+          await createLinksSafe(hash.location);
         } else {
-          createLinks();
+          await createLinksSafe();
+        }
+
+        if (hasHashSubtitle) {
+          try {
+            await loadSubtitle(hash.subtitle);
+          } catch (e) {
+            console.warn('Unable to load subtitle from hash state', e);
+            clearSubtitles();
+          }
+        } else {
+          clearSubtitles();
         }
       }
 
       $(window).on('popstate', async (e) => {
         const hash = await getHash();
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
-        if (hash && hash.location && hash.location.length > 1) createLinks(hash.location)
+        if (hash && hash.location && hash.location.length > 1) {
+          await createLinksSafe(hash.location);
+        } else {
+          await createLinksSafe();
+        }
+
+        if (hash && hash.subtitle && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:')) {
+          try {
+            await loadSubtitle(hash.subtitle);
+          } catch (e) {
+            console.warn('Unable to load subtitle from hash state', e);
+            clearSubtitles();
+          }
+        } else {
+          clearSubtitles();
+        }
       });
     }
 
