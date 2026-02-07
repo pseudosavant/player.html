@@ -18,7 +18,7 @@ It can be used as:
 * Load default behavior from `player.html.json` and export your current configuration from the Settings modal.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
 * Play media from OneDrive / Google Drive (HTTPS + app keys required).
-* Share a URL that resumes at the same folder + playlist + media + timestamp.
+* Share a URL that resumes at the same folder + playlist + media + timestamp + subtitle selection.
 
 ## Contents
 * [Quick Start](#quick-start)
@@ -69,7 +69,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### Playlists
 * Playlist panel: view, add, reorder, previous/next, and looping playback.
 * Import/export `.m3u` playlists.
-* Shareable playlist state in the URL hash (restores current playlist, media, and timestamp).
+* Shareable state in the URL hash (restores folder, playlist, media, timestamp, and subtitle selection).
 
 ### Thumbnails
 * Video thumbnails use pre-rendered server-side thumbnails when present (recommended for large libraries).
@@ -79,7 +79,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 
 ### PWA & Sharing
 * Installable as a PWA (inline generated manifest).
-* Shareable URL that resumes `player.html` in the same folder, playlist, media item, and timestamp.
+* Shareable URL that resumes `player.html` in the same folder, playlist, media item, timestamp, and subtitle selection.
 * Social metadata (`og:*`, `twitter:*`) for link previews.
 
 ### UI & Metadata
@@ -108,7 +108,7 @@ Open the playlist panel using the playlist button next to the file sources. From
 
 Notes:
 
-* The current playlist/media/timestamp are encoded in the URL hash for shareable links and refresh restore.
+* The current folder/playlist/media/timestamp/subtitle selection are encoded in the URL hash for shareable links and refresh restore.
 * Looping is enabled by default and repeats the playlist.
 * Imported `.m3u` files can include relative URLs; they are resolved against the playlist URL (or the current page for local files).
 * Saved playlists in localStorage are optional and restored only on demand.
@@ -248,7 +248,7 @@ User-facing display and subtitle defaults (most commonly customized):
 * `settings.hue`: Theme hue (number)
 * `settings.auto-subtitles`: Auto-load matching subtitle file (`true`/`false`)
 * `settings.subtitle-font`: `sans`, `serif`, `mono`, `casual`
-* `settings.subtitle-size`: `90%`, `100%`, `120%`, `140%`
+* `settings.subtitle-size`: Percentage string. Presets in UI: `50%`, `75%`, `100%`, `150%`, `200%`. Arbitrary percentages are accepted (clamped to `25%`-`400%`).
 * `settings.subtitle-position`: `author`, `90`, `75`, `60`, `35`, `20`
 * `settings.subtitle-color`: Hex color (for example `#ffffff`)
 * `settings.subtitle-background`: Hex color (for example `#000000`)
