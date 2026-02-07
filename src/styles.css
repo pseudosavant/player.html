@@ -360,7 +360,26 @@
     }
     .modal-item .desc { overflow: visible; }
 
-    .subtitle-item { cursor: pointer; }
+    .subtitle-item { cursor: default; }
+    .subtitle-item .subtitle-choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 0 none;
+      color: var(--modal-font-color);
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      font: inherit;
+    }
+    .subtitle-item:has(.subtitle-choice:hover),
+    .subtitle-item:has(.subtitle-choice:focus-visible) {
+      background-color: var(--button-quiet-hover);
+    }
+    .subtitle-item:has(.subtitle-choice:active) {
+      background-color: var(--button-quiet-active);
+    }
     .subtitle-section-heading {
       pointer-events: none;
       cursor: default;

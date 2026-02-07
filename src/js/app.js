@@ -1752,8 +1752,9 @@
     }
 
     const createDisableSubtitlesItem = () => {
-      const $toggle = $(`<li class='subtitle-item modal-item disable-subtitles'>Turn off subtitles</li>`);
-      $toggle.on('click', (e) => {
+      const $toggle = $(`<li class='subtitle-item modal-item disable-subtitles'><button type='button' class='subtitle-choice disable-subtitles-btn'>Turn off subtitles</button></li>`);
+      const $btn = $toggle.querySelector('button');
+      $($btn).on('click', (e) => {
         e.preventDefault();
         clearSubtitles({ updateHash: true });
       });
@@ -1836,17 +1837,15 @@
     }
 
     const updateSubtitleDurations = () => {
-      const items = [...$subtitles.querySelectorAll('li[data-subtitle-url]')];
-      items.forEach(async (li) => {
-        const $li = $(li);
-        if ($li.hasClass('disable-subtitles')) return;
-        if (li.dataset.subtitleDurationReady === 'true') return;
-        const url = li.dataset.subtitleUrl;
+      const items = [...$subtitles.querySelectorAll('button[data-subtitle-url]')];
+      items.forEach(async (btn) => {
+        if (btn.dataset.subtitleDurationReady === 'true') return;
+        const url = btn.dataset.subtitleUrl;
         if (!url) return;
         const duration = await getSubtitleDurationCached(url);
-        const name = li.dataset.subtitleName ? decodeURIComponent(li.dataset.subtitleName) : li.textContent;
-        li.textContent = `${name} (${secondsToString(duration)})`;
-        li.dataset.subtitleDurationReady = 'true';
+        const name = btn.dataset.subtitleName ? decodeURIComponent(btn.dataset.subtitleName) : btn.textContent;
+        btn.textContent = `${name} (${secondsToString(duration)})`;
+        btn.dataset.subtitleDurationReady = 'true';
       });
     }
 
@@ -1865,19 +1864,18 @@
           const safeUrl = escapeAttr(url);
           const safeName = escapeHtml(name);
           const encodedName = encodeURIComponent(name);
-          html += `<li class='subtitle-item modal-item' data-subtitle-url='${safeUrl}' data-subtitle-name='${encodedName}' title='${safeUrl}'>${safeName}</li>`
+          html += `<li class='subtitle-item modal-item' title='${safeUrl}'><button type='button' class='subtitle-choice' data-subtitle-url='${safeUrl}' data-subtitle-name='${encodedName}'>${safeName}</button></li>`
         }
       }
 
       $subtitles.html(html);
 
-      const list = [...$subtitles.querySelectorAll('li[data-subtitle-url]')];
-      list.forEach((li) => {
-        const $li = $(li);
-        $li.on('click', (e) => {
+      const list = [...$subtitles.querySelectorAll('button[data-subtitle-url]')];
+      list.forEach((btn) => {
+        const $btn = $(btn);
+        $btn.on('click', (e) => {
           e.preventDefault();
-
-          loadSubtitle(li.dataset.subtitleUrl);
+          loadSubtitle(btn.dataset.subtitleUrl);
         });
       })
 
