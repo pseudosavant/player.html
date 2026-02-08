@@ -16,6 +16,7 @@ It can be used as:
 * Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
 * Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
 * Load default behavior from `player.html.json` and export your current configuration from the Settings modal.
+* Upload a custom player poster image (or set one in `player.html.json`) with sensible precedence and export support.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
 * Play media from OneDrive / Google Drive (HTTPS + app keys required).
 * Share a URL that resumes at the same folder + playlist + media + timestamp + subtitle selection.
@@ -84,12 +85,14 @@ Once installed, it can be launched like a local media player. Some platforms als
 
 ### UI & Metadata
 * Select your own theme color with hue+saturation theming (including grayscale themes at `saturation: 0`).
+* Set a custom player poster image from Settings (`Upload`) or by config (`settings.poster-image`).
 * Media file metadata (bitrate, resolution, etc).
 * Settings can be configured by file (`player.html.json`) and exported from the UI. See [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson).
 
 ### Keyboard & Convenience
 * Keyboard shortcuts (press `?` in the app to see the list).
 * Paste and Play: `CTRL+V` to play the URL currently in your clipboard.
+* Screenshot capture: `Shift+S`, or use `File metadata` modal -> `Actions` -> `Take screenshot`.
 
 ### Cloud Sources
 * Play media directly from OneDrive and Google Drive (requires HTTPS and valid app keys in `app.options.cloud`).
@@ -257,11 +260,22 @@ User-facing display and subtitle defaults (most commonly customized):
 * `settings.subtitle-color`: Hex color (for example `#ffffff`)
 * `settings.subtitle-background`: Hex color (for example `#000000`)
 * `settings.subtitle-shadow`: `true` uses transparent cue backgrounds with offset text shadow based on `settings.subtitle-background`; `false` uses solid cue background
+* `settings.poster-image`: Optional custom player poster image URL. Supports relative URL, absolute URL, or data URI.
 * `settings.blur`: Enable UI blur effects (`true`/`false`)
 * `settings.transitions`: Enable UI transitions (`true`/`false`)
 * `settings.thumbnailing`: Enable video thumbnail generation (`true`/`false`)
 * `settings.animate`: Enable animated thumbnails (`true`/`false`)
 * `settings.playlist-depth`: Folder depth used when adding folders to playlists (`1` to `3`)
+
+Poster image behavior:
+
+* Precedence is:
+  * user `localStorage` value (`setting-poster-image`) from uploaded custom poster
+  * `player.html.json` value (`settings.poster-image`)
+  * built-in generated fallback poster
+* Uploaded raster images are resized to fit within `1920x1080` and encoded as WebP when supported (PNG fallback).
+* Uploaded SVG files are preserved as SVG data URIs (not rasterized).
+* Exported `player.html.json` includes `settings.poster-image` (including uploaded data URI values).
 
 Thumbnail timing and generation:
 
