@@ -226,10 +226,15 @@
       margin: 1rem 0 0 1.5rem;
       font-size: 1.5em;
       color: rgba(255,255,255,0);
+      cursor: text;
+      user-select: text;
       transition: color var(--transition-base);
     }
     
-    .player:hover + .media-title {
+    .media-container:hover .media-title,
+    .media-title:hover,
+    .media-title:focus,
+    .media-title:focus-within {
       color: rgba(255,255,255,1);
     }
 
@@ -238,7 +243,7 @@
       width: 100%;
       max-height: 75vh;
       margin: auto;
-      background-image: url('./assets/player-poster.svg');
+      background-image: var(--player-poster-image, url('./assets/player-poster.svg'));
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;

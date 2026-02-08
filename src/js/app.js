@@ -614,6 +614,10 @@
     const subtitleColorFallback = '#ffffff';
     const subtitleBackgroundFallback = '#000000';
     const subtitleShadowFallback = false;
+    const posterImageFallback = '';
+    const posterMaxWidth = 1920;
+    const posterMaxHeight = 1080;
+    const posterWebPQuality = 0.85;
 
     const subtitleFontOptions = [
       { value: 'sans', label: 'Sans' },
@@ -687,6 +691,10 @@
       if (/^#[0-9a-f]{6}$/i.test(str) || /^#[0-9a-f]{3}$/i.test(str)) return str;
       return fallback;
     }
+    const normalizePosterImage = (value, fallback = posterImageFallback) => {
+      const str = String(value || '').trim();
+      return (str.length > 0 ? str : fallback);
+    }
     const normalizeThemeHue = (value, fallback) => {
       const parsed = parseFloat(value);
       if (!Number.isFinite(parsed)) return fallback;
@@ -756,6 +764,14 @@
     const getSubtitleShadowDefault = () => normalizeSubtitleShadow(
       getOptionSubtitleDefault('shadow', 'subtitle-shadow', subtitleShadowFallback),
       subtitleShadowFallback
+    );
+    const getPosterImageDefault = () => normalizePosterImage(
+      getOptionSettingDefault('poster-image', posterImageFallback),
+      posterImageFallback
+    );
+    const getPosterImageSetting = () => normalizePosterImage(
+      retrieveSetting('poster-image'),
+      getPosterImageDefault()
     );
     const subtitleFontToFamily = (value) => {
       switch (normalizeSubtitleFont(value)) {
@@ -1502,6 +1518,128 @@
       } catch (e) {
         console.warn('Unable to capture screenshot from current frame', e);
       }
+    }
+    const selectImageFile = async () => {
+      return new Promise((resolve) => {
+        const $input = document.createElement('input');
+        $input.type = 'file';
+        $input.accept = 'image/*';
+        $input.style.display = 'none';
+        let focusTimeoutId = null;
+        let settled = false;
+        const cleanup = (file = null) => {
+          if (settled) return;
+          settled = true;
+          if (focusTimeoutId) {
+            clearTimeout(focusTimeoutId);
+            focusTimeoutId = null;
+          }
+          window.removeEventListener('focus', onWindowFocus, true);
+          $input.remove();
+          resolve(file);
+        };
+        const onWindowFocus = () => {
+          // If the picker was canceled, some browsers don't emit `change`.
+          // Resolve to `null` shortly after focus returns.
+          focusTimeoutId = setTimeout(() => {
+            const file = ($input.files && $input.files.length > 0 ? $input.files[0] : null);
+            cleanup(file);
+          }, 200);
+        };
+        $input.addEventListener('change', () => {
+          const file = ($input.files && $input.files.length > 0 ? $input.files[0] : null);
+          cleanup(file);
+        }, { once: true });
+        $input.addEventListener('cancel', () => cleanup(null), { once: true });
+        window.addEventListener('focus', onWindowFocus, true);
+        document.body.append($input);
+        $input.click();
+      });
+    }
+    const imageFileToElement = async (file) => {
+      if (!file) return null;
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.decoding = 'async';
+      image.src = objectUrl;
+      try {
+        if (image.decode) await image.decode();
+        else await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = reject;
+        });
+        return image;
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+    const canvasToBlob = async ($canvas, type, quality) => {
+      return new Promise((resolve) => $canvas.toBlob(resolve, type, quality));
+    }
+    const blobToDataUri = async (blob) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(reader.error || new Error('Unable to read blob as data URI'));
+        reader.readAsDataURL(blob);
+      });
+    }
+    const supportsWebPEncoding = async () => {
+      const $canvas = document.createElement('canvas');
+      $canvas.width = 1;
+      $canvas.height = 1;
+      const blob = await canvasToBlob($canvas, 'image/webp', posterWebPQuality);
+      return !!(blob && blob.type === 'image/webp');
+    }
+    const fileToPosterDataUri = async (file) => {
+      if (!file || !isString(file.type) || !file.type.startsWith('image/')) return '';
+      if (file.type === 'image/svg+xml') {
+        // Preserve SVG uploads as SVG data URIs instead of rasterizing to bitmap.
+        return blobToDataUri(file);
+      }
+      const image = await imageFileToElement(file);
+      if (!image || !image.naturalWidth || !image.naturalHeight) return '';
+
+      const scale = Math.min(
+        1,
+        posterMaxWidth / image.naturalWidth,
+        posterMaxHeight / image.naturalHeight
+      );
+      const width = Math.max(1, Math.round(image.naturalWidth * scale));
+      const height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const $canvas = document.createElement('canvas');
+      $canvas.width = width;
+      $canvas.height = height;
+
+      const ctx = $canvas.getContext('2d');
+      if (!ctx) return '';
+      ctx.drawImage(image, 0, 0, width, height);
+
+      const canEncodeWebP = await supportsWebPEncoding();
+      const preferredType = (canEncodeWebP ? 'image/webp' : 'image/png');
+      const encodedBlob = await canvasToBlob($canvas, preferredType, posterWebPQuality);
+      if (!encodedBlob) return '';
+      return blobToDataUri(encodedBlob);
+    }
+    const uploadCustomPosterImage = async () => {
+      try {
+        const file = await selectImageFile();
+        if (!file) return false;
+        const dataUri = await fileToPosterDataUri(file);
+        if (!dataUri) return false;
+        const persisted = persistSetting('poster-image', dataUri);
+        if (!persisted) return false;
+        updatePlayerBackground();
+        return true;
+      } catch (e) {
+        console.warn('Unable to upload custom poster image', e);
+        return false;
+      }
+    }
+    const clearCustomPosterImage = () => {
+      const cleared = clearSetting('poster-image');
+      updatePlayerBackground();
+      return cleared;
     }
     const getFileinfoActionSectionHtml = () => {
       return `
@@ -2872,10 +3010,10 @@
     };
     let suppressSettingPersistence = false;
     const persistSetting = (key, value) => {
-      if (suppressSettingPersistence) return;
-      storageStore(`setting-${key}`, value);
+      if (suppressSettingPersistence) return true;
+      return storageStore(`setting-${key}`, value) !== null;
     }
-    const clearSetting = (key) => storageRemove(`setting-${key}`);
+    const clearSetting = (key) => storageRemove(`setting-${key}`) !== null;
     const enumerateSettings = () => Object.keys(localStorage).filter((key) => key.startsWith('setting-')).map((key) => key.replace('setting-', ''));
     const resetSettings = () => {
       const settings = enumerateSettings();
@@ -3087,6 +3225,37 @@
           applySubtitleStyleSettings();
         }
       },
+      'poster-image': {
+        hidden: true,
+        default: getPosterImageDefault(),
+        get: () => getPosterImageSetting(),
+        set: (val) => {
+          const normalized = normalizePosterImage(val, settings['poster-image'].default);
+          if (normalized.length > 0) return persistSetting('poster-image', normalized);
+          return clearSetting('poster-image');
+        },
+        update: () => {}
+      },
+      'poster-upload': {
+        label: 'Custom poster image',
+        buttonLabel: 'Upload',
+        desc: 'Upload a custom player poster image (resized to fit 1920x1080 and encoded as WebP when supported).',
+        event: 'click',
+        type: 'button',
+        get: () => {},
+        set: async () => uploadCustomPosterImage(),
+        update: () => {}
+      },
+      'poster-reset': {
+        label: 'Reset poster image',
+        buttonLabel: 'Reset',
+        desc: 'Clear custom poster image and return to configured/default poster.',
+        event: 'click',
+        type: 'button',
+        get: () => {},
+        set: () => clearCustomPosterImage(),
+        update: () => {}
+      },
       'subtitle-reset': {
         label: 'Reset subtitle settings',
         buttonLabel: 'Reset',
@@ -3208,12 +3377,13 @@
       settings['subtitle-color'].default = getSubtitleColorDefault();
       settings['subtitle-background'].default = getSubtitleBackgroundDefault();
       settings['subtitle-shadow'].default = getSubtitleShadowDefault();
+      settings['poster-image'].default = getPosterImageDefault();
       settings.thumbnailing.default = normalizeBooleanSetting(getOptionSettingDefault('thumbnailing', true), true);
       settings.animate.default = normalizeBooleanSetting(getOptionSettingDefault('animate', true), true);
       settings['playlist-depth'].default = getPlaylistFolderDepthDefault();
     }
 
-    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'export-config']);
+    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'export-config']);
     const exportPlayerConfig = () => {
       const options = deepCloneValue(app.options);
       if (!isObjectRecord(options.settings)) options.settings = {};
@@ -3378,11 +3548,24 @@
     }
 
     const updatePlayerBackground = (themeColor) => {
+      const customPoster = getPosterImageSetting();
+      const setPosterVariable = (urlValue) => {
+        if (!urlValue || urlValue.length === 0) {
+          clearCSSVariable('--player-poster-image', $player);
+        } else {
+          setCSSVariableNumber('--player-poster-image', `url('${escapeCssUrl(urlValue)}')`, $player);
+        }
+        $player.style.removeProperty('background-image');
+      }
+      if (customPoster && customPoster.length > 0) {
+        setPosterVariable(customPoster);
+        return;
+      }
       const color = (isString(themeColor) && themeColor.trim().length > 0
         ? themeColor.trim()
         : HSLToHex(settings.hue.get(), settings.saturation.get(), 50));
       const dataUri = getSVGPoster(color);
-      $player.style.backgroundImage = `url('${dataUri}')`;
+      setPosterVariable(dataUri);
     }
 
     let audioArtworkRequestId = 0;

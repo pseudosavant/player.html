@@ -58,6 +58,7 @@
           'subtitle-color': '#ffffff',
           'subtitle-background': '#000000',
           'subtitle-shadow': false,
+          'poster-image': '', // Optional custom poster image URL or data URI for the player background.
           thumbnailing: true,
           animate: true,
           'playlist-depth': 2
