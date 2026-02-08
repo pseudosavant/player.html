@@ -89,6 +89,13 @@ Once installed, it can be launched like a local media player. Some platforms als
 * Media file metadata (bitrate, resolution, etc).
 * Settings can be configured by file (`player.html.json`) and exported from the UI. See [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson).
 
+### Custom Branding
+Use `player.html` with your own look and branding:
+* Theme color via hue+saturation controls
+* Custom poster/icon image via upload or config (`settings.poster-image`)
+
+![player.html with custom branding (theme color + custom poster/icon)](https://github.com/user-attachments/assets/3f48779b-09a2-45f9-9fc7-de09e7cb14a1)
+
 ### Keyboard & Convenience
 * Keyboard shortcuts (press `?` in the app to see the list).
 * Paste and Play: `CTRL+V` to play the URL currently in your clipboard.
@@ -357,6 +364,31 @@ Linux (package manager examples):
 sudo apt install ffmpeg
 ```
 
+### Example: Remux MKV (H.264 + AC3) to MP4 without transcoding
+
+If your source is already `H.264` video + `AC3` audio, you can often remux to MP4 for broad playback compatibility while keeping the original quality.
+
+Remuxing (`-c copy`) is a container change, not a re-encode. For copied streams it is lossless and typically much faster than transcoding.
+
+This command:
+* Copies video/audio/subtitle streams without re-encoding
+* Copies chapters
+* Moves MP4 metadata to the front (`faststart`) for better web playback
+
+```
+ffmpeg -i "input.mkv" -map 0 -c copy -map_chapters 0 -movflags +faststart "output.mp4"
+```
+
+### Example: Remux H.264 video and convert audio to AC3
+
+If your source audio is something less broadly supported in browsers/devices (for example `DTS` or `EAC3`), you can keep the original H.264 video stream and only transcode audio to AC3:
+
+This keeps video remuxed/lossless (`-c:v copy`) and only re-encodes audio.
+
+```
+ffmpeg -i "input.mkv" -map 0 -c:v copy -c:a ac3 -b:a 640k -map_chapters 0 -movflags +faststart "output.mp4"
+```
+
 ## Development
 * `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
 * `dist/player.html` is generated output; do not edit it by hand.
@@ -382,6 +414,10 @@ The latest version of these browsers is supported:
 * Firefox
 * Safari (Mac, iPadOS, iOS)
 * Chrome
+
+Modern browser/device media stacks have improved significantly. In practice, many current platforms now handle `5.1 AC3 / Dolby Digital` playback out of the box.
+
+Real-world compatibility can still vary by OS version, hardware decoder, browser version, and how audio is routed, but `MP4 + H.264 + AC3` has worked well across iPhone/iOS Safari, Chrome/Edge, Roku devices, and Xbox in testing.
 
 ## Supported web servers
 
