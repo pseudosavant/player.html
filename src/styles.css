@@ -230,7 +230,7 @@
       user-select: text;
       transition: color var(--transition-base);
     }
-    
+
     .media-container:hover .media-title,
     .media-title:hover,
     .media-title:focus,
@@ -346,6 +346,30 @@
     .playlist:before { content: "Playlist"; }
     .open-url:before { content: "Open URL"; }
 
+    .modal .modal-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 1.4rem;
+      height: 1.4rem;
+      min-width: 1.4rem;
+      border: 0 none;
+      border-radius: 999px;
+      background-color: transparent;
+      padding: 0;
+      z-index: 200;
+    }
+    .modal .modal-close-btn svg {
+      fill: var(--modal-font-color);
+    }
+    .modal .modal-close-btn:hover svg,
+    .modal .modal-close-btn:focus-visible svg {
+      fill: var(--accent-hover);
+    }
+    .modal .modal-close-btn:active svg {
+      fill: var(--accent-active);
+    }
+
     .modal-item {
       display: flex;
       justify-content: flex-start;
@@ -407,11 +431,10 @@
       padding-top: 0.85rem;
       border-top: 1px solid var(--modal-divider-color);
     }
-    .help-item { max-width: 320px; }
 
     .fileinfo-item .key, .help-item .key, .setting-item .key {
       display: inline-block;
-      width: 12rem;
+      min-width: 12rem;
       margin-right: 1rem;
       font-weight: bold;
     }
@@ -702,7 +725,6 @@
       align-items: stretch;
       gap: 0.75rem;
       width: 100%;
-      max-width: 40rem;
     }
     .open-url .open-url-label {
       color: var(--text-primary);
@@ -940,7 +962,7 @@
     :-webkit-full-screen .btn-fullscreen .expand   { display: none; } /* Hide collapse in fullscreen mode */
     :fullscreen          .btn-fullscreen .expand   { display: none; }
     .is-audio .btn-fullscreen                      { display: none !important; }
-    
+
     button.btn-pip          { display: none; }
     button.btn-pip.enabled  { display: inline-block; }
     .btn-pip .exit          { display: none; } /* Hide `.exit` by default */
@@ -1082,8 +1104,8 @@
       top: 0;
       left: 0;
       background-image: linear-gradient(to bottom, black, transparent);
-    }  
-    
+    }
+
     .trick {
       display: block;
       min-width: 102%;
@@ -1093,7 +1115,7 @@
       border: 0 none;
       filter: blur(0.5px);
       object-fit: cover;
-    }  
+    }
 
     .is-loaded .progress-bar:hover + .trick-container {
       border: 1px solid transparent;
@@ -1454,4 +1476,3 @@
       --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
       --accent-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
     }
-  

@@ -330,6 +330,10 @@
       $error.textContent = String(message || '');
     }
 
+    const getModalCloseButtonHtml = () => (
+      `<button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>`
+    );
+
     const getOpenUrlInput = () => $('.open-url-input');
 
     const showLinks = async (links) => {
@@ -1224,7 +1228,7 @@
         });
       }
 
-      $playlist.html(html);
+      $playlist.html(`${getModalCloseButtonHtml()}${html}`);
 
       const stopClose = (e) => e.stopImmediatePropagation();
 
@@ -2195,7 +2199,7 @@
         }
       }
 
-      $subtitles.html(html);
+      $subtitles.html(`${getModalCloseButtonHtml()}${html}`);
 
       const list = [...$subtitles.querySelectorAll('button[data-subtitle-url]')];
       list.forEach((btn) => {
@@ -2750,8 +2754,14 @@
         if (!isValue && !isControl) hideModals();
       });
       $help.on('click', hideModals);
-      $playlist.on('click', (e) => e.stopImmediatePropagation());
-      $openUrl.on('click', (e) => e.stopImmediatePropagation());
+      $playlist.on('click', (e) => {
+        const isCloseButton = !!(e.target && e.target.closest && e.target.closest('.modal-close-btn'));
+        if (!isCloseButton) e.stopImmediatePropagation();
+      });
+      const $openUrlItem = $openUrl ? $openUrl.querySelector('.open-url-item') : null;
+      if ($openUrlItem) {
+        $($openUrlItem).on('click', (e) => e.stopImmediatePropagation());
+      }
       $openUrl.on('submit', actionSubmitOpenUrl);
       $('.open-url-cancel').on('click', (e) => {
         e.preventDefault();
@@ -3146,7 +3156,7 @@
       refreshSettingDefaultsFromOptions();
       const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key) && !settings[key].hidden);
       const html = renderSettingRows(keys, useDefaults, 'setting-item');
-      $settings.html(html);
+      $settings.html(`${getModalCloseButtonHtml()}${html}`);
       bindSettingControls(keys);
       return html;
     }
@@ -3687,7 +3697,7 @@
         html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
       });
 
-      $fileinfo.html(`${html}${getFileinfoActionSectionHtml()}`);
+      $fileinfo.html(`${getModalCloseButtonHtml()}${html}${getFileinfoActionSectionHtml()}`);
       bindFileinfoActionHandlers();
     }
 
@@ -3704,7 +3714,7 @@
     }
 
     const resetFileinfo = () => {
-      $fileinfo.html(`<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
+      $fileinfo.html(`${getModalCloseButtonHtml()}<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
       bindFileinfoActionHandlers();
       app.metadata = {};
     }

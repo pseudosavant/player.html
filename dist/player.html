@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.23.0'>
+  <meta name='version' content='2.24.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -243,7 +243,7 @@
       user-select: text;
       transition: color var(--transition-base);
     }
-    
+
     .media-container:hover .media-title,
     .media-title:hover,
     .media-title:focus,
@@ -359,6 +359,30 @@
     .playlist:before { content: "Playlist"; }
     .open-url:before { content: "Open URL"; }
 
+    .modal .modal-close-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 1.4rem;
+      height: 1.4rem;
+      min-width: 1.4rem;
+      border: 0 none;
+      border-radius: 999px;
+      background-color: transparent;
+      padding: 0;
+      z-index: 200;
+    }
+    .modal .modal-close-btn svg {
+      fill: var(--modal-font-color);
+    }
+    .modal .modal-close-btn:hover svg,
+    .modal .modal-close-btn:focus-visible svg {
+      fill: var(--accent-hover);
+    }
+    .modal .modal-close-btn:active svg {
+      fill: var(--accent-active);
+    }
+
     .modal-item {
       display: flex;
       justify-content: flex-start;
@@ -420,11 +444,10 @@
       padding-top: 0.85rem;
       border-top: 1px solid var(--modal-divider-color);
     }
-    .help-item { max-width: 320px; }
 
     .fileinfo-item .key, .help-item .key, .setting-item .key {
       display: inline-block;
-      width: 12rem;
+      min-width: 12rem;
       margin-right: 1rem;
       font-weight: bold;
     }
@@ -715,7 +738,6 @@
       align-items: stretch;
       gap: 0.75rem;
       width: 100%;
-      max-width: 40rem;
     }
     .open-url .open-url-label {
       color: var(--text-primary);
@@ -953,7 +975,7 @@
     :-webkit-full-screen .btn-fullscreen .expand   { display: none; } /* Hide collapse in fullscreen mode */
     :fullscreen          .btn-fullscreen .expand   { display: none; }
     .is-audio .btn-fullscreen                      { display: none !important; }
-    
+
     button.btn-pip          { display: none; }
     button.btn-pip.enabled  { display: inline-block; }
     .btn-pip .exit          { display: none; } /* Hide `.exit` by default */
@@ -1095,8 +1117,8 @@
       top: 0;
       left: 0;
       background-image: linear-gradient(to bottom, black, transparent);
-    }  
-    
+    }
+
     .trick {
       display: block;
       min-width: 102%;
@@ -1106,7 +1128,7 @@
       border: 0 none;
       filter: blur(0.5px);
       object-fit: cover;
-    }  
+    }
 
     .is-loaded .progress-bar:hover + .trick-container {
       border: 1px solid transparent;
@@ -1473,8 +1495,12 @@
     <div class='media-container'>
       <video class='player' data-volume="3" crossorigin="anonymous" playsinline></video>
       <div class="media-title"></div>
-      <ul class='fileinfo modal' inert aria-hidden='true'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
+      <ul class='fileinfo modal' inert aria-hidden='true'>
+        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+        <li class='fileinfo-item modal-item'>Metadata not yet loaded</li>
+      </ul>
       <ul class='help modal' inert aria-hidden='true'>
+        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
         <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
         <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
         <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
@@ -1491,10 +1517,18 @@
         <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
         <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
       </ul>
-      <ul class='subtitle-selection modal' inert aria-hidden='true'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
-      <ul class='playlist modal' inert aria-hidden='true'></ul>
-      <ul class='settings modal' inert aria-hidden='true'></ul>
+      <ul class='subtitle-selection modal' inert aria-hidden='true'>
+        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+        <li class='subtitle-item modal-item'>No subtitles loaded yet</li>
+      </ul>
+      <ul class='playlist modal' inert aria-hidden='true'>
+        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      </ul>
+      <ul class='settings modal' inert aria-hidden='true'>
+        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      </ul>
       <form class='open-url modal' inert aria-hidden='true'>
+        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
         <div class='modal-item open-url-item'>
           <label class='open-url-label' for='open-url-input'>Folder or media URL</label>
           <input id='open-url-input' class='open-url-input' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
@@ -1559,6 +1593,8 @@
 <svg id='svg-circle' viewBox="0 0 24 24"><path d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12Z"/></svg>
 <!-- ic_fluent_arrow_minimize_24_filled.svg -->
 <svg id='svg-collapse' viewBox="0 0 24 24"><path d='M10.498103,12.5046266 C11.0109388,12.5046266 11.4336102,12.8906668 11.4913753,13.3880055 L11.498103,13.5046266 L11.498103,21.0085171 C11.498103,21.5608018 11.0503877,22.0085171 10.498103,22.0085171 C9.98526715,22.0085171 9.56259583,21.6224769 9.50483072,21.1251382 L9.49810299,21.0085171 L9.49757619,15.9154145 L3.70710678,21.7071068 C3.34662282,22.0675907 2.77939176,22.0953203 2.38710056,21.7902954 L2.29289322,21.7071068 C1.93240926,21.3466228 1.90467972,20.7793918 2.20970461,20.3871006 L2.29289322,20.2928932 L8.08057619,14.5044145 L2.99657619,14.5046266 C2.44429144,14.5046266 1.99657619,14.0569114 1.99657619,13.5046266 C1.99657619,12.9917908 2.38261638,12.5691195 2.87995507,12.5113544 L2.99657619,12.5046266 L10.498103,12.5046266 Z M13.4990964,1.99941454 C14.0119323,1.99941454 14.4346036,2.38545473 14.4923687,2.88279341 L14.4990964,2.99941454 L14.4985762,8.08641454 L20.2928932,2.29289322 C20.6533772,1.93240926 21.2206082,1.90467972 21.6128994,2.20970461 L21.7071068,2.29289322 C22.0675907,2.65337718 22.0953203,3.22060824 21.7902954,3.61289944 L21.7071068,3.70710678 L15.9105762,9.50241454 L21.0006232,9.50330499 C21.552908,9.50330499 22.0006232,9.95102024 22.0006232,10.503305 C22.0006232,11.0161408 21.614583,11.4388122 21.1172444,11.4965773 L21.0006232,11.503305 L13.4990964,11.503305 C12.9862606,11.503305 12.5635893,11.1172648 12.5058242,10.6199261 L12.4990964,10.503305 L12.4990964,2.99941454 C12.4990964,2.44712979 12.9468117,1.99941454 13.4990964,1.99941454 Z'></path></svg>
+<!-- ic_fluent_dismiss_circle_24_filled.svg -->
+<svg id='svg-dismiss-circle' viewBox='0 0 24 24'><path d='M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM15.5303 8.46967L15.4462 8.39705C15.1852 8.2034 14.827 8.20101 14.5636 8.38988L14.4697 8.46967L12 10.939L9.53033 8.46967L9.44621 8.39705C9.18522 8.2034 8.82701 8.20101 8.56362 8.38988L8.46967 8.46967L8.39705 8.55379C8.2034 8.81478 8.20101 9.17299 8.38988 9.43638L8.46967 9.53033L10.939 12L8.46967 14.4697L8.39705 14.5538C8.2034 14.8148 8.20101 15.173 8.38988 15.4364L8.46967 15.5303L8.55379 15.6029C8.81478 15.7966 9.17299 15.799 9.43638 15.6101L9.53033 15.5303L12 13.061L14.4697 15.5303L14.5538 15.6029C14.8148 15.7966 15.173 15.799 15.4364 15.6101L15.5303 15.5303L15.6029 15.4462C15.7966 15.1852 15.799 14.827 15.6101 14.5636L15.5303 14.4697L13.061 12L15.5303 9.53033L15.6029 9.44621C15.7966 9.18522 15.799 8.82701 15.6101 8.56362L15.5303 8.46967L15.4462 8.39705L15.5303 8.46967Z'/></svg>
 <!-- ic_fluent_arrow_download_24_filled.svg -->
 <svg id='svg-download' viewBox="0 0 24 24"><path d="M13 3C13 2.44772 12.5523 2 12 2C11.4477 2 11 2.44772 11 3V15.0858L7.70711 11.7929C7.31658 11.4024 6.68342 11.4024 6.29289 11.7929C5.90237 12.1834 5.90237 12.8166 6.29289 13.2071L11.2929 18.2071C11.6834 18.5976 12.3166 18.5976 12.7071 18.2071L17.7071 13.2071C18.0976 12.8166 18.0976 12.1834 17.7071 11.7929C17.3166 11.4024 16.6834 11.4024 16.2929 11.7929L13 15.0858V3ZM5 20C4.44772 20 4 20.4477 4 21C4 21.5523 4.44772 22 5 22H19C19.5523 22 20 21.5523 20 21C20 20.4477 19.5523 20 19 20H5Z"/></svg>
 <!-- ic_fluent_arrow_expand_24_filled.svg -->
@@ -4822,6 +4858,10 @@ const fetchBytes = async (url, opts) => {
       $error.textContent = String(message || '');
     }
 
+    const getModalCloseButtonHtml = () => (
+      `<button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>`
+    );
+
     const getOpenUrlInput = () => $('.open-url-input');
 
     const showLinks = async (links) => {
@@ -5716,7 +5756,7 @@ const fetchBytes = async (url, opts) => {
         });
       }
 
-      $playlist.html(html);
+      $playlist.html(`${getModalCloseButtonHtml()}${html}`);
 
       const stopClose = (e) => e.stopImmediatePropagation();
 
@@ -6687,7 +6727,7 @@ const fetchBytes = async (url, opts) => {
         }
       }
 
-      $subtitles.html(html);
+      $subtitles.html(`${getModalCloseButtonHtml()}${html}`);
 
       const list = [...$subtitles.querySelectorAll('button[data-subtitle-url]')];
       list.forEach((btn) => {
@@ -7242,8 +7282,14 @@ const fetchBytes = async (url, opts) => {
         if (!isValue && !isControl) hideModals();
       });
       $help.on('click', hideModals);
-      $playlist.on('click', (e) => e.stopImmediatePropagation());
-      $openUrl.on('click', (e) => e.stopImmediatePropagation());
+      $playlist.on('click', (e) => {
+        const isCloseButton = !!(e.target && e.target.closest && e.target.closest('.modal-close-btn'));
+        if (!isCloseButton) e.stopImmediatePropagation();
+      });
+      const $openUrlItem = $openUrl ? $openUrl.querySelector('.open-url-item') : null;
+      if ($openUrlItem) {
+        $($openUrlItem).on('click', (e) => e.stopImmediatePropagation());
+      }
       $openUrl.on('submit', actionSubmitOpenUrl);
       $('.open-url-cancel').on('click', (e) => {
         e.preventDefault();
@@ -7638,7 +7684,7 @@ const fetchBytes = async (url, opts) => {
       refreshSettingDefaultsFromOptions();
       const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key) && !settings[key].hidden);
       const html = renderSettingRows(keys, useDefaults, 'setting-item');
-      $settings.html(html);
+      $settings.html(`${getModalCloseButtonHtml()}${html}`);
       bindSettingControls(keys);
       return html;
     }
@@ -8179,7 +8225,7 @@ const fetchBytes = async (url, opts) => {
         html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
       });
 
-      $fileinfo.html(`${html}${getFileinfoActionSectionHtml()}`);
+      $fileinfo.html(`${getModalCloseButtonHtml()}${html}${getFileinfoActionSectionHtml()}`);
       bindFileinfoActionHandlers();
     }
 
@@ -8196,7 +8242,7 @@ const fetchBytes = async (url, opts) => {
     }
 
     const resetFileinfo = () => {
-      $fileinfo.html(`<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
+      $fileinfo.html(`${getModalCloseButtonHtml()}<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
       bindFileinfoActionHandlers();
       app.metadata = {};
     }
