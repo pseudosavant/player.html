@@ -344,6 +344,7 @@
     .fileinfo:before { content: "File metadata"; }
     .help:before { content: "Keyboard Shortcuts" }
     .playlist:before { content: "Playlist"; }
+    .open-url:before { content: "Open URL"; }
 
     .modal-item {
       display: flex;
@@ -692,6 +693,82 @@
       opacity: 0.7;
     }
 
+    .open-url {
+      min-width: min(44rem, 100vw);
+    }
+    .open-url .open-url-item {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 40rem;
+    }
+    .open-url .open-url-label {
+      color: var(--text-primary);
+      font-weight: bold;
+      line-height: 1.2;
+    }
+    .open-url .open-url-input {
+      width: 100%;
+      min-width: 0;
+      height: 2.25rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--modal-divider-color);
+      background-color: rgba(255,255,255,0.92);
+      color: #111;
+      padding: 0 0.75rem;
+      cursor: text;
+    }
+    .open-url .open-url-input::placeholder {
+      color: rgba(0,0,0,0.5);
+    }
+    .open-url .open-url-error {
+      min-height: 1.2em;
+      margin: 0;
+      color: #ffb4b4;
+      font-size: 0.9rem;
+      line-height: 1.2;
+    }
+    .open-url .open-url-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+    .open-url .open-url-actions button {
+      width: auto;
+      min-width: 4.5rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      border: 0 none;
+      color: var(--text-on-accent);
+      background-color: var(--accent);
+      transition:
+        background-color var(--transition-base),
+        color var(--transition-base),
+        transform var(--transition-base);
+    }
+    .open-url .open-url-actions button:hover,
+    .open-url .open-url-actions button:focus-visible {
+      background-color: var(--accent-hover);
+    }
+    .open-url .open-url-actions button:active {
+      background-color: var(--accent-active);
+      transform: translateY(1px);
+    }
+    .open-url .open-url-actions .open-url-cancel {
+      background-color: var(--button-quiet-bg);
+      color: var(--modal-font-color);
+    }
+    .open-url .open-url-actions .open-url-cancel:hover,
+    .open-url .open-url-actions .open-url-cancel:focus-visible {
+      background-color: var(--button-quiet-hover);
+    }
+    .open-url .open-url-actions .open-url-cancel:active {
+      background-color: var(--button-quiet-active);
+    }
+
     .color-scheme-change-transition, .color-scheme-change-transition * {
       --transition-args: calc(var(--transition-base) * 3) ease;
       transition:
@@ -1031,6 +1108,7 @@
        max-height: 2.5rem;
     }
     .controls .btn-cloud:hover { filter: brightness(1.25); }
+    .controls .btn-open-url { margin: 0 -0.1rem; }
     .controls .btn-local-file { margin: 0 -0.15rem; }
     .controls .btn-onedrive { padding: 0 0.1rem; }
 

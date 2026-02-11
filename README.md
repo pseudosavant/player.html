@@ -19,6 +19,7 @@ It can be used as:
 * Upload a custom player poster image (or set one in `player.html.json`) with sensible precedence and export support.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
 * Play media from OneDrive / Google Drive (HTTPS + app keys required).
+* Open a folder or media URL from the sources bar (same-origin or CORS required for folder browsing).
 * Share a URL that resumes at the same folder + playlist + media + timestamp + subtitle selection.
 
 ## Contents
@@ -27,6 +28,7 @@ It can be used as:
 * [Feature requests](#feature-requests)
 * [Pre-rendered server-side thumbnails](#pre-rendered-server-side-thumbnails)
 * [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson)
+* [Advanced deployment patterns](#advanced-deployment-patterns)
 * [Installing ffmpeg](#installing-ffmpeg)
 * [Supported browsers](#supported-browsers)
 * [Supported web servers](#supported-web-servers)
@@ -134,7 +136,7 @@ Notes:
 ### Naming example:
 
 * Media filename: `myMedia.mp4`
-* Matching thumbnail filename: `myMedia.jpg` 
+* Matching thumbnail filename: `myMedia.jpg`
 
 ### Supported thumbnail image formats/extensions
 * JPEG
@@ -211,6 +213,9 @@ Options:
 ## Configuration file (`player.html.json`)
 
 `player.html` can load a configuration file named `player.html.json` from the same folder as `player.html`.
+
+You can rename `player.html` (for example to `index.html`) and still keep the config filename as `player.html.json`.
+This lets you host the player at a folder root while starting in a sub-folder media library.
 
 Priority order (highest to lowest):
 
@@ -301,6 +306,9 @@ Audio thumbnail options:
 
 Playback and UI timing:
 
+* `startLocation`: Optional initial folder/media URL. Relative paths resolve from the page URL.
+  * Useful for `index.html` + `player.html.json` deployments where media lives in a sub-folder like `videos/`.
+  * Can also point at a different server URL when that target has both directory browsing and CORS enabled.
 * `volumeExponent`: Volume curve exponent
 * `updateRate.timeupdate`: UI update throttle for media `timeupdate` events (ms)
 * `updateRate.trickHover`: UI update throttle for trick-hover previews (ms)
@@ -320,6 +328,39 @@ Compatibility notes:
 
 * `subtitles.*` keys are still accepted on load for compatibility, but `settings.*` is the canonical configuration surface for user-facing defaults.
 * Runtime/browser-detected fields may appear in exported files. They are optional and are not required for a hand-authored config file.
+
+## Advanced deployment patterns
+
+Use `startLocation` to control the initial folder or media URL opened by the player.
+
+1. `index.html` at root, media in `videos/` sub-folder:
+
+```text
+/index.html
+/player.html.json
+/videos/           (directory browsing enabled)
+```
+
+`player.html.json`:
+
+```json
+{
+  "startLocation": "videos/"
+}
+```
+
+2. Player on one server, media on another server:
+
+```json
+{
+  "startLocation": "https://media.example.com/videos/"
+}
+```
+
+Requirements for cross-server `startLocation`:
+
+* The target URL must expose a directory listing that `player.html` can parse.
+* The target server must allow CORS for folder/media requests.
 
 ## Feature requests
 
@@ -438,5 +479,3 @@ The latest version of these web servers (others may work as well):
 * [MIT](./LICENSE)
 
 &copy; 2026 Paul Ellis
-
-

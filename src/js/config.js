@@ -12,6 +12,8 @@
       options: {
         // When false, suppress non-error console noise.
         debug: false,
+        // Optional initial folder or media URL. Relative paths resolve from the page URL.
+        startLocation: '',
         cloud: {
           onedrive: {
             clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'

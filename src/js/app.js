@@ -9,6 +9,7 @@
     const $settings = $('.settings');
     const $subtitles = $('.subtitle-selection');
     const $playlist = $('.playlist');
+    const $openUrl = $('.open-url');
     const $currentTimestamp = $('.current-timestamp');
     let lastModalTrigger = null;
 
@@ -88,10 +89,23 @@
     app.playlistLoop = true;
     const playlistStorageKey = 'playlist-saved';
 
-    const urlToFolder = (url) => {
-      if (isFolder(url)) return url;
+    const resolveUrl = (url, base = window.location.href) => {
+      if (!isString(url)) return '';
+      const trimmed = url.trim();
+      if (trimmed.length === 0) return '';
+      try {
+        return new URL(trimmed, base).toString();
+      } catch (e) {
+        return '';
+      }
+    }
 
-      var pieces = url.split('/'); // Break the URL into pieces
+    const urlToFolder = (url) => {
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return '';
+      if (isFolder(absoluteUrl)) return absoluteUrl;
+
+      var pieces = absoluteUrl.split('/'); // Break the URL into pieces
       pieces.pop(); // Remove the last piece (the filename)
       return pieces.join('/') + '/'; // Put it back together with a trailing /
     }
@@ -99,6 +113,7 @@
     const getParentFolder = (url) => {
       try {
         const base = urlToFolder(url);
+        if (!base) return undefined;
         const parentUrl = new URL('../', base).toString();
         return (parentUrl === base ? undefined : parentUrl);
       } catch (e) {
@@ -106,8 +121,21 @@
       }
     }
 
+    const isSameOriginUrl = (url) => {
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return true;
+      try {
+        const target = new URL(absoluteUrl);
+        return target.origin === window.location.origin;
+      } catch (e) {
+        return true;
+      }
+    }
+
     const isFile = (url) => {
-      const parsed = new URL(url);
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return false;
+      const parsed = new URL(absoluteUrl);
       const finalPosition = parsed.pathname.lastIndexOf('/') + 1;
       const finalPart = parsed.pathname.substring(finalPosition);
       const isFile = hasPeriod(finalPart) || isUppercase(finalPart)
@@ -169,7 +197,8 @@
     const isMedia = (haystack, fileExtensions) => {
       const supportedMediaExtensions = app.options.supportedTypes.extensions.join('|');
       const re = new RegExp(`\\.+(${supportedMediaExtensions})+$`, 'i');
-      return re.test(haystack);
+      const cleanHaystack = String(haystack || '').split('#')[0].split('?')[0];
+      return re.test(cleanHaystack);
     };
 
     const isAudio = (url) => {
@@ -197,9 +226,10 @@
 
     const createLinks = async (url) => {
       const targetUrl = url || window.location.href;
-      const folder = urlToFolder(targetUrl);
-      hashState.location = folder;
-      const links = await folderApiRequest(folder);
+      const folder = urlToFolder(targetUrl) || urlToFolder(window.location.href);
+      if (!folder) throw new Error('Invalid folder URL');
+      const mode = (isSameOriginUrl(folder) ? 'auto' : 'fetch');
+      const links = await folderApiRequest(folder, { mode });
 
       if (Array.isArray(links.folders)) {
         links.folders = links.folders.filter((item) => !(item && item.role === 'self'));
@@ -219,6 +249,7 @@
       const oldLinksHash = linksHash(app.links);
       const newLinksHash = linksHash(links);
 
+      hashState.location = folder;
       app.links = links;
 
       // Only show the links if they have changed
@@ -227,10 +258,79 @@
     const createLinksSafe = async (url) => {
       try {
         await createLinks(url);
+        return true;
       } catch (e) {
         console.warn('Unable to load folder links', e);
+        return false;
       }
     }
+
+    const getConfiguredStartLocation = () => {
+      const configured = (app && app.options ? app.options.startLocation : '');
+      if (!isString(configured) || configured.trim().length === 0) return '';
+      const resolved = resolveUrl(configured);
+      if (!resolved) console.warn('Invalid configured startLocation', configured);
+      return resolved;
+    }
+
+    const classifyLocationOpenError = (error) => {
+      const text = String((error && (error.message || error.name)) || '').toLowerCase();
+      if (
+        text.includes('cors') ||
+        text.includes('cross-origin') ||
+        text.includes('access-control') ||
+        text.includes('failed to fetch') ||
+        text.includes('networkerror') ||
+        text.includes('securityerror')
+      ) {
+        return 'possibly CORS/cross-origin restrictions';
+      }
+      return 'possibly directory browsing unavailable or blocked';
+    }
+
+    const openLocation = async (inputUrl, opts = {}) => {
+      const resolved = resolveUrl(inputUrl);
+      if (!resolved) {
+        console.warn('Invalid URL');
+        return false;
+      }
+
+      const playMedia = (opts.playMedia !== false);
+      const mediaUrl = (isMedia(resolved) ? resolved : '');
+      const folderUrl = urlToFolder(mediaUrl || resolved);
+      if (!folderUrl) {
+        console.warn('Invalid folder URL');
+        return false;
+      }
+
+      try {
+        clearThumbnailQueue();
+        await createLinks(folderUrl);
+      } catch (e) {
+        const reason = classifyLocationOpenError(e);
+        console.warn(`Unable to open URL (${reason})`, e);
+        return false;
+      }
+
+      if (mediaUrl && playMedia) {
+        const shouldPlay = (opts.autoplay !== false);
+        setPlaylistFromUrl(mediaUrl, shouldPlay);
+      }
+
+      if (opts.updateHash !== false) {
+        updateHash({ push: !!opts.pushHash });
+      }
+
+      return true;
+    }
+
+    const setOpenUrlError = (message = '') => {
+      const $error = $('.open-url-error');
+      if (!$error) return;
+      $error.textContent = String(message || '');
+    }
+
+    const getOpenUrlInput = () => $('.open-url-input');
 
     const showLinks = async (links) => {
       var html = '';
@@ -299,7 +399,7 @@
       populateThumbnails();
     }
 
-    const clickLink = (e) => {
+    const clickLink = async (e) => {
       const isPlainLeftClick = (
         e.button === 0 &&
         !e.metaKey &&
@@ -336,10 +436,8 @@
 
       if ($el.hasClass('file')) setPlaylistFromUrl($el.href, true);
       if ($el.hasClass('folder')) {
-        hashState.location = $el.href;
-        clearThumbnailQueue();
-        createLinks($el.href);
-        updateHash({ push: true });
+        const opened = await openLocation($el.href, { playMedia: false, pushHash: true });
+        if (!opened) return;
         return;
       }
 
@@ -1484,12 +1582,14 @@
     }
 
     const actionPasteAndPlay = (e) => {
-      e.preventDefault();
+      const target = e.target;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
 
       const re = /^https?:\/\//i;
       const clipboard = e.clipboardData.getData('text');
 
       if (clipboard && re.test(clipboard)) {
+        e.preventDefault();
         const url = clipboard;
         logInfo(`Playing media from clipboard: ${clipboard}`);
         setPlaylistFromUrl(url, true);
@@ -1742,15 +1842,44 @@
       if (!!url) {
         logInfo(`Loading media: ${url}`);
         $player.autoplay = shouldAutoplay;
+        const crossOriginTarget = !isSameOriginUrl(url);
+        let retriedWithoutCors = false;
 
-        $player.once('error', () => {
+        const applyCrossOriginMode = (disableCrossOrigin) => {
+          if (disableCrossOrigin) {
+            $player.removeAttribute('crossorigin');
+            return;
+          }
+          if (crossOriginTarget) {
+            $player.setAttribute('crossorigin', 'anonymous');
+          } else {
+            $player.removeAttribute('crossorigin');
+          }
+        }
+
+        const loadMedia = (disableCrossOrigin = false) => {
+          applyCrossOriginMode(disableCrossOrigin);
+          $player.src = hashState.media = url;
+          $trick.src = url;
+          $player.load();
+        }
+
+        const onPlaybackError = () => {
+          if (crossOriginTarget && !retriedWithoutCors) {
+            retriedWithoutCors = true;
+            console.warn(`Unable to begin playback with CORS mode; retrying without CORS mode: ${url}`);
+            $player.once('error', onPlaybackError);
+            loadMedia(true);
+            return;
+          }
           console.warn(`Unable to begin playback: ${url}`);
           advancePlaylist('error');
-        });
+        }
+
+        $player.once('error', onPlaybackError);
         $player.once('play', () => logInfo(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
-        $player.src = $trick.src = hashState.media = url;
-        $player.load();
+        loadMedia(false);
         $body.addClass('is-loaded');
 
         $player.once('loadedmetadata', () => {
@@ -2519,6 +2648,38 @@
       $input.click();
     }
 
+    const actionOpenUrl = () => {
+      setOpenUrlError('');
+      const $input = getOpenUrlInput();
+      if ($input) {
+        const currentLocation = (isString(hashState.location) ? hashState.location : '');
+        $input.value = currentLocation;
+      }
+      toggleModal($openUrl);
+      if ($input && typeof $input.select === 'function') $input.select();
+    }
+
+    const actionSubmitOpenUrl = async (e) => {
+      if (e) e.preventDefault();
+      const $input = getOpenUrlInput();
+      const input = ($input && isString($input.value) ? $input.value.trim() : '');
+
+      if (!input) {
+        setOpenUrlError('Enter a folder or media URL.');
+        if ($input && typeof $input.focus === 'function') $input.focus();
+        return;
+      }
+
+      setOpenUrlError('');
+      const opened = await openLocation(input, { playMedia: true, pushHash: true });
+      if (opened) {
+        hideModals();
+      } else {
+        setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
+        if ($input && typeof $input.focus === 'function') $input.focus();
+      }
+    }
+
     const actionDropLocalFile = (e) => {
       $playerContainer.removeClass('drop');
       e.preventDefault();
@@ -2566,6 +2727,7 @@
 
       $('.btn-onedrive').on('click', openFromCloud('onedrive'));
       $('.btn-gdrive').on('click', openFromCloud('gdrive'));
+      $('.btn-open-url').on('click', actionOpenUrl);
       $('.btn-local-file').on('click', actionOpenLocalFile);
 
       $('.btn-play-pause').on('click', actionPlayPause);
@@ -2589,6 +2751,12 @@
       });
       $help.on('click', hideModals);
       $playlist.on('click', (e) => e.stopImmediatePropagation());
+      $openUrl.on('click', (e) => e.stopImmediatePropagation());
+      $openUrl.on('submit', actionSubmitOpenUrl);
+      $('.open-url-cancel').on('click', (e) => {
+        e.preventDefault();
+        hideModals();
+      });
 
       setupSettingsControls();
     }
@@ -2855,6 +3023,7 @@
         $(el).removeClass('show');
         setModalAccessibilityState(el, false);
       });
+      setOpenUrlError('');
 
       if (!opts.suppressRestoreFocus && lastModalTrigger && typeof lastModalTrigger.focus === 'function') {
         try { lastModalTrigger.focus(); } catch (err) { /* noop */ }
@@ -3392,6 +3561,14 @@
         if (!settings[key] || typeof settings[key].get !== 'function') return;
         options.settings[key] = settings[key].get();
       });
+      const currentLocation = (isString(hashState.location) ? hashState.location : '');
+      const configuredLocation = getConfiguredStartLocation();
+      const exportLocation = (currentLocation && currentLocation.length > 0 ? currentLocation : configuredLocation);
+      if (exportLocation && exportLocation.length > 0) {
+        options.startLocation = exportLocation;
+      } else {
+        delete options.startLocation;
+      }
       // `settings` is the canonical home for user-configurable defaults in exported config.
       if (Object.prototype.hasOwnProperty.call(options, 'subtitles')) delete options.subtitles;
       downloadJSON(playerConfigFilename, options);
@@ -3918,6 +4095,7 @@
       if (hash) {
         const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
         const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
+        const configuredStartLocation = getConfiguredStartLocation();
         const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
 
         if (hasHashSubtitle) {
@@ -3939,6 +4117,8 @@
 
         if (hasHashLocation) {
           await createLinksSafe(hash.location);
+        } else if (configuredStartLocation) {
+          await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }
@@ -3957,9 +4137,12 @@
 
       $(window).on('popstate', async (e) => {
         const hash = await getHash();
+        const configuredStartLocation = getConfiguredStartLocation();
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
         if (hash && hash.location && hash.location.length > 1) {
           await createLinksSafe(hash.location);
+        } else if (configuredStartLocation) {
+          await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }

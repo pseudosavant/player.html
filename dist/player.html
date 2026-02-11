@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.22.0'>
+  <meta name='version' content='2.23.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -357,6 +357,7 @@
     .fileinfo:before { content: "File metadata"; }
     .help:before { content: "Keyboard Shortcuts" }
     .playlist:before { content: "Playlist"; }
+    .open-url:before { content: "Open URL"; }
 
     .modal-item {
       display: flex;
@@ -705,6 +706,82 @@
       opacity: 0.7;
     }
 
+    .open-url {
+      min-width: min(44rem, 100vw);
+    }
+    .open-url .open-url-item {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 40rem;
+    }
+    .open-url .open-url-label {
+      color: var(--text-primary);
+      font-weight: bold;
+      line-height: 1.2;
+    }
+    .open-url .open-url-input {
+      width: 100%;
+      min-width: 0;
+      height: 2.25rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--modal-divider-color);
+      background-color: rgba(255,255,255,0.92);
+      color: #111;
+      padding: 0 0.75rem;
+      cursor: text;
+    }
+    .open-url .open-url-input::placeholder {
+      color: rgba(0,0,0,0.5);
+    }
+    .open-url .open-url-error {
+      min-height: 1.2em;
+      margin: 0;
+      color: #ffb4b4;
+      font-size: 0.9rem;
+      line-height: 1.2;
+    }
+    .open-url .open-url-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+    .open-url .open-url-actions button {
+      width: auto;
+      min-width: 4.5rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      border: 0 none;
+      color: var(--text-on-accent);
+      background-color: var(--accent);
+      transition:
+        background-color var(--transition-base),
+        color var(--transition-base),
+        transform var(--transition-base);
+    }
+    .open-url .open-url-actions button:hover,
+    .open-url .open-url-actions button:focus-visible {
+      background-color: var(--accent-hover);
+    }
+    .open-url .open-url-actions button:active {
+      background-color: var(--accent-active);
+      transform: translateY(1px);
+    }
+    .open-url .open-url-actions .open-url-cancel {
+      background-color: var(--button-quiet-bg);
+      color: var(--modal-font-color);
+    }
+    .open-url .open-url-actions .open-url-cancel:hover,
+    .open-url .open-url-actions .open-url-cancel:focus-visible {
+      background-color: var(--button-quiet-hover);
+    }
+    .open-url .open-url-actions .open-url-cancel:active {
+      background-color: var(--button-quiet-active);
+    }
+
     .color-scheme-change-transition, .color-scheme-change-transition * {
       --transition-args: calc(var(--transition-base) * 3) ease;
       transition:
@@ -1044,6 +1121,7 @@
        max-height: 2.5rem;
     }
     .controls .btn-cloud:hover { filter: brightness(1.25); }
+    .controls .btn-open-url { margin: 0 -0.1rem; }
     .controls .btn-local-file { margin: 0 -0.15rem; }
     .controls .btn-onedrive { padding: 0 0.1rem; }
 
@@ -1416,6 +1494,17 @@
       <ul class='subtitle-selection modal' inert aria-hidden='true'><li class='subtitle-item modal-item'>No subtitles loaded yet</li></ul>
       <ul class='playlist modal' inert aria-hidden='true'></ul>
       <ul class='settings modal' inert aria-hidden='true'></ul>
+      <form class='open-url modal' inert aria-hidden='true'>
+        <div class='modal-item open-url-item'>
+          <label class='open-url-label' for='open-url-input'>Folder or media URL</label>
+          <input id='open-url-input' class='open-url-input' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
+          <p class='open-url-error' aria-live='polite'></p>
+          <div class='open-url-actions'>
+            <button class='open-url-submit' type='submit'>Open</button>
+            <button class='open-url-cancel' type='button'>Cancel</button>
+          </div>
+        </div>
+      </form>
       <div class="modal-background-overlay"></div>
     </div>
     <section class='controls'>
@@ -1427,6 +1516,7 @@
         <button class='btn-playlist' type='button' title='Open playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
         <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive' aria-label='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
         <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive' aria-label='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
+        <button class='btn-open-url' type='button' title='Open folder or media URL' aria-label='Open folder or media URL'><svg><use xlink:href='#svg-open-folder'/></svg></button>
         <button class='btn-local-file' type='button' title='Open local media file' aria-label='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
@@ -1511,6 +1601,8 @@
       <path d='m19.4531733046,7.950655752380371 c-0.10890420000000003,-0.007269600000000004 -0.21834430000000007,-0.012302400000000003 -0.3290659000000001,-0.012302400000000003 c-0.6645859000000002,-0.0006524000000000004 -1.3222517,0.13509340000000003 -1.9322690000000002,0.3988261000000001 l-0.00013980000000000004,-0.0005126000000000004 l-3.0019720000000003,1.2633260000000002 l3.309532,4.088218 l5.916569000000001,1.4382624000000002 c1.2768167000000001,-2.370309 0.3903216000000001,-5.3268460000000015 -1.9800340000000003,-6.6036860000000015 c-0.6124871000000001,-0.3299280000000001 -1.2885133000000002,-0.5249257 -1.9826203,-0.5719218000000001 v-0.00002330000000000001 z' fill='#1490df' stroke-width='0' id='svg_4'/>
       <path d='m1.0779545046000003,15.11773575238037 c1.1206135,1.6111717 2.9593330000000004,2.5713880000000002 4.9218920000000015,2.570456 h13.124424 c1.7928418000000004,0.0005126000000000004 3.441177,-0.9833065999999999 4.29186,-2.561602 l-9.226334000000001,-5.526527000000001 z' fill='#28a8ea' stroke-width='0' id='svg_5'/>
     </svg>
+<!-- ic_fluent_open_folder_24_filled.svg -->
+<svg id='svg-open-folder' viewBox='0 0 24 24'><path d='M6.74721 3L17.2535 3.00169C19.2574 3.00259 20.8939 4.57474 20.9979 6.55303L21.0032 6.75217V11.2447C21.0032 11.6589 20.6674 11.9947 20.2532 11.9947C19.8735 11.9947 19.5597 11.7126 19.51 11.3465L19.5032 11.2447V6.75239C19.5029 5.5615 18.5777 4.58661 17.4071 4.50695L17.2531 4.50169L6.74652 4.5C5.56884 4.4991 4.60218 5.404 4.5047 6.55687L4.49686 6.71556L4.49946 17.2517C4.50005 18.4426 5.42534 19.4173 6.59596 19.4969L6.74999 19.5021H11.2463C11.6605 19.5021 11.9963 19.8379 11.9963 20.2521C11.9963 20.6318 11.7142 20.9456 11.3481 20.9952L11.2463 21.0021H6.74975C4.74592 21.0015 3.10919 19.4296 3.00475 17.4514L2.99946 17.2522L2.99762 6.75264L3.00184 6.54921C3.10225 4.63646 4.63584 3.10372 6.54809 3.00505L6.74721 3ZM9.94077 9.00177L15.9964 9.0012C16.5486 9.0012 16.9964 9.44892 16.9964 10.0012C16.9964 10.514 16.6103 10.9367 16.113 10.9945L15.9964 11.0012L12.4166 11.001L18.9605 17.5428C19.321 17.9032 19.3489 18.4704 19.0439 18.8628L18.9608 18.957C18.6004 19.3175 18.0331 19.3454 17.6408 19.0404L17.5465 18.9573L10.9986 12.412L10.9988 16.0024C10.9988 16.5152 10.6128 16.9379 10.1154 16.9957L9.99883 17.0024C9.48599 17.0024 9.06332 16.6164 9.00556 16.119L8.99883 16.0024V10.0012L9.0023 9.91724L9.01781 9.81164L9.02679 9.76595L9.04578 9.70025L9.08213 9.60124L9.1459 9.4795C9.18743 9.41145 9.23672 9.34904 9.29254 9.2933L9.4019 9.19849L9.52364 9.12048L9.6255 9.07252L9.71413 9.04164L9.82539 9.0154L9.94077 9.00177L15.9964 9.0012L9.94077 9.00177Z'/></svg>
 <!-- ic_fluent_pause_24_filled.svg -->
 <svg id='svg-pause' viewBox="0 0 24 24"><path d='M8.25,2 C9.21649831,2 10,2.78350169 10,3.75 L10,20.25 C10,21.2164983 9.21649831,22 8.25,22 L4.75,22 C3.78350169,22 3,21.2164983 3,20.25 L3,3.75 C3,2.78350169 3.78350169,2 4.75,2 L8.25,2 Z M19.25,2 C20.2164983,2 21,2.78350169 21,3.75 L21,20.25 C21,21.2164983 20.2164983,22 19.25,22 L15.75,22 C14.7835017,22 14,21.2164983 14,20.25 L14,3.75 C14,2.78350169 14.7835017,2 15.75,2 L19.25,2 Z'></path></svg>
 <!-- ic_fluent_picture_in_picture_enter_24_regular.svg -->
@@ -1588,6 +1680,8 @@
       options: {
         // When false, suppress non-error console noise.
         debug: false,
+        // Optional initial folder or media URL. Relative paths resolve from the page URL.
+        startLocation: '',
         cloud: {
           onedrive: {
             clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
@@ -4407,6 +4501,7 @@ const fetchBytes = async (url, opts) => {
     const $settings = $('.settings');
     const $subtitles = $('.subtitle-selection');
     const $playlist = $('.playlist');
+    const $openUrl = $('.open-url');
     const $currentTimestamp = $('.current-timestamp');
     let lastModalTrigger = null;
 
@@ -4486,10 +4581,23 @@ const fetchBytes = async (url, opts) => {
     app.playlistLoop = true;
     const playlistStorageKey = 'playlist-saved';
 
-    const urlToFolder = (url) => {
-      if (isFolder(url)) return url;
+    const resolveUrl = (url, base = window.location.href) => {
+      if (!isString(url)) return '';
+      const trimmed = url.trim();
+      if (trimmed.length === 0) return '';
+      try {
+        return new URL(trimmed, base).toString();
+      } catch (e) {
+        return '';
+      }
+    }
 
-      var pieces = url.split('/'); // Break the URL into pieces
+    const urlToFolder = (url) => {
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return '';
+      if (isFolder(absoluteUrl)) return absoluteUrl;
+
+      var pieces = absoluteUrl.split('/'); // Break the URL into pieces
       pieces.pop(); // Remove the last piece (the filename)
       return pieces.join('/') + '/'; // Put it back together with a trailing /
     }
@@ -4497,6 +4605,7 @@ const fetchBytes = async (url, opts) => {
     const getParentFolder = (url) => {
       try {
         const base = urlToFolder(url);
+        if (!base) return undefined;
         const parentUrl = new URL('../', base).toString();
         return (parentUrl === base ? undefined : parentUrl);
       } catch (e) {
@@ -4504,8 +4613,21 @@ const fetchBytes = async (url, opts) => {
       }
     }
 
+    const isSameOriginUrl = (url) => {
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return true;
+      try {
+        const target = new URL(absoluteUrl);
+        return target.origin === window.location.origin;
+      } catch (e) {
+        return true;
+      }
+    }
+
     const isFile = (url) => {
-      const parsed = new URL(url);
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return false;
+      const parsed = new URL(absoluteUrl);
       const finalPosition = parsed.pathname.lastIndexOf('/') + 1;
       const finalPart = parsed.pathname.substring(finalPosition);
       const isFile = hasPeriod(finalPart) || isUppercase(finalPart)
@@ -4567,7 +4689,8 @@ const fetchBytes = async (url, opts) => {
     const isMedia = (haystack, fileExtensions) => {
       const supportedMediaExtensions = app.options.supportedTypes.extensions.join('|');
       const re = new RegExp(`\\.+(${supportedMediaExtensions})+$`, 'i');
-      return re.test(haystack);
+      const cleanHaystack = String(haystack || '').split('#')[0].split('?')[0];
+      return re.test(cleanHaystack);
     };
 
     const isAudio = (url) => {
@@ -4595,9 +4718,10 @@ const fetchBytes = async (url, opts) => {
 
     const createLinks = async (url) => {
       const targetUrl = url || window.location.href;
-      const folder = urlToFolder(targetUrl);
-      hashState.location = folder;
-      const links = await folderApiRequest(folder);
+      const folder = urlToFolder(targetUrl) || urlToFolder(window.location.href);
+      if (!folder) throw new Error('Invalid folder URL');
+      const mode = (isSameOriginUrl(folder) ? 'auto' : 'fetch');
+      const links = await folderApiRequest(folder, { mode });
 
       if (Array.isArray(links.folders)) {
         links.folders = links.folders.filter((item) => !(item && item.role === 'self'));
@@ -4617,6 +4741,7 @@ const fetchBytes = async (url, opts) => {
       const oldLinksHash = linksHash(app.links);
       const newLinksHash = linksHash(links);
 
+      hashState.location = folder;
       app.links = links;
 
       // Only show the links if they have changed
@@ -4625,10 +4750,79 @@ const fetchBytes = async (url, opts) => {
     const createLinksSafe = async (url) => {
       try {
         await createLinks(url);
+        return true;
       } catch (e) {
         console.warn('Unable to load folder links', e);
+        return false;
       }
     }
+
+    const getConfiguredStartLocation = () => {
+      const configured = (app && app.options ? app.options.startLocation : '');
+      if (!isString(configured) || configured.trim().length === 0) return '';
+      const resolved = resolveUrl(configured);
+      if (!resolved) console.warn('Invalid configured startLocation', configured);
+      return resolved;
+    }
+
+    const classifyLocationOpenError = (error) => {
+      const text = String((error && (error.message || error.name)) || '').toLowerCase();
+      if (
+        text.includes('cors') ||
+        text.includes('cross-origin') ||
+        text.includes('access-control') ||
+        text.includes('failed to fetch') ||
+        text.includes('networkerror') ||
+        text.includes('securityerror')
+      ) {
+        return 'possibly CORS/cross-origin restrictions';
+      }
+      return 'possibly directory browsing unavailable or blocked';
+    }
+
+    const openLocation = async (inputUrl, opts = {}) => {
+      const resolved = resolveUrl(inputUrl);
+      if (!resolved) {
+        console.warn('Invalid URL');
+        return false;
+      }
+
+      const playMedia = (opts.playMedia !== false);
+      const mediaUrl = (isMedia(resolved) ? resolved : '');
+      const folderUrl = urlToFolder(mediaUrl || resolved);
+      if (!folderUrl) {
+        console.warn('Invalid folder URL');
+        return false;
+      }
+
+      try {
+        clearThumbnailQueue();
+        await createLinks(folderUrl);
+      } catch (e) {
+        const reason = classifyLocationOpenError(e);
+        console.warn(`Unable to open URL (${reason})`, e);
+        return false;
+      }
+
+      if (mediaUrl && playMedia) {
+        const shouldPlay = (opts.autoplay !== false);
+        setPlaylistFromUrl(mediaUrl, shouldPlay);
+      }
+
+      if (opts.updateHash !== false) {
+        updateHash({ push: !!opts.pushHash });
+      }
+
+      return true;
+    }
+
+    const setOpenUrlError = (message = '') => {
+      const $error = $('.open-url-error');
+      if (!$error) return;
+      $error.textContent = String(message || '');
+    }
+
+    const getOpenUrlInput = () => $('.open-url-input');
 
     const showLinks = async (links) => {
       var html = '';
@@ -4697,7 +4891,7 @@ const fetchBytes = async (url, opts) => {
       populateThumbnails();
     }
 
-    const clickLink = (e) => {
+    const clickLink = async (e) => {
       const isPlainLeftClick = (
         e.button === 0 &&
         !e.metaKey &&
@@ -4734,10 +4928,8 @@ const fetchBytes = async (url, opts) => {
 
       if ($el.hasClass('file')) setPlaylistFromUrl($el.href, true);
       if ($el.hasClass('folder')) {
-        hashState.location = $el.href;
-        clearThumbnailQueue();
-        createLinks($el.href);
-        updateHash({ push: true });
+        const opened = await openLocation($el.href, { playMedia: false, pushHash: true });
+        if (!opened) return;
         return;
       }
 
@@ -5882,12 +6074,14 @@ const fetchBytes = async (url, opts) => {
     }
 
     const actionPasteAndPlay = (e) => {
-      e.preventDefault();
+      const target = e.target;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
 
       const re = /^https?:\/\//i;
       const clipboard = e.clipboardData.getData('text');
 
       if (clipboard && re.test(clipboard)) {
+        e.preventDefault();
         const url = clipboard;
         logInfo(`Playing media from clipboard: ${clipboard}`);
         setPlaylistFromUrl(url, true);
@@ -6140,15 +6334,44 @@ const fetchBytes = async (url, opts) => {
       if (!!url) {
         logInfo(`Loading media: ${url}`);
         $player.autoplay = shouldAutoplay;
+        const crossOriginTarget = !isSameOriginUrl(url);
+        let retriedWithoutCors = false;
 
-        $player.once('error', () => {
+        const applyCrossOriginMode = (disableCrossOrigin) => {
+          if (disableCrossOrigin) {
+            $player.removeAttribute('crossorigin');
+            return;
+          }
+          if (crossOriginTarget) {
+            $player.setAttribute('crossorigin', 'anonymous');
+          } else {
+            $player.removeAttribute('crossorigin');
+          }
+        }
+
+        const loadMedia = (disableCrossOrigin = false) => {
+          applyCrossOriginMode(disableCrossOrigin);
+          $player.src = hashState.media = url;
+          $trick.src = url;
+          $player.load();
+        }
+
+        const onPlaybackError = () => {
+          if (crossOriginTarget && !retriedWithoutCors) {
+            retriedWithoutCors = true;
+            console.warn(`Unable to begin playback with CORS mode; retrying without CORS mode: ${url}`);
+            $player.once('error', onPlaybackError);
+            loadMedia(true);
+            return;
+          }
           console.warn(`Unable to begin playback: ${url}`);
           advancePlaylist('error');
-        });
+        }
+
+        $player.once('error', onPlaybackError);
         $player.once('play', () => logInfo(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
-        $player.src = $trick.src = hashState.media = url;
-        $player.load();
+        loadMedia(false);
         $body.addClass('is-loaded');
 
         $player.once('loadedmetadata', () => {
@@ -6917,6 +7140,38 @@ const fetchBytes = async (url, opts) => {
       $input.click();
     }
 
+    const actionOpenUrl = () => {
+      setOpenUrlError('');
+      const $input = getOpenUrlInput();
+      if ($input) {
+        const currentLocation = (isString(hashState.location) ? hashState.location : '');
+        $input.value = currentLocation;
+      }
+      toggleModal($openUrl);
+      if ($input && typeof $input.select === 'function') $input.select();
+    }
+
+    const actionSubmitOpenUrl = async (e) => {
+      if (e) e.preventDefault();
+      const $input = getOpenUrlInput();
+      const input = ($input && isString($input.value) ? $input.value.trim() : '');
+
+      if (!input) {
+        setOpenUrlError('Enter a folder or media URL.');
+        if ($input && typeof $input.focus === 'function') $input.focus();
+        return;
+      }
+
+      setOpenUrlError('');
+      const opened = await openLocation(input, { playMedia: true, pushHash: true });
+      if (opened) {
+        hideModals();
+      } else {
+        setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
+        if ($input && typeof $input.focus === 'function') $input.focus();
+      }
+    }
+
     const actionDropLocalFile = (e) => {
       $playerContainer.removeClass('drop');
       e.preventDefault();
@@ -6964,6 +7219,7 @@ const fetchBytes = async (url, opts) => {
 
       $('.btn-onedrive').on('click', openFromCloud('onedrive'));
       $('.btn-gdrive').on('click', openFromCloud('gdrive'));
+      $('.btn-open-url').on('click', actionOpenUrl);
       $('.btn-local-file').on('click', actionOpenLocalFile);
 
       $('.btn-play-pause').on('click', actionPlayPause);
@@ -6987,6 +7243,12 @@ const fetchBytes = async (url, opts) => {
       });
       $help.on('click', hideModals);
       $playlist.on('click', (e) => e.stopImmediatePropagation());
+      $openUrl.on('click', (e) => e.stopImmediatePropagation());
+      $openUrl.on('submit', actionSubmitOpenUrl);
+      $('.open-url-cancel').on('click', (e) => {
+        e.preventDefault();
+        hideModals();
+      });
 
       setupSettingsControls();
     }
@@ -7253,6 +7515,7 @@ const fetchBytes = async (url, opts) => {
         $(el).removeClass('show');
         setModalAccessibilityState(el, false);
       });
+      setOpenUrlError('');
 
       if (!opts.suppressRestoreFocus && lastModalTrigger && typeof lastModalTrigger.focus === 'function') {
         try { lastModalTrigger.focus(); } catch (err) { /* noop */ }
@@ -7790,6 +8053,14 @@ const fetchBytes = async (url, opts) => {
         if (!settings[key] || typeof settings[key].get !== 'function') return;
         options.settings[key] = settings[key].get();
       });
+      const currentLocation = (isString(hashState.location) ? hashState.location : '');
+      const configuredLocation = getConfiguredStartLocation();
+      const exportLocation = (currentLocation && currentLocation.length > 0 ? currentLocation : configuredLocation);
+      if (exportLocation && exportLocation.length > 0) {
+        options.startLocation = exportLocation;
+      } else {
+        delete options.startLocation;
+      }
       // `settings` is the canonical home for user-configurable defaults in exported config.
       if (Object.prototype.hasOwnProperty.call(options, 'subtitles')) delete options.subtitles;
       downloadJSON(playerConfigFilename, options);
@@ -8316,6 +8587,7 @@ const fetchBytes = async (url, opts) => {
       if (hash) {
         const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
         const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
+        const configuredStartLocation = getConfiguredStartLocation();
         const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
 
         if (hasHashSubtitle) {
@@ -8337,6 +8609,8 @@ const fetchBytes = async (url, opts) => {
 
         if (hasHashLocation) {
           await createLinksSafe(hash.location);
+        } else if (configuredStartLocation) {
+          await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }
@@ -8355,9 +8629,12 @@ const fetchBytes = async (url, opts) => {
 
       $(window).on('popstate', async (e) => {
         const hash = await getHash();
+        const configuredStartLocation = getConfiguredStartLocation();
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
         if (hash && hash.location && hash.location.length > 1) {
           await createLinksSafe(hash.location);
+        } else if (configuredStartLocation) {
+          await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }
