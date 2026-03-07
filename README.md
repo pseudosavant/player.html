@@ -39,7 +39,7 @@ It can be used as:
 `player.html` is designed to be a drop-in audio and video player that does not require any configuration or other files.
 
 ### Use As A Web Player (HTTP Directory Listing)
-1) Copy `./dist/player.html` into a folder that is served over HTTP with directory listing enabled.
+1) Copy `./dist/player.html` or `./dist/player.min.html` into a folder that is served over HTTP with directory listing enabled.
 2) Browse to `player.html` in your browser.
 
 `player.html` treats the directory listing HTML as an API for enumerating files/folders, so it works with simple web servers (see [Supported web servers](#supported-web-servers)).
@@ -51,7 +51,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 
 ## Features
 ### Core
-* Single file (`dist/player.html`) with zero runtime dependencies.
+* Single-file distributables (`dist/player.html` and `dist/player.min.html`) with zero runtime dependencies.
 * All CSS/JS/SVG/assets are inlined (portable drop-in file).
 
 ### Playback (Video)
@@ -438,19 +438,36 @@ ffmpeg -i "input.mkv" -map 0 -c:v copy -c:a ac3 -b:a 640k -map_chapters 0 -movfl
 
 ## Development
 * `src/player.html` is the dev template (it references `src/styles.css`, `src/js/*`, and `src/svg/*`).
-* `dist/player.html` is generated output; do not edit it by hand.
+* `dist/player.html` and `dist/player.min.html` are generated output; do not edit them by hand.
 
 ### Build
-The build inlines CSS, JS, SVGs, and assets into a single portable file.
+The build inlines CSS, JS, SVGs, and assets into portable single-file outputs.
 
 ```
 uv run build.py
+```
+
+By default this writes:
+
+* `dist/player.html` (unminified)
+* `dist/player.min.html` (minified)
+
+For a dev-only build that skips minification:
+
+```
+uv run build.py --dev
 ```
 
 For continuous rebuilds while editing:
 
 ```
 uv run build.py --watch
+```
+
+You can combine watch mode with dev mode:
+
+```
+uv run build.py --watch --dev
 ```
 
 ## Supported browsers
