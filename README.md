@@ -15,6 +15,7 @@ It can be used as:
 * Build playlists from folders/albums, reorder them, and loop playback.
 * Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
 * Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
+* Client-side search across indexed media filenames from the current library root.
 * Load default behavior from `player.html.json` and export your current configuration from the Settings modal.
 * Upload a custom player poster image (or set one in `player.html.json`) with sensible precedence and export support.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
@@ -68,6 +69,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### Browsing & Library
 * Uses folder listing pages as an API (no backend required).
 * Folder + file tiles for fast navigation through large media libraries.
+* Optional client-side search that indexes media filenames from the current root, supports multi-term matching, and caches the index in `sessionStorage` for the session.
 
 ### Playlists
 * Playlist panel: view, add, reorder, previous/next, and looping playback.
@@ -244,7 +246,8 @@ Priority order (highest to lowest):
     "subtitle-background": "#000000",
     "subtitle-shadow": false,
     "thumbnailing": true,
-    "animate": true
+    "animate": true,
+    "search-depth": 3
   },
   "thumbnails": {
     "timestamps": [0.005, 0.01, 0.015],
@@ -278,6 +281,7 @@ User-facing display and subtitle defaults (most commonly customized):
 * `settings.thumbnailing`: Enable video thumbnail generation (`true`/`false`)
 * `settings.animate`: Enable animated thumbnails (`true`/`false`)
 * `settings.playlist-depth`: Folder depth used when adding folders to playlists (`1` to `3`)
+* `settings.search-depth`: Client-side search depth (`0` disables search and hides the search UI, `1` indexes the current folder only, higher values recurse deeper up to `6`)
 
 Poster image behavior:
 

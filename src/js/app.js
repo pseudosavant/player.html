@@ -11,6 +11,11 @@
     const $playlist = $('.playlist');
     const $openUrl = $('.open-url');
     const $currentTimestamp = $('.current-timestamp');
+    const $links = $('.links');
+    const $linksSearch = $('.links-search');
+    const $linksSearchInput = $('.links-search-input');
+    const $linksSearchClear = $('.links-search-clear');
+    const $linksSearchResultsCount = $('.links-search-results-count');
     let lastModalTrigger = null;
 
     const isDebug = () => !!(app && app.options && app.options.debug);
@@ -88,6 +93,24 @@
     app.playlistIndex = -1;
     app.playlistLoop = true;
     const playlistStorageKey = 'playlist-saved';
+    const searchIndexSessionPrefix = 'player-search-index:v2:';
+    const searchResultLimit = 100;
+    const searchInputDebounceMs = 120;
+    const searchState = {
+      rootUrl: '',
+      cacheKey: '',
+      previousLinks: null,
+      previousLocation: '',
+      active: false,
+      query: '',
+      indexed: false,
+      indexing: false,
+      entries: [],
+      stats: null,
+      errors: []
+    };
+    let searchIndexRequestId = 0;
+    let searchInputDebounceId = null;
 
     const resolveUrl = (url, base = window.location.href) => {
       if (!isString(url)) return '';
@@ -265,6 +288,389 @@
       }
     }
 
+    const getSessionStorageSafe = () => {
+      try {
+        if (typeof sessionStorage === 'undefined') return null;
+        sessionStorage.length;
+        return sessionStorage;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const getSearchRootUrl = () => {
+      const root = urlToFolder(searchState.rootUrl || hashState.location || window.location.href);
+      return (root || '');
+    }
+
+    const getSearchCacheKey = (rootUrl = getSearchRootUrl(), depth = getSearchDepth()) => {
+      if (!rootUrl) return '';
+      const extensions = [...new Set(app.options.supportedTypes.extensions)].sort().join(',');
+      return `${searchIndexSessionPrefix}${base64EncodeUTF(`${rootUrl}|${depth}|${extensions}`)}`;
+    }
+
+    const resetSearchIndexState = () => {
+      searchState.cacheKey = '';
+      searchState.indexed = false;
+      searchState.indexing = false;
+      searchState.entries = [];
+      searchState.stats = null;
+      searchState.errors = [];
+    }
+
+    const setSearchRootUrl = (url) => {
+      const root = urlToFolder(url || window.location.href);
+      if (!root) return '';
+      if (searchState.rootUrl !== root) {
+        searchState.rootUrl = root;
+        resetSearchIndexState();
+      }
+      searchState.cacheKey = getSearchCacheKey(root, getSearchDepth());
+      return searchState.rootUrl;
+    }
+
+    const isUrlWithinRoot = (url, rootUrl = getSearchRootUrl()) => {
+      const absoluteUrl = resolveUrl(url);
+      const absoluteRoot = resolveUrl(rootUrl);
+      if (!absoluteUrl || !absoluteRoot) return false;
+
+      try {
+        const target = new URL(absoluteUrl);
+        const root = new URL(absoluteRoot);
+        return target.origin === root.origin && target.pathname.startsWith(root.pathname);
+      } catch (e) {
+        return false;
+      }
+    }
+
+    const updateSearchResultsCount = (message = '') => {
+      if (!$linksSearchResultsCount) return;
+      const text = String(message || '').trim();
+      $linksSearchResultsCount.textContent = text;
+      $linksSearchResultsCount.hidden = (text.length === 0);
+    }
+
+    const updateSearchControls = () => {
+      const enabled = isSearchEnabled();
+      if ($linksSearch) {
+        $linksSearch.hidden = !enabled;
+        $linksSearch.attr('aria-busy', (enabled && searchState.indexing) ? 'true' : 'false');
+      }
+      if ($linksSearchInput) {
+        const disabled = (!enabled || !searchState.indexed || searchState.indexing);
+        $linksSearchInput.disabled = disabled;
+        $linksSearchInput.placeholder = (searchState.indexing ? 'Indexing media library...' : 'Search media files');
+        $linksSearchInput.attr('aria-disabled', disabled ? 'true' : 'false');
+      }
+      if ($linksSearchClear) {
+        $linksSearchClear.hidden = (!enabled || String(searchState.query || '').trim().length === 0);
+      }
+    }
+
+    const readSearchIndexCache = () => {
+      const storage = getSessionStorageSafe();
+      const key = searchState.cacheKey || getSearchCacheKey();
+      if (!storage || !key) return null;
+
+      try {
+        const cached = storage.getItem(key);
+        if (!cached) return null;
+        const parsed = JSON.parse(cached);
+        if (!parsed || !Array.isArray(parsed.entries)) return null;
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const writeSearchIndexCache = (payload) => {
+      const storage = getSessionStorageSafe();
+      const key = searchState.cacheKey || getSearchCacheKey();
+      if (!storage || !key || !payload) return false;
+
+      try {
+        storage.setItem(key, JSON.stringify(payload));
+        return true;
+      } catch (e) {
+        console.warn('Unable to cache search index in sessionStorage', e);
+        return false;
+      }
+    }
+
+    const renderLinksHtml = (html = '') => {
+      clearThumbnailQueue();
+      $links.innerHTML = html;
+
+      const $renderedLinks = [...document.querySelectorAll('.file, .folder')];
+      $renderedLinks.forEach((link) => $(link).on('click', clickLink));
+
+      populateThumbnails();
+    }
+
+    const getSearchRelativeLabel = (url, rootUrl = getSearchRootUrl()) => {
+      const absoluteUrl = resolveUrl(url);
+      const absoluteRoot = resolveUrl(rootUrl);
+      let fallbackName = urlToFilename(url);
+      try {
+        fallbackName = decodeURIComponent(fallbackName);
+      } catch (e) {}
+      if (!absoluteUrl || !absoluteRoot) return fallbackName;
+
+      try {
+        const target = new URL(absoluteUrl);
+        const root = new URL(absoluteRoot);
+        const relativePath = (target.origin === root.origin && target.pathname.startsWith(root.pathname))
+          ? target.pathname.substring(root.pathname.length)
+          : target.pathname.split('/').filter(Boolean).slice(-1)[0];
+        const decoded = decodeURIComponent(relativePath || '');
+        if (!decoded) return fallbackName;
+        const parts = decoded.split('/').filter((segment) => segment.length > 0);
+        return parts.join(' / ');
+      } catch (e) {
+        return fallbackName;
+      }
+    }
+
+    const buildSearchIndexEntries = (links, rootUrl = getSearchRootUrl()) => {
+      if (!links || !Array.isArray(links.files)) return [];
+
+      const dedupe = new Set();
+      return links.files
+        .filter((file) => file && file.url && isMedia(file.url))
+        .map((file) => {
+          const url = resolveUrl(file.url);
+          let fallbackName = urlToFilename(url);
+          try {
+            fallbackName = decodeURIComponent(fallbackName);
+          } catch (e) {}
+          const label = String(file.name || fallbackName);
+          const relativeLabel = getSearchRelativeLabel(url, rootUrl);
+          const filename = fallbackName;
+          const extension = ((/\.[^./]+$/.exec(filename) || [])[0] || '').toLowerCase();
+          return {
+            url,
+            label,
+            relativeLabel,
+            filename,
+            extension,
+            searchLabel: String(label || '').toLowerCase(),
+            searchFilename: String(filename || '').toLowerCase(),
+            searchPath: String(relativeLabel || label || '').toLowerCase()
+          };
+        })
+        .filter((entry) => {
+          if (!entry.url || dedupe.has(entry.url)) return false;
+          dedupe.add(entry.url);
+          return true;
+        })
+        .sort((a, b) => (
+          a.relativeLabel.localeCompare(b.relativeLabel, undefined, { sensitivity: 'base' }) ||
+          a.url.localeCompare(b.url)
+        ));
+    }
+
+    const scoreSearchEntry = (entry, query) => {
+      const normalized = String(query || '').trim().toLowerCase();
+      if (!normalized) return -1;
+      const label = entry.searchLabel || '';
+      const filename = entry.searchFilename || '';
+      const path = entry.searchPath || '';
+      const extension = entry.extension || '';
+
+      if (label === normalized) return 0;
+      if (label.startsWith(normalized)) return 1;
+      if (filename === normalized) return 0.5;
+      if (filename.startsWith(normalized)) return 1.5;
+      if (extension && (normalized === extension || normalized === extension.replace(/^\./, ''))) return 2;
+      const labelWordIndex = label.indexOf(` ${normalized}`);
+      if (labelWordIndex >= 0) return 2 + (labelWordIndex / 1000);
+      const filenameContainsIndex = filename.indexOf(normalized);
+      if (filenameContainsIndex >= 0) return 2.5 + (filenameContainsIndex / 1000);
+      const labelContainsIndex = label.indexOf(normalized);
+      if (labelContainsIndex >= 0) return 3 + (labelContainsIndex / 1000);
+      if (path.startsWith(normalized)) return 10;
+      const pathContainsIndex = path.indexOf(normalized);
+      if (pathContainsIndex >= 0) return 11 + (pathContainsIndex / 1000);
+      return -1;
+    }
+
+    const tokenizeSearchQuery = (query) => (
+      String(query || '')
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((token) => token.length > 0)
+    );
+
+    const getSearchMatches = (query) => {
+      const normalized = String(query || '').trim().toLowerCase();
+      const tokens = tokenizeSearchQuery(normalized);
+      if (!normalized || tokens.length === 0) return [];
+
+      return searchState.entries
+        .map((entry) => {
+          const tokenScores = tokens.map((token) => scoreSearchEntry(entry, token));
+          if (tokenScores.some((score) => score < 0)) return null;
+
+          const phraseScore = (tokens.length > 1 ? scoreSearchEntry(entry, normalized) : -1);
+          const tokenScore = (tokenScores.reduce((acc, score) => acc + score, 0) / tokenScores.length);
+          const score = (phraseScore >= 0 ? Math.min(phraseScore, 100 + tokenScore) : 100 + tokenScore);
+
+          return { entry, score };
+        })
+        .filter((item) => item && item.score >= 0)
+        .sort((a, b) => (
+          a.score - b.score ||
+          a.entry.label.localeCompare(b.entry.label, undefined, { sensitivity: 'base' }) ||
+          a.entry.relativeLabel.localeCompare(b.entry.relativeLabel, undefined, { sensitivity: 'base' })
+        ))
+        .map((item) => item.entry);
+    }
+
+    const renderSearchResults = (query) => {
+      const normalized = String(query || '').trim();
+      searchState.query = normalized;
+      updateSearchControls();
+
+      if (!normalized) {
+        searchState.active = false;
+        searchState.previousLinks = null;
+        searchState.previousLocation = '';
+        updateSearchResultsCount('');
+        showLinks(app.links);
+        return [];
+      }
+
+      if (!searchState.active) {
+        searchState.previousLinks = app.links;
+        searchState.previousLocation = hashState.location;
+      }
+      searchState.active = true;
+
+      const matches = getSearchMatches(normalized);
+      const limitedMatches = matches.slice(0, searchResultLimit);
+      const html = limitedMatches.map((entry) => {
+        const cssClasses = ['search-result'];
+        if (entry.url === $player.src) cssClasses.push('current');
+        return createFileTemplate(entry.url, entry.relativeLabel || entry.label, cssClasses.join(' '));
+      }).join('');
+
+      renderLinksHtml(html);
+
+      if (matches.length > searchResultLimit) {
+        updateSearchResultsCount(`Showing ${addCommas(searchResultLimit)} of ${addCommas(matches.length)} results`);
+      } else {
+        updateSearchResultsCount(`${addCommas(matches.length)} result${matches.length === 1 ? '' : 's'}`);
+      }
+
+      return matches;
+    }
+
+    const clearSearch = (opts = {}) => {
+      if (searchInputDebounceId) {
+        clearTimeout(searchInputDebounceId);
+        searchInputDebounceId = null;
+      }
+
+      searchState.active = false;
+      searchState.query = '';
+      searchState.previousLocation = '';
+
+      if ($linksSearchInput && opts.keepInput !== true) {
+        $linksSearchInput.value = '';
+      }
+
+      updateSearchResultsCount('');
+      updateSearchControls();
+
+      const linksToRestore = (searchState.previousLinks || app.links);
+      searchState.previousLinks = null;
+
+      if (opts.render !== false && linksToRestore && Array.isArray(linksToRestore.files) && Array.isArray(linksToRestore.folders)) {
+        showLinks(linksToRestore);
+      }
+    }
+
+    const scheduleSearchResults = (query) => {
+      if (searchInputDebounceId) clearTimeout(searchInputDebounceId);
+      searchInputDebounceId = setTimeout(() => {
+        searchInputDebounceId = null;
+        if (!searchState.indexed || searchState.indexing) return;
+        renderSearchResults(query);
+      }, searchInputDebounceMs);
+    }
+
+    const refreshSearchIndex = async (opts = {}) => {
+      if (!isSearchEnabled()) {
+        resetSearchIndexState();
+        updateSearchResultsCount('');
+        updateSearchControls();
+        return false;
+      }
+
+      const rootUrl = setSearchRootUrl(opts.rootUrl || searchState.rootUrl || hashState.location || window.location.href);
+      if (!rootUrl) return false;
+
+      searchState.cacheKey = getSearchCacheKey(rootUrl, getSearchDepth());
+      const requestId = ++searchIndexRequestId;
+      const cached = (!opts.force ? readSearchIndexCache() : null);
+
+      if (cached) {
+        searchState.entries = cached.entries;
+        searchState.stats = cached.stats || null;
+        searchState.errors = cached.errors || [];
+        searchState.indexed = true;
+        searchState.indexing = false;
+        updateSearchResultsCount('');
+        updateSearchControls();
+        if (searchState.query) renderSearchResults(searchState.query);
+        return true;
+      }
+
+      searchState.indexing = true;
+      searchState.indexed = false;
+      updateSearchResultsCount('');
+      updateSearchControls();
+
+      try {
+        const depth = Math.max(0, getSearchDepth() - 1);
+        const mode = (isSameOriginUrl(rootUrl) ? 'auto' : 'fetch');
+        const links = await folderApiRequest(rootUrl, { mode, maxDepth: depth });
+        if (requestId !== searchIndexRequestId) return false;
+
+        searchState.entries = buildSearchIndexEntries(links, rootUrl);
+        searchState.stats = links.stats || null;
+        searchState.errors = links.errors || [];
+        searchState.indexed = true;
+        searchState.indexing = false;
+
+        writeSearchIndexCache({
+          rootUrl,
+          depth: getSearchDepth(),
+          entries: searchState.entries,
+          stats: searchState.stats,
+          errors: searchState.errors,
+          generatedAt: new Date().toISOString()
+        });
+
+        if (searchState.errors.length > 0) {
+          console.warn('Search index completed with traversal errors', searchState.errors);
+        }
+
+        updateSearchResultsCount('');
+        updateSearchControls();
+        if (searchState.query) renderSearchResults(searchState.query);
+        return true;
+      } catch (e) {
+        if (requestId !== searchIndexRequestId) return false;
+        resetSearchIndexState();
+        updateSearchResultsCount('');
+        updateSearchControls();
+        console.warn('Unable to build search index', e);
+        return false;
+      }
+    }
+
     const getConfiguredStartLocation = () => {
       const configured = (app && app.options ? app.options.startLocation : '');
       if (!isString(configured) || configured.trim().length === 0) return '';
@@ -395,12 +801,7 @@
         html += createFileTemplate(rawUrl, label, cssClasses.join(' '), thumbnailUrl);
       });
 
-      $('.links').innerHTML = html;
-
-      const $links = [...document.querySelectorAll('.file, .folder')];
-      $links.forEach((link) => $(link).on('click', clickLink));
-
-      populateThumbnails();
+      renderLinksHtml(html);
     }
 
     const clickLink = async (e) => {
@@ -575,6 +976,14 @@
     }
     const getPlaylistFolderDepthDefault = () => normalizePlaylistFolderDepth(getOptionSettingDefault('playlist-depth', 2), 2);
     const getPlaylistFolderDepth = () => normalizePlaylistFolderDepth(retrieveSetting('playlist-depth'), getPlaylistFolderDepthDefault());
+    const normalizeSearchDepth = (value, fallback = 3) => {
+      const parsed = parseInt(value, 10);
+      if (!Number.isFinite(parsed)) return fallback;
+      return Math.min(6, Math.max(0, Math.floor(parsed)));
+    }
+    const getSearchDepthDefault = () => normalizeSearchDepth(getOptionSettingDefault('search-depth', 3), 3);
+    const getSearchDepth = () => normalizeSearchDepth(retrieveSetting('search-depth'), getSearchDepthDefault());
+    const isSearchEnabled = () => getSearchDepth() > 0;
 
     const playerConfigFilename = 'player.html.json';
 
@@ -2677,10 +3086,48 @@
       setOpenUrlError('');
       const opened = await openLocation(input, { playMedia: true, pushHash: true });
       if (opened) {
+        clearSearch({ render: false });
+        setSearchRootUrl(input);
+        refreshSearchIndex({ force: false, rootUrl: input });
         hideModals();
       } else {
         setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
         if ($input && typeof $input.focus === 'function') $input.focus();
+      }
+    }
+
+    const setupSearchControls = () => {
+      if (!$linksSearch) return;
+
+      updateSearchResultsCount('');
+      updateSearchControls();
+
+      $linksSearch.on('submit', (e) => e.preventDefault());
+
+      if ($linksSearchInput) {
+        $linksSearchInput.on('input', () => {
+          const query = String($linksSearchInput.value || '').trim();
+          if (!query) {
+            clearSearch();
+            return;
+          }
+          if (!searchState.indexed || searchState.indexing) return;
+          scheduleSearchResults(query);
+        });
+
+        $linksSearchInput.on('keydown', (e) => {
+          if (e.key !== 'Escape') return;
+          e.preventDefault();
+          clearSearch();
+          if (typeof $linksSearchInput.focus === 'function') $linksSearchInput.focus();
+        });
+      }
+
+      if ($linksSearchClear) {
+        $linksSearchClear.on('click', () => {
+          clearSearch();
+          if ($linksSearchInput && typeof $linksSearchInput.focus === 'function') $linksSearchInput.focus();
+        });
       }
     }
 
@@ -2709,6 +3156,7 @@
       setupPrimaryControls();
       setupModals();
       setupDragAndDrop();
+      setupSearchControls();
       $body.on('paste', actionPasteAndPlay);
       updatePlaylistLoop();
       renderPlaylist();
@@ -3501,6 +3949,34 @@
           settings['playlist-depth'].set(val);
         }
       },
+      'search-depth': {
+        label: 'Search folder depth',
+        desc: 'How many folder levels to include in the client-side search index (0 = disabled, 1 = current folder only).',
+        event: 'change',
+        type: 'select',
+        options: [0, 1, 2, 3, 4, 5, 6],
+        default: getSearchDepthDefault(),
+        get: () => normalizeSearchDepth(retrieveSetting('search-depth'), settings['search-depth'].default),
+        set: (val) => persistSetting('search-depth', val),
+        update: () => {
+          const $el = $('.setting-search-depth');
+          const val = normalizeSearchDepth($el.value);
+          $el.value = val;
+          settings['search-depth'].set(val);
+          if (val === 0) {
+            clearSearch();
+            resetSearchIndexState();
+            updateSearchControls();
+            return;
+          }
+          if (searchState.rootUrl) {
+            searchState.cacheKey = getSearchCacheKey(getSearchRootUrl(), val);
+            refreshSearchIndex({ force: false, rootUrl: getSearchRootUrl() });
+          } else {
+            updateSearchControls();
+          }
+        }
+      },
       cache: {
         label: 'Thumbnail cache',
         buttonLabel: 'Clear',
@@ -3560,6 +4036,7 @@
       settings.thumbnailing.default = normalizeBooleanSetting(getOptionSettingDefault('thumbnailing', true), true);
       settings.animate.default = normalizeBooleanSetting(getOptionSettingDefault('animate', true), true);
       settings['playlist-depth'].default = getPlaylistFolderDepthDefault();
+      settings['search-depth'].default = getSearchDepthDefault();
     }
 
     const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'export-config']);
@@ -4106,6 +4583,7 @@
         const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
         const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
         const configuredStartLocation = getConfiguredStartLocation();
+        const startLocation = (hasHashLocation ? hash.location : (configuredStartLocation || window.location.href));
         const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
 
         if (hasHashSubtitle) {
@@ -4133,6 +4611,9 @@
           await createLinksSafe();
         }
 
+        setSearchRootUrl(startLocation);
+        refreshSearchIndex({ rootUrl: startLocation });
+
         if (hasHashSubtitle) {
           try {
             await loadSubtitle(hash.subtitle);
@@ -4148,6 +4629,9 @@
       $(window).on('popstate', async (e) => {
         const hash = await getHash();
         const configuredStartLocation = getConfiguredStartLocation();
+        const targetLocation = (hash && hash.location && hash.location.length > 1
+          ? hash.location
+          : (configuredStartLocation || window.location.href));
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
         if (hash && hash.location && hash.location.length > 1) {
           await createLinksSafe(hash.location);
@@ -4155,6 +4639,12 @@
           await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
+        }
+
+        if (!searchState.rootUrl || !isUrlWithinRoot(targetLocation, searchState.rootUrl)) {
+          clearSearch({ render: false });
+          setSearchRootUrl(targetLocation);
+          refreshSearchIndex({ rootUrl: targetLocation });
         }
 
         if (hash && hash.subtitle && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:')) {

@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.24.0'>
+  <meta name='version' content='2.25.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -105,7 +105,25 @@
     <div class='current-timestamp' style='--duration: "0:00"; --absolute-position: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
   </div>
-  <section class='links'></section>
+  <section class='links-panel'>
+    <form class='links-search' role='search' autocomplete='off' hidden>
+      <div class='links-search-controls'>
+        <input
+          id='links-search-input'
+          class='links-search-input'
+          type='text'
+          placeholder='Indexing media library...'
+          autocomplete='off'
+          autocapitalize='off'
+          autocorrect='off'
+          spellcheck='false'
+          disabled>
+        <button class='links-search-clear' type='button' hidden>Clear</button>
+      </div>
+      <p class='links-search-results-count' aria-live='polite' hidden></p>
+    </form>
+    <section class='links'></section>
+  </section>
   <footer><a href='https://github.com/pseudosavant/player.html' target='_blank'>player.html <span class='version'></span> &copy; Paul Ellis</a></footer>
   <section class='xlinks' style='display: none' data-inline='svg'></section>
   <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>

@@ -63,7 +63,8 @@
           'poster-image': '', // Optional custom poster image URL or data URI for the player background.
           thumbnailing: true,
           animate: true,
-          'playlist-depth': 2
+          'playlist-depth': 2,
+          'search-depth': 3
         },
         // Perceptual volume curve exponent for the discrete volume control (0..1 -> 0..1).
         // Higher values give more control at lower volumes.
