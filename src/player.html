@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.25.0'>
+  <meta name='version' content='2.26.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -18,51 +18,6 @@
     <div class='media-container'>
       <video class='player' data-volume="3" crossorigin="anonymous" playsinline></video>
       <div class="media-title"></div>
-      <ul class='fileinfo modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <li class='fileinfo-item modal-item'>Metadata not yet loaded</li>
-      </ul>
-      <ul class='help modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
-        <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
-        <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
-        <li class='help-item modal-item'><span class='key'>I</span><span class='desc'>Media file information</span></li>
-        <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of media</span></li>
-        <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 10 seconds</span></li>
-        <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 30 seconds</span></li>
-        <li class='help-item modal-item'><span class='key'>Page Up</span><span class='desc'>Previous track</span></li>
-        <li class='help-item modal-item'><span class='key'>Page Down</span><span class='desc'>Next track</span></li>
-        <li class='help-item modal-item'><span class='key'>R</span><span class='desc'>Alter playback rate</span></li>
-        <li class='help-item modal-item'><span class='key'>S</span><span class='desc'>Select a subtitle</span></li>
-        <li class='help-item modal-item'><span class='key'>Shift+S</span><span class='desc'>Save screenshot of current frame</span></li>
-        <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
-        <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
-        <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
-      </ul>
-      <ul class='subtitle-selection modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <li class='subtitle-item modal-item'>No subtitles loaded yet</li>
-      </ul>
-      <ul class='playlist modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-      </ul>
-      <ul class='settings modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-      </ul>
-      <form class='open-url modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <div class='modal-item open-url-item'>
-          <label class='open-url-label' for='open-url-input'>Folder or media URL</label>
-          <input id='open-url-input' class='open-url-input' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
-          <p class='open-url-error' aria-live='polite'></p>
-          <div class='open-url-actions'>
-            <button class='open-url-submit' type='submit'>Open</button>
-            <button class='open-url-cancel' type='button'>Cancel</button>
-          </div>
-        </div>
-      </form>
-      <div class="modal-background-overlay"></div>
     </div>
     <section class='controls'>
       <div class='progress-bar' style=' --relative-position: 0%;' role='slider' tabindex='0' aria-label='Seek' aria-valuemin='0' aria-valuemax='0' aria-valuenow='0' aria-valuetext='0:00 of 0:00' aria-disabled='true'></div>
@@ -104,6 +59,51 @@
       </section>
     <div class='current-timestamp' style='--duration: "0:00"; --absolute-position: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
+    <ul class='fileinfo modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='fileinfo-item modal-item'>Metadata not yet loaded</li>
+    </ul>
+    <ul class='help modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
+      <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
+      <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
+      <li class='help-item modal-item'><span class='key'>I</span><span class='desc'>Media file information</span></li>
+      <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of media</span></li>
+      <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 10 seconds</span></li>
+      <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 30 seconds</span></li>
+      <li class='help-item modal-item'><span class='key'>Page Up</span><span class='desc'>Previous track</span></li>
+      <li class='help-item modal-item'><span class='key'>Page Down</span><span class='desc'>Next track</span></li>
+      <li class='help-item modal-item'><span class='key'>R</span><span class='desc'>Alter playback rate</span></li>
+      <li class='help-item modal-item'><span class='key'>S</span><span class='desc'>Select a subtitle</span></li>
+      <li class='help-item modal-item'><span class='key'>Shift+S</span><span class='desc'>Save screenshot of current frame</span></li>
+      <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
+      <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
+      <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
+    </ul>
+    <ul class='subtitle-selection modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='subtitle-item modal-item'>No subtitles loaded yet</li>
+    </ul>
+    <ul class='playlist modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+    </ul>
+    <ul class='settings modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+    </ul>
+    <form class='open-url modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <div class='modal-item open-url-item'>
+        <label class='open-url-label' for='open-url-input'>Folder or media URL</label>
+        <input id='open-url-input' class='open-url-input' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
+        <p class='open-url-error' aria-live='polite'></p>
+        <div class='open-url-actions'>
+          <button class='open-url-submit' type='submit'>Open</button>
+          <button class='open-url-cancel' type='button'>Cancel</button>
+        </div>
+      </div>
+    </form>
+    <div class="modal-background-overlay"></div>
   </div>
   <section class='links-panel'>
     <form class='links-search' role='search' autocomplete='off' hidden>

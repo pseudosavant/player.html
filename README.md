@@ -6,7 +6,8 @@ It can be used as:
 * A local media player by installing it as a PWA (where supported).
 
 ![player.html in action](https://github.com/user-attachments/assets/7bc13981-52ad-4871-be0f-c0625ec565f2)
-![player.html on all of your devices](https://github.com/user-attachments/assets/6a4771ca-50d0-4089-aed6-3f9a2c1570dd)
+![player.html for video](https://github.com/user-attachments/assets/c65fac9c-56c2-4772-9ee6-bac3151f75af)
+![player.html for music](https://github.com/user-attachments/assets/53e98efe-ea84-45e0-b3ae-1281c3542fa2)
 
 ## What player.html can do
 * Play videos with external subtitles (`.srt` / `.vtt`).
@@ -21,7 +22,7 @@ It can be used as:
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
 * Play media from OneDrive / Google Drive (HTTPS + app keys required).
 * Open a folder or media URL from the sources bar (same-origin or CORS required for folder browsing).
-* Share a URL that resumes at the same folder + playlist + media + timestamp + subtitle selection.
+* Share a URL that resumes at the same library root + folder + search + playlist + media + timestamp + subtitle selection.
 
 ## Contents
 * [Quick Start](#quick-start)
@@ -74,7 +75,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 ### Playlists
 * Playlist panel: view, add, reorder, previous/next, and looping playback.
 * Import/export `.m3u` playlists.
-* Shareable state in the URL hash (restores folder, playlist, media, timestamp, and subtitle selection).
+* Shareable state in the URL hash (restores library root, folder, search, playlist, media, timestamp, and subtitle selection).
 
 ### Thumbnails
 * Video thumbnails use pre-rendered server-side thumbnails when present (recommended for large libraries).
@@ -84,7 +85,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 
 ### PWA & Sharing
 * Installable as a PWA (inline generated manifest).
-* Shareable URL that resumes `player.html` in the same folder, playlist, media item, timestamp, and subtitle selection.
+* Shareable URL that resumes `player.html` in the same library root, folder, search, playlist, media item, timestamp, and subtitle selection.
 * Standard page metadata (`title`, `description`) plus favicon and PWA manifest support.
 
 ### UI & Metadata
@@ -313,6 +314,7 @@ Playback and UI timing:
 * `startLocation`: Optional initial folder/media URL. Relative paths resolve from the page URL.
   * Useful for `index.html` + `player.html.json` deployments where media lives in a sub-folder like `videos/`.
   * Can also point at a different server URL when that target has both directory browsing and CORS enabled.
+  * Exported configs rewrite same-origin absolute `startLocation` values to root-relative paths so they stay portable across host/domain/port changes.
 * `volumeExponent`: Volume curve exponent
 * `updateRate.timeupdate`: UI update throttle for media `timeupdate` events (ms)
 * `updateRate.trickHover`: UI update throttle for trick-hover previews (ms)

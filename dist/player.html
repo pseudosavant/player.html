@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.25.0'>
+  <meta name='version' content='2.26.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -304,9 +304,11 @@
       position: absolute;
       top: 0;
       left: 0;
+      z-index: 90;
       width: 100%;
       height: 100%;
-      background: transparent;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(2px);
     }
 
     .modal {
@@ -338,11 +340,43 @@
       list-style: none;
 
       background-color: var(--modal-background-color);
+      border-right: 8px solid var(--modal-background-color);
+      border-bottom: 8px solid var(--modal-background-color);
+      border-bottom-right-radius: 1rem;
       background-image: linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0));
       -webkit-backdrop-filter: blur(var(--blur-base));
       backdrop-filter: blur(var(--blur-base));
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--theme-hue), var(--sat-strong), 52%) hsla(var(--theme-hue), var(--sat-muted), 14%, 0.55);
     }
     .modal.show { transform: translateX(0); }
+
+    .modal::-webkit-scrollbar {
+      width: 0.8rem;
+    }
+
+    .modal::-webkit-scrollbar-track {
+      background: hsla(var(--theme-hue), var(--sat-muted), 14%, 0.55);
+      border-bottom-right-radius: 0.75rem;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: linear-gradient(
+        180deg,
+        hsl(var(--theme-hue), var(--sat-strong), 62%),
+        hsl(var(--theme-hue), var(--sat-strong), 46%)
+      );
+      border: 2px solid hsla(var(--theme-hue), var(--sat-muted), 14%, 0.55);
+      border-radius: 999px;
+    }
+
+    .modal::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(
+        180deg,
+        hsl(var(--theme-hue), var(--sat-strong), 70%),
+        hsl(var(--theme-hue), var(--sat-strong), 54%)
+      );
+    }
 
     .modal:before {
       display: block;
@@ -1589,51 +1623,6 @@
     <div class='media-container'>
       <video class='player' data-volume="3" crossorigin="anonymous" playsinline></video>
       <div class="media-title"></div>
-      <ul class='fileinfo modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <li class='fileinfo-item modal-item'>Metadata not yet loaded</li>
-      </ul>
-      <ul class='help modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
-        <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
-        <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
-        <li class='help-item modal-item'><span class='key'>I</span><span class='desc'>Media file information</span></li>
-        <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of media</span></li>
-        <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 10 seconds</span></li>
-        <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 30 seconds</span></li>
-        <li class='help-item modal-item'><span class='key'>Page Up</span><span class='desc'>Previous track</span></li>
-        <li class='help-item modal-item'><span class='key'>Page Down</span><span class='desc'>Next track</span></li>
-        <li class='help-item modal-item'><span class='key'>R</span><span class='desc'>Alter playback rate</span></li>
-        <li class='help-item modal-item'><span class='key'>S</span><span class='desc'>Select a subtitle</span></li>
-        <li class='help-item modal-item'><span class='key'>Shift+S</span><span class='desc'>Save screenshot of current frame</span></li>
-        <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
-        <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
-        <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
-      </ul>
-      <ul class='subtitle-selection modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <li class='subtitle-item modal-item'>No subtitles loaded yet</li>
-      </ul>
-      <ul class='playlist modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-      </ul>
-      <ul class='settings modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-      </ul>
-      <form class='open-url modal' inert aria-hidden='true'>
-        <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-        <div class='modal-item open-url-item'>
-          <label class='open-url-label' for='open-url-input'>Folder or media URL</label>
-          <input id='open-url-input' class='open-url-input' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
-          <p class='open-url-error' aria-live='polite'></p>
-          <div class='open-url-actions'>
-            <button class='open-url-submit' type='submit'>Open</button>
-            <button class='open-url-cancel' type='button'>Cancel</button>
-          </div>
-        </div>
-      </form>
-      <div class="modal-background-overlay"></div>
     </div>
     <section class='controls'>
       <div class='progress-bar' style=' --relative-position: 0%;' role='slider' tabindex='0' aria-label='Seek' aria-valuemin='0' aria-valuemax='0' aria-valuenow='0' aria-valuetext='0:00 of 0:00' aria-disabled='true'></div>
@@ -1675,6 +1664,51 @@
       </section>
     <div class='current-timestamp' style='--duration: "0:00"; --absolute-position: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
+    <ul class='fileinfo modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='fileinfo-item modal-item'>Metadata not yet loaded</li>
+    </ul>
+    <ul class='help modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
+      <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
+      <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
+      <li class='help-item modal-item'><span class='key'>I</span><span class='desc'>Media file information</span></li>
+      <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of media</span></li>
+      <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 10 seconds</span></li>
+      <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 30 seconds</span></li>
+      <li class='help-item modal-item'><span class='key'>Page Up</span><span class='desc'>Previous track</span></li>
+      <li class='help-item modal-item'><span class='key'>Page Down</span><span class='desc'>Next track</span></li>
+      <li class='help-item modal-item'><span class='key'>R</span><span class='desc'>Alter playback rate</span></li>
+      <li class='help-item modal-item'><span class='key'>S</span><span class='desc'>Select a subtitle</span></li>
+      <li class='help-item modal-item'><span class='key'>Shift+S</span><span class='desc'>Save screenshot of current frame</span></li>
+      <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
+      <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
+      <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
+    </ul>
+    <ul class='subtitle-selection modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='subtitle-item modal-item'>No subtitles loaded yet</li>
+    </ul>
+    <ul class='playlist modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+    </ul>
+    <ul class='settings modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+    </ul>
+    <form class='open-url modal' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <div class='modal-item open-url-item'>
+        <label class='open-url-label' for='open-url-input'>Folder or media URL</label>
+        <input id='open-url-input' class='open-url-input' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
+        <p class='open-url-error' aria-live='polite'></p>
+        <div class='open-url-actions'>
+          <button class='open-url-submit' type='submit'>Open</button>
+          <button class='open-url-cancel' type='button'>Cancel</button>
+        </div>
+      </div>
+    </form>
+    <div class="modal-background-overlay"></div>
   </div>
   <section class='links-panel'>
     <form class='links-search' role='search' autocomplete='off' hidden>
@@ -4729,7 +4763,7 @@ const fetchBytes = async (url, opts) => {
     app.options.supportedTypes = getSupportedTypes();
     logInfo(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
-    const hashState = { location: '', media: '', subtitle: '' };
+    const hashState = { root: '', location: '', media: '', subtitle: '', search: '' };
     app.playlist = [];
     app.playlistIndex = -1;
     app.playlistLoop = true;
@@ -4939,8 +4973,15 @@ const fetchBytes = async (url, opts) => {
       }
     }
 
+    const normalizeFolderUrl = (url) => (urlToFolder(url || '') || '');
+    const getHashRootLocation = () => normalizeFolderUrl(hashState.root);
+    const setHashRootLocation = (url) => {
+      const root = normalizeFolderUrl(url);
+      hashState.root = root;
+      return root;
+    }
     const getSearchRootUrl = () => {
-      const root = urlToFolder(searchState.rootUrl || hashState.location || window.location.href);
+      const root = normalizeFolderUrl(searchState.rootUrl || hashState.root || hashState.location || window.location.href);
       return (root || '');
     }
 
@@ -4960,7 +5001,7 @@ const fetchBytes = async (url, opts) => {
     }
 
     const setSearchRootUrl = (url) => {
-      const root = urlToFolder(url || window.location.href);
+      const root = normalizeFolderUrl(url || window.location.href);
       if (!root) return '';
       if (searchState.rootUrl !== root) {
         searchState.rootUrl = root;
@@ -4968,6 +5009,18 @@ const fetchBytes = async (url, opts) => {
       }
       searchState.cacheKey = getSearchCacheKey(root, getSearchDepth());
       return searchState.rootUrl;
+    }
+    const resolveRootForLocation = (locationUrl, explicitRootUrl = '') => {
+      const folder = normalizeFolderUrl(locationUrl);
+      if (!folder) return '';
+
+      const explicitRoot = normalizeFolderUrl(explicitRootUrl);
+      if (explicitRoot) return explicitRoot;
+
+      const currentRoot = getHashRootLocation();
+      if (!currentRoot) return folder;
+
+      return (isUrlWithinRoot(folder, currentRoot) ? currentRoot : folder);
     }
 
     const isUrlWithinRoot = (url, rootUrl = getSearchRootUrl()) => {
@@ -5171,6 +5224,7 @@ const fetchBytes = async (url, opts) => {
     const renderSearchResults = (query) => {
       const normalized = String(query || '').trim();
       searchState.query = normalized;
+      hashState.search = normalized;
       updateSearchControls();
 
       if (!normalized) {
@@ -5179,6 +5233,7 @@ const fetchBytes = async (url, opts) => {
         searchState.previousLocation = '';
         updateSearchResultsCount('');
         showLinks(app.links);
+        updateHash();
         return [];
       }
 
@@ -5204,6 +5259,8 @@ const fetchBytes = async (url, opts) => {
         updateSearchResultsCount(`${addCommas(matches.length)} result${matches.length === 1 ? '' : 's'}`);
       }
 
+      updateHash();
+
       return matches;
     }
 
@@ -5216,6 +5273,7 @@ const fetchBytes = async (url, opts) => {
       searchState.active = false;
       searchState.query = '';
       searchState.previousLocation = '';
+      hashState.search = '';
 
       if ($linksSearchInput && opts.keepInput !== true) {
         $linksSearchInput.value = '';
@@ -5230,6 +5288,8 @@ const fetchBytes = async (url, opts) => {
       if (opts.render !== false && linksToRestore && Array.isArray(linksToRestore.files) && Array.isArray(linksToRestore.folders)) {
         showLinks(linksToRestore);
       }
+
+      if (opts.updateHash !== false) updateHash();
     }
 
     const scheduleSearchResults = (query) => {
@@ -5319,6 +5379,18 @@ const fetchBytes = async (url, opts) => {
       if (!resolved) console.warn('Invalid configured startLocation', configured);
       return resolved;
     }
+    const toExportableStartLocation = (url) => {
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return '';
+      try {
+        const target = new URL(absoluteUrl);
+        const current = new URL(window.location.href);
+        if (target.origin === current.origin) {
+          return `${target.pathname}${target.search}${target.hash}`;
+        }
+      } catch (e) {}
+      return absoluteUrl;
+    }
 
     const classifyLocationOpenError = (error) => {
       const text = String((error && (error.message || error.name)) || '').toLowerCase();
@@ -5350,8 +5422,13 @@ const fetchBytes = async (url, opts) => {
         return false;
       }
 
+      const previousRoot = getHashRootLocation();
+      const nextRoot = resolveRootForLocation(folderUrl, opts.rootUrl);
+      const rootChanged = (!!nextRoot && nextRoot !== previousRoot);
+
       try {
         clearThumbnailQueue();
+        setHashRootLocation(nextRoot || folderUrl);
         await createLinks(folderUrl);
       } catch (e) {
         const reason = classifyLocationOpenError(e);
@@ -5366,6 +5443,11 @@ const fetchBytes = async (url, opts) => {
 
       if (opts.updateHash !== false) {
         updateHash({ push: !!opts.pushHash });
+      }
+
+      if (rootChanged || !searchState.rootUrl) {
+        setSearchRootUrl(nextRoot || folderUrl);
+        refreshSearchIndex({ force: false, rootUrl: (nextRoot || folderUrl) });
       }
 
       return true;
@@ -6491,12 +6573,18 @@ const fetchBytes = async (url, opts) => {
     }
 
     const getState = () => {
+      const root = getHashRootLocation();
       const location = hashState.location;
       const media = getMediaUrl();
       const time = $player.currentTime;
       const playlist = getPlaylistState();
       const state = { location, media, time };
+      if (root) state.root = root;
       if (hashState.subtitle) state.subtitle = hashState.subtitle;
+      if (isSearchEnabled()) {
+        const search = String(searchState.query || hashState.search || '').trim();
+        if (search.length > 0) state.search = search;
+      }
       if (playlist) state.playlist = playlist;
 
       return state;
@@ -7727,9 +7815,7 @@ const fetchBytes = async (url, opts) => {
       setOpenUrlError('');
       const opened = await openLocation(input, { playMedia: true, pushHash: true });
       if (opened) {
-        clearSearch({ render: false });
-        setSearchRootUrl(input);
-        refreshSearchIndex({ force: false, rootUrl: input });
+        clearSearch({ render: false, updateHash: false });
         hideModals();
       } else {
         setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
@@ -8693,7 +8779,7 @@ const fetchBytes = async (url, opts) => {
       const configuredLocation = getConfiguredStartLocation();
       const exportLocation = (currentLocation && currentLocation.length > 0 ? currentLocation : configuredLocation);
       if (exportLocation && exportLocation.length > 0) {
-        options.startLocation = exportLocation;
+        options.startLocation = toExportableStartLocation(exportLocation);
       } else {
         delete options.startLocation;
       }
@@ -9223,14 +9309,29 @@ const fetchBytes = async (url, opts) => {
       if (hash) {
         const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
         const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
+        const hasHashRoot = (isString(hash.root) && hash.root.length > 1);
         const configuredStartLocation = getConfiguredStartLocation();
-        const startLocation = (hasHashLocation ? hash.location : (configuredStartLocation || window.location.href));
+        const targetRoot = normalizeFolderUrl(
+          hasHashRoot
+            ? hash.root
+            : (configuredStartLocation || (hasHashLocation ? hash.location : window.location.href))
+        );
+        const targetLocation = normalizeFolderUrl(hasHashLocation ? hash.location : (targetRoot || window.location.href));
         const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
 
         if (hasHashSubtitle) {
           hashState.subtitle = hash.subtitle;
         } else {
           hashState.subtitle = undefined;
+        }
+        if (isString(hash.search) && hash.search.trim().length > 0 && isSearchEnabled()) {
+          hashState.search = hash.search.trim();
+          searchState.query = hashState.search;
+          if ($linksSearchInput) $linksSearchInput.value = hashState.search;
+        } else {
+          hashState.search = '';
+          searchState.query = '';
+          if ($linksSearchInput) $linksSearchInput.value = '';
         }
 
         if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
@@ -9244,16 +9345,18 @@ const fetchBytes = async (url, opts) => {
 
         if (hash.time && hash.time > 0) $player.currentTime = hash.time;
 
-        if (hasHashLocation) {
-          await createLinksSafe(hash.location);
+        setHashRootLocation(targetRoot);
+
+        if (targetLocation) {
+          await createLinksSafe(targetLocation);
         } else if (configuredStartLocation) {
           await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }
 
-        setSearchRootUrl(startLocation);
-        refreshSearchIndex({ rootUrl: startLocation });
+        setSearchRootUrl(targetRoot || targetLocation || window.location.href);
+        refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
 
         if (hasHashSubtitle) {
           try {
@@ -9270,23 +9373,40 @@ const fetchBytes = async (url, opts) => {
       $(window).on('popstate', async (e) => {
         const hash = await getHash();
         const configuredStartLocation = getConfiguredStartLocation();
-        const targetLocation = (hash && hash.location && hash.location.length > 1
-          ? hash.location
-          : (configuredStartLocation || window.location.href));
+        const hasHashLocation = !!(hash && hash.location && hash.location.length > 1);
+        const hasHashRoot = !!(hash && hash.root && hash.root.length > 1);
+        const targetRoot = normalizeFolderUrl(
+          hasHashRoot
+            ? hash.root
+            : (configuredStartLocation || (hasHashLocation ? hash.location : window.location.href))
+        );
+        const targetLocation = normalizeFolderUrl(
+          hasHashLocation
+            ? hash.location
+            : (targetRoot || configuredStartLocation || window.location.href)
+        );
+        if (hash && isString(hash.search) && hash.search.trim().length > 0 && isSearchEnabled()) {
+          hashState.search = hash.search.trim();
+          searchState.query = hashState.search;
+          if ($linksSearchInput) $linksSearchInput.value = hashState.search;
+        } else {
+          hashState.search = '';
+          searchState.query = '';
+          if ($linksSearchInput) $linksSearchInput.value = '';
+        }
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
-        if (hash && hash.location && hash.location.length > 1) {
-          await createLinksSafe(hash.location);
+        setHashRootLocation(targetRoot);
+        if (targetLocation) {
+          await createLinksSafe(targetLocation);
         } else if (configuredStartLocation) {
           await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }
 
-        if (!searchState.rootUrl || !isUrlWithinRoot(targetLocation, searchState.rootUrl)) {
-          clearSearch({ render: false });
-          setSearchRootUrl(targetLocation);
-          refreshSearchIndex({ rootUrl: targetLocation });
-        }
+        clearSearch({ render: false, updateHash: false });
+        setSearchRootUrl(targetRoot || targetLocation || window.location.href);
+        refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
 
         if (hash && hash.subtitle && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:')) {
           try {

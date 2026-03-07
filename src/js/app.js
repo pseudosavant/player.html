@@ -88,7 +88,7 @@
     app.options.supportedTypes = getSupportedTypes();
     logInfo(`Supported mime-types: ${app.options.supportedTypes.mime.join(', ')}`);
 
-    const hashState = { location: '', media: '', subtitle: '' };
+    const hashState = { root: '', location: '', media: '', subtitle: '', search: '' };
     app.playlist = [];
     app.playlistIndex = -1;
     app.playlistLoop = true;
@@ -298,8 +298,15 @@
       }
     }
 
+    const normalizeFolderUrl = (url) => (urlToFolder(url || '') || '');
+    const getHashRootLocation = () => normalizeFolderUrl(hashState.root);
+    const setHashRootLocation = (url) => {
+      const root = normalizeFolderUrl(url);
+      hashState.root = root;
+      return root;
+    }
     const getSearchRootUrl = () => {
-      const root = urlToFolder(searchState.rootUrl || hashState.location || window.location.href);
+      const root = normalizeFolderUrl(searchState.rootUrl || hashState.root || hashState.location || window.location.href);
       return (root || '');
     }
 
@@ -319,7 +326,7 @@
     }
 
     const setSearchRootUrl = (url) => {
-      const root = urlToFolder(url || window.location.href);
+      const root = normalizeFolderUrl(url || window.location.href);
       if (!root) return '';
       if (searchState.rootUrl !== root) {
         searchState.rootUrl = root;
@@ -327,6 +334,18 @@
       }
       searchState.cacheKey = getSearchCacheKey(root, getSearchDepth());
       return searchState.rootUrl;
+    }
+    const resolveRootForLocation = (locationUrl, explicitRootUrl = '') => {
+      const folder = normalizeFolderUrl(locationUrl);
+      if (!folder) return '';
+
+      const explicitRoot = normalizeFolderUrl(explicitRootUrl);
+      if (explicitRoot) return explicitRoot;
+
+      const currentRoot = getHashRootLocation();
+      if (!currentRoot) return folder;
+
+      return (isUrlWithinRoot(folder, currentRoot) ? currentRoot : folder);
     }
 
     const isUrlWithinRoot = (url, rootUrl = getSearchRootUrl()) => {
@@ -530,6 +549,7 @@
     const renderSearchResults = (query) => {
       const normalized = String(query || '').trim();
       searchState.query = normalized;
+      hashState.search = normalized;
       updateSearchControls();
 
       if (!normalized) {
@@ -538,6 +558,7 @@
         searchState.previousLocation = '';
         updateSearchResultsCount('');
         showLinks(app.links);
+        updateHash();
         return [];
       }
 
@@ -563,6 +584,8 @@
         updateSearchResultsCount(`${addCommas(matches.length)} result${matches.length === 1 ? '' : 's'}`);
       }
 
+      updateHash();
+
       return matches;
     }
 
@@ -575,6 +598,7 @@
       searchState.active = false;
       searchState.query = '';
       searchState.previousLocation = '';
+      hashState.search = '';
 
       if ($linksSearchInput && opts.keepInput !== true) {
         $linksSearchInput.value = '';
@@ -589,6 +613,8 @@
       if (opts.render !== false && linksToRestore && Array.isArray(linksToRestore.files) && Array.isArray(linksToRestore.folders)) {
         showLinks(linksToRestore);
       }
+
+      if (opts.updateHash !== false) updateHash();
     }
 
     const scheduleSearchResults = (query) => {
@@ -678,6 +704,18 @@
       if (!resolved) console.warn('Invalid configured startLocation', configured);
       return resolved;
     }
+    const toExportableStartLocation = (url) => {
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return '';
+      try {
+        const target = new URL(absoluteUrl);
+        const current = new URL(window.location.href);
+        if (target.origin === current.origin) {
+          return `${target.pathname}${target.search}${target.hash}`;
+        }
+      } catch (e) {}
+      return absoluteUrl;
+    }
 
     const classifyLocationOpenError = (error) => {
       const text = String((error && (error.message || error.name)) || '').toLowerCase();
@@ -709,8 +747,13 @@
         return false;
       }
 
+      const previousRoot = getHashRootLocation();
+      const nextRoot = resolveRootForLocation(folderUrl, opts.rootUrl);
+      const rootChanged = (!!nextRoot && nextRoot !== previousRoot);
+
       try {
         clearThumbnailQueue();
+        setHashRootLocation(nextRoot || folderUrl);
         await createLinks(folderUrl);
       } catch (e) {
         const reason = classifyLocationOpenError(e);
@@ -725,6 +768,11 @@
 
       if (opts.updateHash !== false) {
         updateHash({ push: !!opts.pushHash });
+      }
+
+      if (rootChanged || !searchState.rootUrl) {
+        setSearchRootUrl(nextRoot || folderUrl);
+        refreshSearchIndex({ force: false, rootUrl: (nextRoot || folderUrl) });
       }
 
       return true;
@@ -1850,12 +1898,18 @@
     }
 
     const getState = () => {
+      const root = getHashRootLocation();
       const location = hashState.location;
       const media = getMediaUrl();
       const time = $player.currentTime;
       const playlist = getPlaylistState();
       const state = { location, media, time };
+      if (root) state.root = root;
       if (hashState.subtitle) state.subtitle = hashState.subtitle;
+      if (isSearchEnabled()) {
+        const search = String(searchState.query || hashState.search || '').trim();
+        if (search.length > 0) state.search = search;
+      }
       if (playlist) state.playlist = playlist;
 
       return state;
@@ -3086,9 +3140,7 @@
       setOpenUrlError('');
       const opened = await openLocation(input, { playMedia: true, pushHash: true });
       if (opened) {
-        clearSearch({ render: false });
-        setSearchRootUrl(input);
-        refreshSearchIndex({ force: false, rootUrl: input });
+        clearSearch({ render: false, updateHash: false });
         hideModals();
       } else {
         setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
@@ -4052,7 +4104,7 @@
       const configuredLocation = getConfiguredStartLocation();
       const exportLocation = (currentLocation && currentLocation.length > 0 ? currentLocation : configuredLocation);
       if (exportLocation && exportLocation.length > 0) {
-        options.startLocation = exportLocation;
+        options.startLocation = toExportableStartLocation(exportLocation);
       } else {
         delete options.startLocation;
       }
@@ -4582,14 +4634,29 @@
       if (hash) {
         const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
         const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
+        const hasHashRoot = (isString(hash.root) && hash.root.length > 1);
         const configuredStartLocation = getConfiguredStartLocation();
-        const startLocation = (hasHashLocation ? hash.location : (configuredStartLocation || window.location.href));
+        const targetRoot = normalizeFolderUrl(
+          hasHashRoot
+            ? hash.root
+            : (configuredStartLocation || (hasHashLocation ? hash.location : window.location.href))
+        );
+        const targetLocation = normalizeFolderUrl(hasHashLocation ? hash.location : (targetRoot || window.location.href));
         const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
 
         if (hasHashSubtitle) {
           hashState.subtitle = hash.subtitle;
         } else {
           hashState.subtitle = undefined;
+        }
+        if (isString(hash.search) && hash.search.trim().length > 0 && isSearchEnabled()) {
+          hashState.search = hash.search.trim();
+          searchState.query = hashState.search;
+          if ($linksSearchInput) $linksSearchInput.value = hashState.search;
+        } else {
+          hashState.search = '';
+          searchState.query = '';
+          if ($linksSearchInput) $linksSearchInput.value = '';
         }
 
         if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
@@ -4603,16 +4670,18 @@
 
         if (hash.time && hash.time > 0) $player.currentTime = hash.time;
 
-        if (hasHashLocation) {
-          await createLinksSafe(hash.location);
+        setHashRootLocation(targetRoot);
+
+        if (targetLocation) {
+          await createLinksSafe(targetLocation);
         } else if (configuredStartLocation) {
           await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }
 
-        setSearchRootUrl(startLocation);
-        refreshSearchIndex({ rootUrl: startLocation });
+        setSearchRootUrl(targetRoot || targetLocation || window.location.href);
+        refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
 
         if (hasHashSubtitle) {
           try {
@@ -4629,23 +4698,40 @@
       $(window).on('popstate', async (e) => {
         const hash = await getHash();
         const configuredStartLocation = getConfiguredStartLocation();
-        const targetLocation = (hash && hash.location && hash.location.length > 1
-          ? hash.location
-          : (configuredStartLocation || window.location.href));
+        const hasHashLocation = !!(hash && hash.location && hash.location.length > 1);
+        const hasHashRoot = !!(hash && hash.root && hash.root.length > 1);
+        const targetRoot = normalizeFolderUrl(
+          hasHashRoot
+            ? hash.root
+            : (configuredStartLocation || (hasHashLocation ? hash.location : window.location.href))
+        );
+        const targetLocation = normalizeFolderUrl(
+          hasHashLocation
+            ? hash.location
+            : (targetRoot || configuredStartLocation || window.location.href)
+        );
+        if (hash && isString(hash.search) && hash.search.trim().length > 0 && isSearchEnabled()) {
+          hashState.search = hash.search.trim();
+          searchState.query = hashState.search;
+          if ($linksSearchInput) $linksSearchInput.value = hashState.search;
+        } else {
+          hashState.search = '';
+          searchState.query = '';
+          if ($linksSearchInput) $linksSearchInput.value = '';
+        }
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
-        if (hash && hash.location && hash.location.length > 1) {
-          await createLinksSafe(hash.location);
+        setHashRootLocation(targetRoot);
+        if (targetLocation) {
+          await createLinksSafe(targetLocation);
         } else if (configuredStartLocation) {
           await createLinksSafe(configuredStartLocation);
         } else {
           await createLinksSafe();
         }
 
-        if (!searchState.rootUrl || !isUrlWithinRoot(targetLocation, searchState.rootUrl)) {
-          clearSearch({ render: false });
-          setSearchRootUrl(targetLocation);
-          refreshSearchIndex({ rootUrl: targetLocation });
-        }
+        clearSearch({ render: false, updateHash: false });
+        setSearchRootUrl(targetRoot || targetLocation || window.location.href);
+        refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
 
         if (hash && hash.subtitle && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:')) {
           try {

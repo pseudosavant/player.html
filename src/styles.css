@@ -291,9 +291,11 @@
       position: absolute;
       top: 0;
       left: 0;
+      z-index: 90;
       width: 100%;
       height: 100%;
-      background: transparent;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(2px);
     }
 
     .modal {
@@ -325,11 +327,43 @@
       list-style: none;
 
       background-color: var(--modal-background-color);
+      border-right: 8px solid var(--modal-background-color);
+      border-bottom: 8px solid var(--modal-background-color);
+      border-bottom-right-radius: 1rem;
       background-image: linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0));
       -webkit-backdrop-filter: blur(var(--blur-base));
       backdrop-filter: blur(var(--blur-base));
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--theme-hue), var(--sat-strong), 52%) hsla(var(--theme-hue), var(--sat-muted), 14%, 0.55);
     }
     .modal.show { transform: translateX(0); }
+
+    .modal::-webkit-scrollbar {
+      width: 0.8rem;
+    }
+
+    .modal::-webkit-scrollbar-track {
+      background: hsla(var(--theme-hue), var(--sat-muted), 14%, 0.55);
+      border-bottom-right-radius: 0.75rem;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: linear-gradient(
+        180deg,
+        hsl(var(--theme-hue), var(--sat-strong), 62%),
+        hsl(var(--theme-hue), var(--sat-strong), 46%)
+      );
+      border: 2px solid hsla(var(--theme-hue), var(--sat-muted), 14%, 0.55);
+      border-radius: 999px;
+    }
+
+    .modal::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(
+        180deg,
+        hsl(var(--theme-hue), var(--sat-strong), 70%),
+        hsl(var(--theme-hue), var(--sat-strong), 54%)
+      );
+    }
 
     .modal:before {
       display: block;
