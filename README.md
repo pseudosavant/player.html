@@ -1,5 +1,5 @@
 # player.html
-Single-file audio + video player web app for media libraries served from basic HTTP directory listings (NGINX/Apache/IIS/etc).
+Single-file audio + video player web app for media libraries served from basic HTTP directory listings (NGINX/Apache/IIS/etc). Try it live on GitHub Pages: [pseudosavant.github.io/player.html/player.html](https://pseudosavant.github.io/player.html/player.html).
 
 It can be used as:
 * A web player for folders of media on a server (NAS/home server/shared hosting).
