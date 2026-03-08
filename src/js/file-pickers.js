@@ -20,16 +20,21 @@
     }
 
     function onedriveCheck() {
-      return isSet(app.options.cloud.onedrive.clientId);
+      const onedriveOpts = app && app.options && app.options.cloud && app.options.cloud.onedrive;
+      return isSet(onedriveOpts && onedriveOpts.clientId);
     }
 
     function gdriveCheck() {
-      const opts = app.options.cloud;
-      return isSet(opts.gdrive.developerKey) && isSet(opts.gdrive.clientId) && isSet(opts.gdrive.appId);
+      const gdriveOpts = app && app.options && app.options.cloud && app.options.cloud.gdrive;
+      return (
+        isSet(gdriveOpts && gdriveOpts.developerKey) &&
+        isSet(gdriveOpts && gdriveOpts.clientId) &&
+        isSet(gdriveOpts && gdriveOpts.appId)
+      );
     }
 
     function isSet(v) {
-      return (typeof v !== 'undefined' && v.length > 0);
+      return (typeof v === 'string' && v.trim().length > 0);
     }
 
     function onedrive() {

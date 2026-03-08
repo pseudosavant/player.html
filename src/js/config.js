@@ -16,12 +16,12 @@
         startLocation: '',
         cloud: {
           onedrive: {
-            clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
+            clientId: ''
           },
           gdrive: {
-            developerKey: 'AIzaSyASwr9ZqtB_DGszfJ7E1nIq-SRO44rsXdc', // Browser API key obtained from the Google API Console.
-            clientId: '350482528905-uplflng9avfo3p5sghlgr0g059r04v0b.apps.googleusercontent.com', // Client ID obtained from the Google API Console. Replace with your own Client ID.
-            appId: '350482528905' // console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
+            developerKey: '', // Browser API key obtained from the Google API Console.
+            clientId: '', // Client ID obtained from the Google API Console. Replace with your own Client ID.
+            appId: '' // console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
           }
         },
         thumbnails: {
