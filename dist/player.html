@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.26.0'>
+  <meta name='version' content='2.27.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -28,8 +28,11 @@
     html {
       --player-aspect-ratio: calc(9/16);
       --tile-aspect-ratio: var(--player-aspect-ratio);
-      --tile-width: 24rem;
-      --tile-height: calc(var(--tile-width) * var(--tile-aspect-ratio));
+      --tile-min-width: 23rem;
+      --tile-width-ratio: 16;
+      --tile-height-ratio: 9;
+      --tile-arrow-size: 20%;
+      --tile-arrow-size-active: 33.333%;
       --tile-border-radius: 0.6rem / 0.5rem;
       --tile-font-color: var(--text-on-tile-title);
       --tile-title-background-color: var(--bg-tile-title);
@@ -242,6 +245,7 @@
       margin: 1rem 0 0 1.5rem;
       font-size: 1.5em;
       color: rgba(255,255,255,0);
+      text-shadow: 0.5px 0.5px 1px rgba(0,0,0,1);
       cursor: text;
       user-select: text;
       transition: color var(--transition-base);
@@ -482,17 +486,27 @@
       border-top: 1px solid var(--modal-divider-color);
     }
 
+    .fileinfo-item,
+    .setting-item {
+      display: grid;
+      grid-template-columns: minmax(10rem, 12rem) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
     .fileinfo-item .key, .help-item .key, .setting-item .key {
       display: inline-block;
       min-width: 12rem;
-      margin-right: 1rem;
       font-weight: bold;
     }
 
     .fileinfo-item .value, .setting-item .value {
       display: inline-block;
-      width: calc(100% - 11rem);
+      min-width: 0;
       user-select: text;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .help-item .key {
@@ -902,7 +916,7 @@
       width: min(10vw, 2.5rem);
       height: min(10vw, 2.5rem);
 
-      margin: 0rem 0.1rem;
+      margin: 0;
       padding: 0;
 
       background: none;
@@ -1025,12 +1039,12 @@
     .playlist-loop-off .btn-loop .loop-on { display: none; }
     .playlist-loop-off .btn-loop .loop-off { display: block; }
 
-    .btn-previous,
-    .btn-next {
+    .controls .btn-previous,
+    .controls .btn-next {
       display: none;
     }
-    .playlist-multiple .btn-previous,
-    .playlist-multiple .btn-next {
+    .playlist-multiple .controls .btn-previous,
+    .playlist-multiple .controls .btn-next {
       display: inline-flex;
     }
 
@@ -1180,8 +1194,6 @@
        max-height: 2.5rem;
     }
     .controls .btn-cloud:hover { filter: brightness(1.25); }
-    .controls .btn-open-url { margin: 0 -0.1rem; }
-    .controls .btn-local-file { margin: 0 -0.15rem; }
     .controls .btn-onedrive { padding: 0 0.1rem; }
 
     .controls .btn-fileinfo { display: none; }
@@ -1194,6 +1206,7 @@
       position: relative;
       justify-content: center;
       align-items: end;
+      gap: 0.2rem;
     }
 
     .controls-settings {
@@ -1202,6 +1215,7 @@
       display: flex;
       justify-content: flex-end;
       align-items: center;
+      gap: 0.2rem;
     }
 
     .controls-sources {
@@ -1209,6 +1223,7 @@
       display: flex;
       justify-content: flex-start;
       align-items: center;
+      gap: 0.2rem;
     }
 
     .links-panel {
@@ -1220,7 +1235,7 @@
 
       max-width: 100vw;
       margin-top: 1rem;
-
+      padding-inline: 1rem;
       padding-bottom: 2rem;
     }
 
@@ -1299,8 +1314,7 @@
 
       display: grid;
       gap: var(--inter-tile-margin);
-      grid-template-columns: repeat(auto-fill, var(--tile-width));
-      justify-content: center;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--tile-min-width)), 1fr));
     }
 
     .links a {
@@ -1311,8 +1325,9 @@
       align-items: center;
       overflow: hidden;
 
-      width: var(--tile-width);
-      height: var(--tile-height);
+      width: 100%;
+      height: auto;
+      aspect-ratio: var(--tile-width-ratio) / var(--tile-height-ratio);
 
       padding: 0;
       border-radius: var(--tile-border-radius);
@@ -1328,12 +1343,10 @@
       background-repeat: no-repeat;
 
       background-image: var(--image-url-0, var(--image-fallback, none));
-      animation: animateThumbnail 1000ms infinite;
-      animation-play-state: paused;
     }
-    .links a.prerendered { animation: none; }
-    .links a:hover { animation-play-state: running; }
-    .no-thumbnail-animation .links a { animation: unset; }
+    .links a:not(.prerendered):hover { animation: animateThumbnail 1000ms infinite; }
+    .no-thumbnail-animation .links a,
+    .no-thumbnail-animation .links a:hover { animation: unset; }
 
     .links a .title {
       /* Title */
@@ -1351,6 +1364,7 @@
       font-size: 1.25rem;
       line-height: 1.5rem;
       text-align: left;
+      text-shadow: 0.5px 0.5px 1px rgba(0,0,0,1);
       padding: 1rem;
 
       background-color: var(--tile-title-background-color);
@@ -1436,10 +1450,10 @@
     .folder .arrow,
     .file .arrow {
       /* Arrow */
-      font-size: 3rem;
-
-      display: block;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
       padding: 0;
     }
 
@@ -1449,7 +1463,7 @@
     .folder:hover .arrow svg,
     .file.current .arrow svg {
       transform: rotate(360deg);
-      width: calc(var(--tile-width) / 3);
+      width: var(--tile-arrow-size-active);
     }
 
     @media (max-width: 700px) {
@@ -1467,7 +1481,9 @@
     }
 
     .file .arrow svg, .folder .arrow svg {
-      width: calc(var(--tile-width) / 5);
+      width: var(--tile-arrow-size);
+      height: auto;
+      flex: 0 0 auto;
       will-change: width, transform;
     }
 
@@ -1523,14 +1539,8 @@
     html[data-transitions="disabled"] * { transition: none !important; will-change: none; }
     .no-volume .btn-volume { display: none; }
 
-    @media (min-width: 1024px) { html { --tile-width: 24vw; } }
-    @media (max-width: 1024px) { html { --tile-width: 32vw; } }
-    @media (max-width: 768px)  { html { --tile-width: 48vw; } }
-    @media (max-width: 500px) {
-      html {
-        --tile-width: 96vw;
-        --progress-bar-height: 1.25rem;
-      }
+    @media (max-width: 650px) {
+      html { --progress-bar-height: 1.25rem; }
       .controls {
         grid-template-areas:
           "progress-bar       progress-bar"
@@ -1548,10 +1558,19 @@
         justify-self: end;
       }
 
-      .controls-sources   { justify-content: flex-end; }
-      .controls-settings  { justify-content: flex-start; }
+      .controls-sources   { justify-content: flex-start; gap: 0.75rem; }
+      .controls-settings  { justify-content: flex-end; gap: 0.75rem; }
+      .primary-buttons    { justify-content: space-between; }
       .progress-bar       { margin-bottom: 1rem; }
       .trick-container    { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .primary-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.35rem;
+      }
     }
 
     @media (prefers-color-scheme: light) {
@@ -1631,10 +1650,10 @@
       </div>
       <section class='controls-sources'>
         <button class='btn-playlist' type='button' title='Open playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
+        <button class='btn-local-file' type='button' title='Open local media file' aria-label='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
+        <button class='btn-open-url' type='button' title='Open folder or media URL' aria-label='Open folder or media URL'><svg><use xlink:href='#svg-open-folder'/></svg></button>
         <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive' aria-label='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
         <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive' aria-label='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
-        <button class='btn-open-url' type='button' title='Open folder or media URL' aria-label='Open folder or media URL'><svg><use xlink:href='#svg-open-folder'/></svg></button>
-        <button class='btn-local-file' type='button' title='Open local media file' aria-label='Open local media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
         <button class='btn-previous' type='button' title='Previous track [Page Up]' aria-label='Previous track'><svg><use xlink:href='#svg-previous'/></svg></button>
@@ -9123,7 +9142,7 @@ const fetchBytes = async (url, opts) => {
           ? [...thumbnailOpts.timestamps]
           : [0]
       );
-      const shouldAnimate = retrieveSetting('animate');
+      const shouldAnimate = settings.animate.get();
       const timestamps = (shouldAnimate ? timestampList : [timestampList[0]]);
       const frameCount = (shouldAnimate ? timestamps.length : 1);
 
@@ -9183,13 +9202,13 @@ const fetchBytes = async (url, opts) => {
 
       var animationRule = '@keyframes animateThumbnail {\r\n';
       if (n <= 1) {
-        animationRule += `0% { background-image: var(--image-url-0); }\r\n`;
-        animationRule += `100% { background-image: var(--image-url-0); }\r\n`;
+        animationRule += `0% { background-image: var(--image-url-0, var(--image-fallback, none)); }\r\n`;
+        animationRule += `100% { background-image: var(--image-url-0, var(--image-fallback, none)); }\r\n`;
       } else {
         const unit = (1 / (n - 1)) * 100;
         for (let i = 0; i < n; i++) {
           const percent = `${unit * i}%`;
-          animationRule += `${percent} { background-image: var(--image-url-${i}); }\r\n`;
+          animationRule += `${percent} { background-image: var(--image-url-${i}, var(--image-url-0, var(--image-fallback, none))); }\r\n`;
         }
       }
       animationRule += '}';

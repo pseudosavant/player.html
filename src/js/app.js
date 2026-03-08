@@ -4448,7 +4448,7 @@
           ? [...thumbnailOpts.timestamps]
           : [0]
       );
-      const shouldAnimate = retrieveSetting('animate');
+      const shouldAnimate = settings.animate.get();
       const timestamps = (shouldAnimate ? timestampList : [timestampList[0]]);
       const frameCount = (shouldAnimate ? timestamps.length : 1);
 
@@ -4508,13 +4508,13 @@
 
       var animationRule = '@keyframes animateThumbnail {\r\n';
       if (n <= 1) {
-        animationRule += `0% { background-image: var(--image-url-0); }\r\n`;
-        animationRule += `100% { background-image: var(--image-url-0); }\r\n`;
+        animationRule += `0% { background-image: var(--image-url-0, var(--image-fallback, none)); }\r\n`;
+        animationRule += `100% { background-image: var(--image-url-0, var(--image-fallback, none)); }\r\n`;
       } else {
         const unit = (1 / (n - 1)) * 100;
         for (let i = 0; i < n; i++) {
           const percent = `${unit * i}%`;
-          animationRule += `${percent} { background-image: var(--image-url-${i}); }\r\n`;
+          animationRule += `${percent} { background-image: var(--image-url-${i}, var(--image-url-0, var(--image-fallback, none))); }\r\n`;
         }
       }
       animationRule += '}';
