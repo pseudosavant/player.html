@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.28.0'>
+  <meta name='version' content='2.29.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -245,10 +245,10 @@
       margin: 1rem 0 0 1.5rem;
       font-size: 1.5em;
       color: rgba(255,255,255,0);
-      text-shadow: 0.5px 0.5px 1px rgba(0,0,0,1);
+      text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0);
       cursor: text;
       user-select: text;
-      transition: color var(--transition-base);
+      transition: color var(--transition-base), text-shadow var(--transition-base);
     }
 
     .media-container:hover .media-title,
@@ -256,6 +256,7 @@
     .media-title:focus,
     .media-title:focus-within {
       color: rgba(255,255,255,1);
+      text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 1);
     }
 
     .player {
@@ -310,7 +311,7 @@
       left: 0;
       z-index: 90;
       width: 100%;
-      height: 100%;
+      height: 100vh;
       background: rgba(0, 0, 0, 0.25);
       backdrop-filter: blur(2px);
     }
@@ -321,7 +322,7 @@
       position: absolute;
       top: 0;
       left: 0;
-      height: 100%;
+      max-height: 100vh;
       min-width: 40vw;
       max-width: 100vw;
       overflow-x: auto;
