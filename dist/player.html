@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.29.0'>
+  <meta name='version' content='2.30.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -29,6 +29,7 @@
       --player-aspect-ratio: calc(9/16);
       --tile-aspect-ratio: var(--player-aspect-ratio);
       --tile-min-width: 23rem;
+      --tile-max-width: 34rem;
       --tile-width-ratio: 16;
       --tile-height-ratio: 9;
       --tile-arrow-size: 20%;
@@ -612,6 +613,12 @@
       transform: translateY(1px);
     }
 
+    .fileinfo-action-item button {
+      justify-self: start;
+      width: auto;
+      padding: 0 0.9rem;
+    }
+
     .modal input[type='color'] {
       width: 2rem;
       border: 0 none;
@@ -1062,12 +1069,20 @@
     .current-timestamp .duration:before { content: var(--duration); }
     .current-timestamp .divider:before  { content: ' / '; }
 
-    .progress-bar {
+    .progress-track {
       grid-area: progress-bar;
+      position: relative;
+      width: 100%;
+      height: var(--progress-bar-height);
+      overflow: visible;
+      z-index: 2000;
+    }
+
+    .progress-bar {
       display: flex;
       align-items: center;
 
-      z-index: 2000;
+      z-index: 1;
       cursor: pointer;
 
       position: relative;
@@ -1136,25 +1151,33 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      top: calc(1rem + var(--progress-bar-height));
+      --trick-gap: 0.35rem;
+      --trick-preview-height: calc(var(--trick-preview-width) * var(--player-aspect-ratio));
+      top: calc(100% + var(--trick-gap));
       left: clamp(
-        calc(var(--trick-preview-width)/2 + 1rem),
+        calc(var(--trick-preview-width) / 2),
         var(--trick-position),
-        calc(100% - var(--trick-preview-width)/2 - 1rem)
+        calc(100% - (var(--trick-preview-width) / 2))
       );
       width: var(--trick-preview-width);
-      margin-left: calc(var(--trick-preview-width) * -0.5);
+      transform: translateX(-50%) translateY(-0.25rem);
 
       position: absolute;
-      max-height: 0%;
+      height: var(--trick-preview-height);
       overflow: hidden;
       border-radius: 0 0 0.5rem 0.5rem;
       background: rgb(32,32,32);
-      transition: max-height var(--transition-base);
-      will-change: max-height;
-      border: 0 none;
-      box-shadow: 0 0 10px black;
-      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity var(--transition-base),
+        transform var(--transition-base),
+        visibility 0s linear var(--transition-base);
+      will-change: opacity, transform;
+      border: 1px solid transparent;
+      box-shadow: 0 0.35rem 10px rgba(0, 0, 0, 0.9);
+      z-index: 2;
     }
 
     .is-audio .trick-container {
@@ -1182,10 +1205,15 @@
       object-fit: cover;
     }
 
-    .is-loaded .progress-bar:hover + .trick-container {
-      border: 1px solid transparent;
-      height: calc(var(--trick-preview-width) * var(--player-aspect-ratio));
-      max-height: 100%;
+    .is-loaded .progress-track:hover .trick-container,
+    .is-loaded .progress-track:focus-within .trick-container {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+      transition:
+        opacity var(--transition-base),
+        transform var(--transition-base),
+        visibility 0s linear 0s;
     }
 
       /* Only show this button if cloud streaming is enabled/possible */
@@ -1313,9 +1341,9 @@
     .links {
       z-index: 500;
 
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       gap: var(--inter-tile-margin);
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--tile-min-width)), 1fr));
     }
 
     .links a {
@@ -1326,7 +1354,9 @@
       align-items: center;
       overflow: hidden;
 
+      flex: 1 1 var(--tile-min-width);
       width: 100%;
+      max-width: min(100%, var(--tile-max-width));
       height: auto;
       aspect-ratio: var(--tile-width-ratio) / var(--tile-height-ratio);
 
@@ -1478,6 +1508,12 @@
 
       .links-search-clear {
         width: 100%;
+      }
+    }
+
+    @media (max-width: 74rem) {
+      .links a {
+        max-width: none;
       }
     }
 
@@ -1645,9 +1681,11 @@
       <div class="media-title"></div>
     </div>
     <section class='controls'>
-      <div class='progress-bar' style=' --relative-position: 0%;' role='slider' tabindex='0' aria-label='Seek' aria-valuemin='0' aria-valuemax='0' aria-valuenow='0' aria-valuetext='0:00 of 0:00' aria-disabled='true'></div>
-      <div class='trick-container' style='--trick-position: 0%'>
-        <video class='trick'></video>
+      <div class='progress-track'>
+        <div class='progress-bar' style=' --relative-position: 0%;' role='slider' tabindex='0' aria-label='Seek' aria-valuemin='0' aria-valuemax='0' aria-valuenow='0' aria-valuetext='0:00 of 0:00' aria-disabled='true'></div>
+        <div class='trick-container' style='--trick-position: 0%'>
+          <video class='trick'></video>
+        </div>
       </div>
       <section class='controls-sources'>
         <button class='btn-playlist' type='button' title='Open playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
@@ -2215,17 +2253,29 @@
 
   <!-- PWA -->
   <script type="module">
+    const manifestFilename = 'manifest.json';
+    const manifestTitle = document.title;
+    window.getPWAManifest = getPWAManifest;
+
     const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
     if (iconLink) {
+      const manifest = await getPWAManifest();
+      if (manifest) await setPWAManifest(manifest);
+    }
+
+    async function getPWAManifest() {
+      const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
+      if (!iconLink) return undefined;
+
       const icon = iconLink.href;
       const metadata = await imageMetadata(icon);
       const startUrl = window.location.href.split('#')[0];
       const scopeUrl = new URL('./', startUrl).toString();
       const themeColor = resolveManifestColor(getCSSVariable('--theme-color'));
 
-      const manifest = {
-        short_name: document.title,
-        name: document.title,
+      return {
+        short_name: manifestTitle,
+        name: manifestTitle,
         description: document.querySelector('meta[name="description"]').content,
         background_color: '#FFFFFF',
         theme_color: themeColor,
@@ -2242,15 +2292,14 @@
         scope: scopeUrl,
         file_handlers: [
           {
-            action: location.href.split('#')[0],
+            action: startUrl,
             accept: {
               "audio/*": [".mp3", ".wav", ".aac", ".m4a", ".mka", ".ogg"],
               "video/*": [".mp4", ".mov", ".webm", ".mkv"]
             }
           }
         ]
-      }
-      setPWAManifest(manifest);
+      };
     }
 
     function resolveManifestColor(value) {
@@ -2275,17 +2324,42 @@
       return (computed ? computed : fallback);
     }
 
-    function setPWAManifest(manifest) {
+    async function hasHostedManifest(url) {
+      try {
+        const head = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        if (head.ok) return true;
+        if (![405, 501].includes(head.status)) return false;
+      } catch (e) {}
+
+      try {
+        const get = await fetch(url, { method: 'GET', cache: 'no-store' });
+        return get.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function manifestToDataURI(manifest) {
       const json = JSON.stringify(manifest);
       const base64 = base64EncodeUTF(json);
       const mimeType = 'application/json';
-      const dataURI = `data:${mimeType};base64,${base64}`;
+      return `data:${mimeType};base64,${base64}`;
+    }
 
-      const link = document.createElement('link');
+    async function setPWAManifest(manifest) {
+      const hostedManifestUrl = new URL(manifestFilename, manifest.start_url).toString();
+      const href = (await hasHostedManifest(hostedManifestUrl))
+        ? hostedManifestUrl
+        : manifestToDataURI(manifest);
+      let link = document.querySelector('link[data-pwa-manifest="true"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.setAttribute('rel', 'manifest');
+        link.setAttribute('data-pwa-manifest', 'true');
+        document.querySelector('head').appendChild(link);
+      }
       link.setAttribute('rel', 'manifest');
-      link.setAttribute('href', dataURI);
-
-      document.querySelector('head').appendChild(link);
+      link.setAttribute('href', href);
     }
 
     function imageMetadata(src) {
@@ -5734,6 +5808,7 @@ const fetchBytes = async (url, opts) => {
     const isSearchEnabled = () => getSearchDepth() > 0;
 
     const playerConfigFilename = 'player.html.json';
+    const manifestFilename = 'manifest.json';
 
     const isObjectRecord = (value) => (value && typeof value === 'object' && !Array.isArray(value));
     const getOptionSettingsDefaults = () => (
@@ -6614,7 +6689,6 @@ const fetchBytes = async (url, opts) => {
 
       return state;
     }
-
     const getBaseLocation = (l) => l.protocol + '//' + l.host;
     const getMediaUrl = () => $player.src;
 
@@ -7670,10 +7744,17 @@ const fetchBytes = async (url, opts) => {
     });
 
     /* Progress bar */
-    const getProgressBarRelative = (e) => {
+    const getPointerClientX = (e) => {
+      if (!e) return undefined;
+      if (e.touches && e.touches.length) return e.touches[0].clientX;
+      if (typeof e.clientX === 'number') return e.clientX;
+      return undefined;
+    }
+
+    const getProgressBarRelative = (eOrClientX) => {
       const rect = $progressBar.getBoundingClientRect();
       if (!rect.width) return 0;
-      const point = (e.touches && e.touches.length ? e.touches[0].clientX : e.clientX);
+      const point = (typeof eOrClientX === 'number' ? eOrClientX : getPointerClientX(eOrClientX));
       if (isUndefined(point)) return 0;
       const raw = (point - rect.left) / rect.width;
       return minmax(0, raw, 1);
@@ -7772,19 +7853,36 @@ const fetchBytes = async (url, opts) => {
     const absolutePositionEl = durationEl;
     const relativePositionEl = $('.progress-bar');
     const trickPositionEl = $('.trick-container');
+    let trickHoverClientX;
+    let trickHoverRAF = 0;
 
     const updateDuration              = (d) => setCSSVariableString('--duration',          secondsToString(d), durationEl);
     const updateAbsolutePosition      = (p) => setCSSVariableString('--absolute-position', secondsToString(p), absolutePositionEl);
     const updateRelativePosition      = (p) => setCSSVariableNumber('--relative-position', `${p * 100}%`, relativePositionEl);
     const updateTrickRelativePosition = (p) => setCSSVariableNumber('--trick-position'   , `${p * 100}%`, trickPositionEl);
 
-    const progressBarTrickHover = (e) => {
-      const relative = getProgressBarRelative(e);
+    const flushProgressBarTrickHover = () => {
+      trickHoverRAF = 0;
+      if (isUndefined(trickHoverClientX)) return;
+      const relative = getProgressBarRelative(trickHoverClientX);
       const absolute = relative * getMediaDuration();
 
       updateTrickRelativePosition(relative);
 
       if (absolute >= 0) trickSeek(absolute);
+    }
+
+    const queueProgressBarTrickHover = (e) => {
+      if (window.PointerEvent && e && e.pointerType === 'touch') return;
+      const point = getPointerClientX(e);
+      if (isUndefined(point)) return;
+      trickHoverClientX = point;
+      if (trickHoverRAF) return;
+      trickHoverRAF = requestAnimationFrame(flushProgressBarTrickHover);
+    }
+
+    const clearProgressBarTrickHover = () => {
+      trickHoverClientX = undefined;
     }
 
     const trickSeek = (time) => {
@@ -8005,13 +8103,17 @@ const fetchBytes = async (url, opts) => {
       $player.on('volumechange', updateVolume);
       $player.on('ratechange', updatePlaybackRate);
 
-      $progressBar.on('mousemove', throttle(progressBarTrickHover, app.options.updateRate.trickHover));
       if (window.PointerEvent) {
+        $progressBar.on('pointermove', queueProgressBarTrickHover);
+        $progressBar.on('pointerleave', clearProgressBarTrickHover);
+        $progressBar.on('pointercancel', clearProgressBarTrickHover);
         $progressBar.on('pointerdown', progressDragStart);
         $progressBar.on('pointermove', progressDragMove);
         $progressBar.on('pointerup', progressDragEnd);
         $progressBar.on('pointercancel', progressDragEnd);
       } else {
+        $progressBar.on('mousemove', queueProgressBarTrickHover);
+        $progressBar.on('mouseleave', clearProgressBarTrickHover);
         $progressBar.on('mousedown', (e) => {
           progressDragStart(e);
           const move = (ev) => progressDragMove(ev);
@@ -8756,6 +8858,16 @@ const fetchBytes = async (url, opts) => {
         set: () => exportPlayerConfig(),
         update: () => {}
       },
+      'export-manifest': {
+        label: 'Export manifest.json',
+        buttonLabel: 'Export',
+        desc: `Download a starter ${manifestFilename} for hosting next to player.html`,
+        event: 'click',
+        type: 'button',
+        get: () => {},
+        set: async () => exportPWAManifest(),
+        update: () => {}
+      },
       reset: {
         label: 'Reset to defaults',
         buttonLabel: 'Reset',
@@ -8791,7 +8903,7 @@ const fetchBytes = async (url, opts) => {
       settings['search-depth'].default = getSearchDepthDefault();
     }
 
-    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'export-config']);
+    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'export-config', 'export-manifest']);
     const exportPlayerConfig = () => {
       const options = deepCloneValue(app.options);
       if (!isObjectRecord(options.settings)) options.settings = {};
@@ -8811,6 +8923,13 @@ const fetchBytes = async (url, opts) => {
       // `settings` is the canonical home for user-configurable defaults in exported config.
       if (Object.prototype.hasOwnProperty.call(options, 'subtitles')) delete options.subtitles;
       downloadJSON(playerConfigFilename, options);
+    }
+
+    const exportPWAManifest = async () => {
+      if (typeof window.getPWAManifest !== 'function') return;
+      const manifest = await window.getPWAManifest();
+      if (!manifest) return;
+      downloadJSON(manifestFilename, manifest);
     }
 
     const getHeaderData = async (url) => {
@@ -8876,9 +8995,41 @@ const fetchBytes = async (url, opts) => {
     }
 
     const supportsVideoFrameCallback = () => 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+    let fileinfoRequestId = 0;
+    const fileinfoMapping = {
+      name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
+      url: 'URL',
+      size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
+      mimeType: 'Type',
+      duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
+      bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
+      date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
+      framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
+      width: 'Width',
+      height: 'Height',
+      subtitles: 'Embedded Subtitles',
+      audioTracks: 'Audio Tracks'
+    };
+    const renderFileinfo = (metadata = {}) => {
+      app.metadata = metadata;
+
+      var html = '';
+      const metadataKeys = Object.keys(metadata);
+      metadataKeys.forEach((key) => {
+        const map = fileinfoMapping[key];
+        if (!map) return;
+        const label = (typeof map === 'object' ? map.name : map);
+        const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
+        html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
+      });
+
+      $fileinfo.html(`${getModalCloseButtonHtml()}${html}${getFileinfoActionSectionHtml()}`);
+      bindFileinfoActionHandlers();
+    }
 
     const updateFileinfo = async () => {
       const url = $player.currentSrc;
+      const requestId = ++fileinfoRequestId;
       const subtitles =   ($player.textTracks  && $player.textTracks.length  ? $player.textTracks.length  : 0);
       const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
 
@@ -8892,42 +9043,22 @@ const fetchBytes = async (url, opts) => {
         audioTracks: audioTracks,
       };
 
+      renderFileinfo(metadata);
+
       const headerData = await getHeaderData(url);
+      if (requestId !== fileinfoRequestId || $player.currentSrc !== url) return;
       if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
 
       const headerKeys = Object.keys(headerData);
       headerKeys.forEach((k) => metadata[k] = headerData[k]);
+      renderFileinfo(metadata);
 
-      if (!isAudio(url) && supportsVideoFrameCallback()) metadata.framerate = await getFramerate($player);
-
-      const mapping = {
-        name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
-        url: 'URL',
-        size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
-        mimeType: 'Type',
-        duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
-        bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
-        date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
-        framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
-        width: 'Width',
-        height: 'Height',
-        subtitles: 'Embedded Subtitles',
-        audioTracks: 'Audio Tracks'
+      if (!isAudio(url) && supportsVideoFrameCallback()) {
+        const framerate = await getFramerate($player);
+        if (requestId !== fileinfoRequestId || $player.currentSrc !== url) return;
+        metadata.framerate = framerate;
+        renderFileinfo(metadata);
       }
-      app.metadata = metadata;
-
-      // Generate HTML for each fileinfo metadata item
-      var html = '';
-      const metadataKeys = Object.keys(metadata);
-      metadataKeys.forEach((key) => {
-        const map = mapping[key];
-        const label = (typeof map === 'object' ? map.name : map);
-        const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
-        html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
-      });
-
-      $fileinfo.html(`${getModalCloseButtonHtml()}${html}${getFileinfoActionSectionHtml()}`);
-      bindFileinfoActionHandlers();
     }
 
     const dateFormat = (d) => {
@@ -8943,6 +9074,7 @@ const fetchBytes = async (url, opts) => {
     }
 
     const resetFileinfo = () => {
+      fileinfoRequestId += 1;
       $fileinfo.html(`${getModalCloseButtonHtml()}<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
       bindFileinfoActionHandlers();
       app.metadata = {};

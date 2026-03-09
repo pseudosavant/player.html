@@ -16,6 +16,7 @@
       --player-aspect-ratio: calc(9/16);
       --tile-aspect-ratio: var(--player-aspect-ratio);
       --tile-min-width: 23rem;
+      --tile-max-width: 34rem;
       --tile-width-ratio: 16;
       --tile-height-ratio: 9;
       --tile-arrow-size: 20%;
@@ -599,6 +600,12 @@
       transform: translateY(1px);
     }
 
+    .fileinfo-action-item button {
+      justify-self: start;
+      width: auto;
+      padding: 0 0.9rem;
+    }
+
     .modal input[type='color'] {
       width: 2rem;
       border: 0 none;
@@ -1049,12 +1056,20 @@
     .current-timestamp .duration:before { content: var(--duration); }
     .current-timestamp .divider:before  { content: ' / '; }
 
-    .progress-bar {
+    .progress-track {
       grid-area: progress-bar;
+      position: relative;
+      width: 100%;
+      height: var(--progress-bar-height);
+      overflow: visible;
+      z-index: 2000;
+    }
+
+    .progress-bar {
       display: flex;
       align-items: center;
 
-      z-index: 2000;
+      z-index: 1;
       cursor: pointer;
 
       position: relative;
@@ -1123,25 +1138,33 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      top: calc(1rem + var(--progress-bar-height));
+      --trick-gap: 0.35rem;
+      --trick-preview-height: calc(var(--trick-preview-width) * var(--player-aspect-ratio));
+      top: calc(100% + var(--trick-gap));
       left: clamp(
-        calc(var(--trick-preview-width)/2 + 1rem),
+        calc(var(--trick-preview-width) / 2),
         var(--trick-position),
-        calc(100% - var(--trick-preview-width)/2 - 1rem)
+        calc(100% - (var(--trick-preview-width) / 2))
       );
       width: var(--trick-preview-width);
-      margin-left: calc(var(--trick-preview-width) * -0.5);
+      transform: translateX(-50%) translateY(-0.25rem);
 
       position: absolute;
-      max-height: 0%;
+      height: var(--trick-preview-height);
       overflow: hidden;
       border-radius: 0 0 0.5rem 0.5rem;
       background: rgb(32,32,32);
-      transition: max-height var(--transition-base);
-      will-change: max-height;
-      border: 0 none;
-      box-shadow: 0 0 10px black;
-      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity var(--transition-base),
+        transform var(--transition-base),
+        visibility 0s linear var(--transition-base);
+      will-change: opacity, transform;
+      border: 1px solid transparent;
+      box-shadow: 0 0.35rem 10px rgba(0, 0, 0, 0.9);
+      z-index: 2;
     }
 
     .is-audio .trick-container {
@@ -1169,10 +1192,15 @@
       object-fit: cover;
     }
 
-    .is-loaded .progress-bar:hover + .trick-container {
-      border: 1px solid transparent;
-      height: calc(var(--trick-preview-width) * var(--player-aspect-ratio));
-      max-height: 100%;
+    .is-loaded .progress-track:hover .trick-container,
+    .is-loaded .progress-track:focus-within .trick-container {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+      transition:
+        opacity var(--transition-base),
+        transform var(--transition-base),
+        visibility 0s linear 0s;
     }
 
       /* Only show this button if cloud streaming is enabled/possible */
@@ -1300,9 +1328,9 @@
     .links {
       z-index: 500;
 
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
       gap: var(--inter-tile-margin);
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--tile-min-width)), 1fr));
     }
 
     .links a {
@@ -1313,7 +1341,9 @@
       align-items: center;
       overflow: hidden;
 
+      flex: 1 1 var(--tile-min-width);
       width: 100%;
+      max-width: min(100%, var(--tile-max-width));
       height: auto;
       aspect-ratio: var(--tile-width-ratio) / var(--tile-height-ratio);
 
@@ -1465,6 +1495,12 @@
 
       .links-search-clear {
         width: 100%;
+      }
+    }
+
+    @media (max-width: 74rem) {
+      .links a {
+        max-width: none;
       }
     }
 

@@ -17,7 +17,7 @@ It can be used as:
 * Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
 * Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
 * Client-side search across indexed media filenames from the current library root.
-* Load default behavior from `player.html.json` and export your current configuration from the Settings modal.
+* Load default behavior from `player.html.json`, and optionally host a static `manifest.json` for PWA install metadata.
 * Upload a custom player poster image (or set one in `player.html.json`) with sensible precedence and export support.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
 * Play media from OneDrive / Google Drive (HTTPS + app keys required).
@@ -29,7 +29,7 @@ It can be used as:
 * [Features](#features)
 * [Feature requests](#feature-requests)
 * [Pre-rendered server-side thumbnails](#pre-rendered-server-side-thumbnails)
-* [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson)
+* [Configuration and PWA manifest (`player.html.json` + `manifest.json`)](#configuration-and-pwa-manifest-playerhtmljson--manifestjson)
 * [Advanced deployment patterns](#advanced-deployment-patterns)
 * [Installing ffmpeg](#installing-ffmpeg)
 * [Supported browsers](#supported-browsers)
@@ -48,6 +48,11 @@ It can be used as:
 Serve `player.html` from `https://` (or `http://localhost`) and use your browser's "Install" option to install it as an app.
 
 Once installed, it can be launched like a local media player. Some platforms also support opening local media files directly into the app (PWA file handlers).
+
+If you are customizing a hosted deployment, the usual pairing is:
+
+* `player.html.json` for player behavior and default library location
+* `manifest.json` for install-time app metadata such as name, icons, colors, `start_url`, and `scope`
 
 ## Features
 ### Core
@@ -84,7 +89,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 * Thumbnail caching using `localStorage` (view cache size, clear cache).
 
 ### PWA & Sharing
-* Installable as a PWA (inline generated manifest).
+* Installable as a PWA (generated manifest by default, or hosted `manifest.json` if present).
 * Shareable URL that resumes `player.html` in the same library root, folder, search, playlist, media item, timestamp, and subtitle selection.
 * Standard page metadata (`title`, `description`) plus favicon and PWA manifest support.
 
@@ -92,7 +97,7 @@ Once installed, it can be launched like a local media player. Some platforms als
 * Select your own theme color with hue+saturation theming (including grayscale themes at `saturation: 0`).
 * Set a custom player poster image from Settings (`Upload`) or by config (`settings.poster-image`).
 * Media file metadata (bitrate, resolution, etc).
-* Settings can be configured by file (`player.html.json`) and exported from the UI. See [Configuration file (`player.html.json`)](#configuration-file-playerhtmljson).
+* Settings can be configured by file (`player.html.json`) and exported from the UI. PWA install metadata can also be exported as `manifest.json`. See [Configuration and PWA manifest (`player.html.json` + `manifest.json`)](#configuration-and-pwa-manifest-playerhtmljson--manifestjson).
 
 ### Custom Branding
 Use `player.html` with your own look and branding:
@@ -213,12 +218,25 @@ Options:
 * `ROOT` - Root folder to scan (default: current directory)
 * `--debug` - Print ffmpeg debug output
 
-## Configuration file (`player.html.json`)
+## Configuration and PWA manifest (`player.html.json` + `manifest.json`)
 
 `player.html` can load a configuration file named `player.html.json` from the same folder as `player.html`.
 
 You can rename `player.html` (for example to `index.html`) and still keep the config filename as `player.html.json`.
 This lets you host the player at a folder root while starting in a sub-folder media library.
+
+`player.html` also generates a manifest in-memory by default for PWA installs. If you host a real `manifest.json` next to `player.html`, the page will use that instead. This is useful when you want to control install metadata such as:
+
+* App name and short name
+* Icons
+* Theme/background colors
+* `start_url`
+* `scope`
+
+In practice:
+
+* Use `player.html.json` for player behavior and defaults
+* Use `manifest.json` for install-time PWA metadata and branding
 
 Priority order (highest to lowest):
 
@@ -231,6 +249,20 @@ Priority order (highest to lowest):
 * Opening the Settings modal
 * Clicking `Export settings file`
 * Saving the downloaded `player.html.json` next to `player.html`
+
+You can create a starter `manifest.json` by:
+
+* Opening the Settings modal
+* Clicking `Export manifest.json`
+* Saving the downloaded `manifest.json` next to `player.html`
+
+Notes:
+
+* If hosted `manifest.json` is present, it is preferred over the generated inline manifest.
+* If hosted `manifest.json` is not present, `player.html` falls back to its generated inline manifest automatically.
+* `player.html.json` is the right place to set `startLocation` and other player defaults.
+* `manifest.json` is the right place to set install/app metadata. It is intentionally separate from shareable URL hash state.
+* The exported `manifest.json` is a starter. For a hosted deployment, you will often want to replace `name`, `short_name`, colors, and icon URLs with your own values.
 
 ### Example
 
@@ -259,6 +291,38 @@ Priority order (highest to lowest):
     "concurrency": 1
   },
   "volumeExponent": 1.8
+}
+```
+
+### Example `manifest.json`
+
+```json
+{
+  "short_name": "player.html",
+  "name": "player.html",
+  "description": "Drop player.html in a folder of video and audio files and play them on the web",
+  "background_color": "#FFFFFF",
+  "theme_color": "#ff0099",
+  "color": "#ff0099",
+  "icons": [
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "display": "standalone",
+  "start_url": "./player.html",
+  "scope": "./",
+  "file_handlers": [
+    {
+      "action": "./player.html",
+      "accept": {
+        "audio/*": [".mp3", ".wav", ".aac", ".m4a", ".mka", ".ogg"],
+        "video/*": [".mp4", ".mov", ".webm", ".mkv"]
+      }
+    }
+  ]
 }
 ```
 

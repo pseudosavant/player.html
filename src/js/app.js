@@ -1034,6 +1034,7 @@
     const isSearchEnabled = () => getSearchDepth() > 0;
 
     const playerConfigFilename = 'player.html.json';
+    const manifestFilename = 'manifest.json';
 
     const isObjectRecord = (value) => (value && typeof value === 'object' && !Array.isArray(value));
     const getOptionSettingsDefaults = () => (
@@ -1914,7 +1915,6 @@
 
       return state;
     }
-
     const getBaseLocation = (l) => l.protocol + '//' + l.host;
     const getMediaUrl = () => $player.src;
 
@@ -2970,10 +2970,17 @@
     });
 
     /* Progress bar */
-    const getProgressBarRelative = (e) => {
+    const getPointerClientX = (e) => {
+      if (!e) return undefined;
+      if (e.touches && e.touches.length) return e.touches[0].clientX;
+      if (typeof e.clientX === 'number') return e.clientX;
+      return undefined;
+    }
+
+    const getProgressBarRelative = (eOrClientX) => {
       const rect = $progressBar.getBoundingClientRect();
       if (!rect.width) return 0;
-      const point = (e.touches && e.touches.length ? e.touches[0].clientX : e.clientX);
+      const point = (typeof eOrClientX === 'number' ? eOrClientX : getPointerClientX(eOrClientX));
       if (isUndefined(point)) return 0;
       const raw = (point - rect.left) / rect.width;
       return minmax(0, raw, 1);
@@ -3072,19 +3079,36 @@
     const absolutePositionEl = durationEl;
     const relativePositionEl = $('.progress-bar');
     const trickPositionEl = $('.trick-container');
+    let trickHoverClientX;
+    let trickHoverRAF = 0;
 
     const updateDuration              = (d) => setCSSVariableString('--duration',          secondsToString(d), durationEl);
     const updateAbsolutePosition      = (p) => setCSSVariableString('--absolute-position', secondsToString(p), absolutePositionEl);
     const updateRelativePosition      = (p) => setCSSVariableNumber('--relative-position', `${p * 100}%`, relativePositionEl);
     const updateTrickRelativePosition = (p) => setCSSVariableNumber('--trick-position'   , `${p * 100}%`, trickPositionEl);
 
-    const progressBarTrickHover = (e) => {
-      const relative = getProgressBarRelative(e);
+    const flushProgressBarTrickHover = () => {
+      trickHoverRAF = 0;
+      if (isUndefined(trickHoverClientX)) return;
+      const relative = getProgressBarRelative(trickHoverClientX);
       const absolute = relative * getMediaDuration();
 
       updateTrickRelativePosition(relative);
 
       if (absolute >= 0) trickSeek(absolute);
+    }
+
+    const queueProgressBarTrickHover = (e) => {
+      if (window.PointerEvent && e && e.pointerType === 'touch') return;
+      const point = getPointerClientX(e);
+      if (isUndefined(point)) return;
+      trickHoverClientX = point;
+      if (trickHoverRAF) return;
+      trickHoverRAF = requestAnimationFrame(flushProgressBarTrickHover);
+    }
+
+    const clearProgressBarTrickHover = () => {
+      trickHoverClientX = undefined;
     }
 
     const trickSeek = (time) => {
@@ -3305,13 +3329,17 @@
       $player.on('volumechange', updateVolume);
       $player.on('ratechange', updatePlaybackRate);
 
-      $progressBar.on('mousemove', throttle(progressBarTrickHover, app.options.updateRate.trickHover));
       if (window.PointerEvent) {
+        $progressBar.on('pointermove', queueProgressBarTrickHover);
+        $progressBar.on('pointerleave', clearProgressBarTrickHover);
+        $progressBar.on('pointercancel', clearProgressBarTrickHover);
         $progressBar.on('pointerdown', progressDragStart);
         $progressBar.on('pointermove', progressDragMove);
         $progressBar.on('pointerup', progressDragEnd);
         $progressBar.on('pointercancel', progressDragEnd);
       } else {
+        $progressBar.on('mousemove', queueProgressBarTrickHover);
+        $progressBar.on('mouseleave', clearProgressBarTrickHover);
         $progressBar.on('mousedown', (e) => {
           progressDragStart(e);
           const move = (ev) => progressDragMove(ev);
@@ -4056,6 +4084,16 @@
         set: () => exportPlayerConfig(),
         update: () => {}
       },
+      'export-manifest': {
+        label: 'Export manifest.json',
+        buttonLabel: 'Export',
+        desc: `Download a starter ${manifestFilename} for hosting next to player.html`,
+        event: 'click',
+        type: 'button',
+        get: () => {},
+        set: async () => exportPWAManifest(),
+        update: () => {}
+      },
       reset: {
         label: 'Reset to defaults',
         buttonLabel: 'Reset',
@@ -4091,7 +4129,7 @@
       settings['search-depth'].default = getSearchDepthDefault();
     }
 
-    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'export-config']);
+    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'export-config', 'export-manifest']);
     const exportPlayerConfig = () => {
       const options = deepCloneValue(app.options);
       if (!isObjectRecord(options.settings)) options.settings = {};
@@ -4111,6 +4149,13 @@
       // `settings` is the canonical home for user-configurable defaults in exported config.
       if (Object.prototype.hasOwnProperty.call(options, 'subtitles')) delete options.subtitles;
       downloadJSON(playerConfigFilename, options);
+    }
+
+    const exportPWAManifest = async () => {
+      if (typeof window.getPWAManifest !== 'function') return;
+      const manifest = await window.getPWAManifest();
+      if (!manifest) return;
+      downloadJSON(manifestFilename, manifest);
     }
 
     const getHeaderData = async (url) => {
@@ -4176,9 +4221,41 @@
     }
 
     const supportsVideoFrameCallback = () => 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+    let fileinfoRequestId = 0;
+    const fileinfoMapping = {
+      name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
+      url: 'URL',
+      size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
+      mimeType: 'Type',
+      duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
+      bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
+      date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
+      framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
+      width: 'Width',
+      height: 'Height',
+      subtitles: 'Embedded Subtitles',
+      audioTracks: 'Audio Tracks'
+    };
+    const renderFileinfo = (metadata = {}) => {
+      app.metadata = metadata;
+
+      var html = '';
+      const metadataKeys = Object.keys(metadata);
+      metadataKeys.forEach((key) => {
+        const map = fileinfoMapping[key];
+        if (!map) return;
+        const label = (typeof map === 'object' ? map.name : map);
+        const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
+        html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
+      });
+
+      $fileinfo.html(`${getModalCloseButtonHtml()}${html}${getFileinfoActionSectionHtml()}`);
+      bindFileinfoActionHandlers();
+    }
 
     const updateFileinfo = async () => {
       const url = $player.currentSrc;
+      const requestId = ++fileinfoRequestId;
       const subtitles =   ($player.textTracks  && $player.textTracks.length  ? $player.textTracks.length  : 0);
       const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
 
@@ -4192,42 +4269,22 @@
         audioTracks: audioTracks,
       };
 
+      renderFileinfo(metadata);
+
       const headerData = await getHeaderData(url);
+      if (requestId !== fileinfoRequestId || $player.currentSrc !== url) return;
       if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
 
       const headerKeys = Object.keys(headerData);
       headerKeys.forEach((k) => metadata[k] = headerData[k]);
+      renderFileinfo(metadata);
 
-      if (!isAudio(url) && supportsVideoFrameCallback()) metadata.framerate = await getFramerate($player);
-
-      const mapping = {
-        name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
-        url: 'URL',
-        size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
-        mimeType: 'Type',
-        duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
-        bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
-        date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
-        framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
-        width: 'Width',
-        height: 'Height',
-        subtitles: 'Embedded Subtitles',
-        audioTracks: 'Audio Tracks'
+      if (!isAudio(url) && supportsVideoFrameCallback()) {
+        const framerate = await getFramerate($player);
+        if (requestId !== fileinfoRequestId || $player.currentSrc !== url) return;
+        metadata.framerate = framerate;
+        renderFileinfo(metadata);
       }
-      app.metadata = metadata;
-
-      // Generate HTML for each fileinfo metadata item
-      var html = '';
-      const metadataKeys = Object.keys(metadata);
-      metadataKeys.forEach((key) => {
-        const map = mapping[key];
-        const label = (typeof map === 'object' ? map.name : map);
-        const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
-        html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
-      });
-
-      $fileinfo.html(`${getModalCloseButtonHtml()}${html}${getFileinfoActionSectionHtml()}`);
-      bindFileinfoActionHandlers();
     }
 
     const dateFormat = (d) => {
@@ -4243,6 +4300,7 @@
     }
 
     const resetFileinfo = () => {
+      fileinfoRequestId += 1;
       $fileinfo.html(`${getModalCloseButtonHtml()}<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
       bindFileinfoActionHandlers();
       app.metadata = {};

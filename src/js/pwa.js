@@ -1,14 +1,26 @@
+    const manifestFilename = 'manifest.json';
+    const manifestTitle = document.title;
+    window.getPWAManifest = getPWAManifest;
+
     const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
     if (iconLink) {
+      const manifest = await getPWAManifest();
+      if (manifest) await setPWAManifest(manifest);
+    }
+
+    async function getPWAManifest() {
+      const iconLink = document.querySelector('link[rel="shortcut icon"]') || document.querySelector('link[rel="icon"]');
+      if (!iconLink) return undefined;
+
       const icon = iconLink.href;
       const metadata = await imageMetadata(icon);
       const startUrl = window.location.href.split('#')[0];
       const scopeUrl = new URL('./', startUrl).toString();
       const themeColor = resolveManifestColor(getCSSVariable('--theme-color'));
 
-      const manifest = {
-        short_name: document.title,
-        name: document.title,
+      return {
+        short_name: manifestTitle,
+        name: manifestTitle,
         description: document.querySelector('meta[name="description"]').content,
         background_color: '#FFFFFF',
         theme_color: themeColor,
@@ -25,15 +37,14 @@
         scope: scopeUrl,
         file_handlers: [
           {
-            action: location.href.split('#')[0],
+            action: startUrl,
             accept: {
               "audio/*": [".mp3", ".wav", ".aac", ".m4a", ".mka", ".ogg"],
               "video/*": [".mp4", ".mov", ".webm", ".mkv"]
             }
           }
         ]
-      }
-      setPWAManifest(manifest);
+      };
     }
 
     function resolveManifestColor(value) {
@@ -58,17 +69,42 @@
       return (computed ? computed : fallback);
     }
 
-    function setPWAManifest(manifest) {
+    async function hasHostedManifest(url) {
+      try {
+        const head = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        if (head.ok) return true;
+        if (![405, 501].includes(head.status)) return false;
+      } catch (e) {}
+
+      try {
+        const get = await fetch(url, { method: 'GET', cache: 'no-store' });
+        return get.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function manifestToDataURI(manifest) {
       const json = JSON.stringify(manifest);
       const base64 = base64EncodeUTF(json);
       const mimeType = 'application/json';
-      const dataURI = `data:${mimeType};base64,${base64}`;
+      return `data:${mimeType};base64,${base64}`;
+    }
 
-      const link = document.createElement('link');
+    async function setPWAManifest(manifest) {
+      const hostedManifestUrl = new URL(manifestFilename, manifest.start_url).toString();
+      const href = (await hasHostedManifest(hostedManifestUrl))
+        ? hostedManifestUrl
+        : manifestToDataURI(manifest);
+      let link = document.querySelector('link[data-pwa-manifest="true"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.setAttribute('rel', 'manifest');
+        link.setAttribute('data-pwa-manifest', 'true');
+        document.querySelector('head').appendChild(link);
+      }
       link.setAttribute('rel', 'manifest');
-      link.setAttribute('href', dataURI);
-
-      document.querySelector('head').appendChild(link);
+      link.setAttribute('href', href);
     }
 
     function imageMetadata(src) {
