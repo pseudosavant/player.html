@@ -922,9 +922,10 @@
 
     const createFolderTemplate = (url, label, optionalClasses = '') => {
       const escapedUrl = escapeAttr(url);
-      const safeLabel = escapeHtml(label);
       const safeTitle = escapeAttr(`Navigate to ${url}`);
       const isParent = optionalClasses.split(' ').includes('parent');
+      const displayLabel = (isParent ? 'Parent Folder' : label);
+      const safeLabel = escapeHtml(displayLabel);
       const addButton = (isParent ? '' : `
                   <button class='btn-add-to-playlist' type='button' title='Add folder to playlist' aria-label='Add folder to playlist'>
                     <svg><use xlink:href='#svg-playlist-add'/></svg>

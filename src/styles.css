@@ -25,7 +25,7 @@
       --tile-font-color: var(--text-on-tile-title);
       --tile-title-background-color: var(--bg-tile-title);
       --tile-background-color: var(--bg-tile);
-      --inter-tile-margin: 1rem;
+      --inter-tile-margin: 0.75rem;
 
       --modal-font-color: var(--text-primary);
 
@@ -232,6 +232,7 @@
       left: 0;
       margin: 1rem 0 0 1.5rem;
       font-size: 1.5em;
+      font-weight: 500;
       color: rgba(255,255,255,0);
       text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0);
       cursor: text;
@@ -480,7 +481,14 @@
       display: grid;
       grid-template-columns: minmax(10rem, 12rem) minmax(0, 1fr);
       gap: 1rem;
+    }
+
+    .fileinfo-item {
       align-items: start;
+    }
+
+    .setting-item {
+      align-items: center;
     }
 
     .fileinfo-item .key, .help-item .key, .setting-item .key {
@@ -496,6 +504,13 @@
       white-space: normal;
       overflow-wrap: anywhere;
       word-break: break-word;
+    }
+
+    .setting-item .desc,
+    .setting-item .desc label {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
     }
 
     .help-item .key {
@@ -569,6 +584,11 @@
         color var(--transition-base),
         transform var(--transition-base);
     }
+    .modal button:not(:has(svg)) {
+      font-weight: bold;
+      color: white;
+      text-shadow: 0.5px 0.5px 1px black;
+    }
     .modal .reset-defaults:hover {
       background-color: var(--accent-hover);
     }
@@ -588,8 +608,6 @@
     .modal .setting-item button:not(:has(svg)) {
       background-color: var(--accent);
       border: 0 none;
-      color: var(--text-on-accent);
-      text-shadow: none;
     }
     .modal .setting-item button:not(:has(svg)):hover,
     .modal .setting-item button:not(:has(svg)):focus-visible {
@@ -604,6 +622,10 @@
       justify-self: start;
       width: auto;
       padding: 0 0.9rem;
+    }
+
+    .fileinfo-action-item {
+      align-items: center;
     }
 
     .modal input[type='color'] {
@@ -840,7 +862,6 @@
     }
     .open-url .open-url-actions .open-url-cancel {
       background-color: var(--button-quiet-bg);
-      color: var(--modal-font-color);
     }
     .open-url .open-url-actions .open-url-cancel:hover,
     .open-url .open-url-actions .open-url-cancel:focus-visible {
@@ -1250,7 +1271,7 @@
       gap: 2rem;
 
       max-width: 100vw;
-      margin-top: 1rem;
+      margin-top: 0.5rem;
       padding-inline: 1rem;
       padding-bottom: 2rem;
     }
@@ -1328,9 +1349,9 @@
     .links {
       z-index: 500;
 
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
       gap: var(--inter-tile-margin);
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--tile-min-width)), 1fr));
     }
 
     .links a {
@@ -1341,9 +1362,7 @@
       align-items: center;
       overflow: hidden;
 
-      flex: 1 1 var(--tile-min-width);
       width: 100%;
-      max-width: min(100%, var(--tile-max-width));
       height: auto;
       aspect-ratio: var(--tile-width-ratio) / var(--tile-height-ratio);
 
@@ -1351,6 +1370,7 @@
       border-radius: var(--tile-border-radius);
 
       background-color: var(--tile-background-color);
+      box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.18);
       color: var(--tile-font-color);
       text-decoration: none;
 
@@ -1385,11 +1405,11 @@
       text-shadow: 0.5px 0.5px 1px rgba(0,0,0,1);
       padding: 1rem;
 
-      background-color: var(--tile-title-background-color);
+      background-color: hsla(var(--theme-hue), var(--sat-muted), 25%, 0.8);
       border-radius: 0 0 var(--tile-border-radius) var(--tile-border-radius);
 
-      -webkit-backdrop-filter: blur(var(--blur-base) / 4);
-      backdrop-filter: blur(var(--blur-base) / 4);
+      -webkit-backdrop-filter: blur(calc(var(--blur-base) / 2));
+      backdrop-filter: blur(calc(var(--blur-base) / 2));
     }
 
     .links a .title .label {
@@ -1438,14 +1458,6 @@
 
     .links a:hover .btn-add-to-playlist { opacity: 1; }
 
-    .links a.parent .title::after {
-      content: '[Parent Folder]';
-    }
-    .links a.parent .title .label {
-      display: none;
-    }
-
-
     .links a .title .icon {
       display: none;
     }
@@ -1454,10 +1466,9 @@
       display: initial;
     }
 
-    .folder .title svg {
-      height: 1em;
-      width: 1em;
-      margin-bottom: -0.18em;
+    .folder .title .icon {
+      height: 1.5rem;
+      width: 1.5rem;
     }
 
     .file.audio-file {
@@ -1495,12 +1506,6 @@
 
       .links-search-clear {
         width: 100%;
-      }
-    }
-
-    @media (max-width: 74rem) {
-      .links a {
-        max-width: none;
       }
     }
 
