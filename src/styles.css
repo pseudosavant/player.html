@@ -14,29 +14,8 @@
 
     html {
       --player-aspect-ratio: calc(9/16);
-      --tile-aspect-ratio: var(--player-aspect-ratio);
-      --tile-min-width: 23rem;
-      --tile-max-width: 34rem;
-      --tile-width-ratio: 16;
-      --tile-height-ratio: 9;
-      --tile-arrow-size: 20%;
-      --tile-arrow-size-active: 33.333%;
-      --tile-border-radius: 0.6rem / 0.5rem;
-      --tile-font-color: var(--text-on-tile-title);
-      --tile-title-background-color: var(--bg-tile-title);
-      --tile-background-color: var(--bg-tile);
+      --radius-card: 0.6rem / 0.5rem;
       --inter-tile-margin: 0.75rem;
-
-      --modal-font-color: var(--text-primary);
-
-      --progress-bar-background-color: var(--theme-100);
-      --progress-bar-position-color: var(--accent);
-      --progress-bar-height: 1rem;
-      --progress-bar-buffer-color: var(--theme-300);
-      --trick-preview-width: max(10vw, 100px);
-
-      --base-background-color: var(--bg-page);
-      --base-overlay-color: 128,128,128;
 
       --default-hue: 323;
       --theme-hue: var(--default-hue);
@@ -45,34 +24,32 @@
       --sat-soft: clamp(0%, calc(var(--theme-saturation) * 0.35), 100%);
       --sat-muted: clamp(0%, calc(var(--theme-saturation) * 0.15), 100%);
       --theme-100: hsl(var(--theme-hue), var(--sat-soft), 95%);
-      --theme-200: hsl(var(--theme-hue), var(--sat-soft), 88%);
       --theme-300: hsl(var(--theme-hue), var(--sat-soft), 76%);
       --theme-500: hsl(var(--theme-hue), var(--sat-strong), 50%);
-      --theme-700: hsl(var(--theme-hue), var(--sat-muted), 26%);
       --theme-900: hsl(var(--theme-hue), var(--sat-muted), 14%);
-      --theme-color-base: var(--theme-hue), var(--sat-strong), 50%;
-      --theme-color: var(--theme-500);
+
+      --surface-page: #0a0b0e;
+      --surface-modal: hsla(var(--theme-hue), var(--sat-muted), 14%, 0.5);
+      --surface-tile: var(--theme-900);
+      --surface-modal-item: rgba(255,255,255,0.08);
+      --surface-modal-button: rgba(255,255,255,0.18);
+      --surface-modal-button-hover: rgba(255,255,255,0.26);
+      --surface-modal-button-active: rgba(255,255,255,0.34);
+      --border-modal-button: rgba(255,255,255,0.24);
+      --surface-quiet: rgba(255,255,255,0.08);
+      --surface-quiet-hover: rgba(255,255,255,0.16);
+      --surface-quiet-active: rgba(255,255,255,0.24);
+      --border-subtle: rgba(255,255,255,0.2);
+
+      --text-primary: #f5f7fa;
+      --text-secondary: #c7ccd4;
+      --text-on-accent: #ffffff;
+      --text-on-overlay: #ffffff;
+
       --accent: var(--theme-500);
       --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
       --accent-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
       --focus-ring: var(--accent);
-
-      --folder-color: hsl(44,100%,68%);
-      --file-color: #FFF;
-      --playing-color: var(--theme-300);
-
-      --primary-font-color: var(--text-primary);
-      --secondary-font-color: var(--text-secondary);
-
-      --modal-background-color: var(--bg-modal);
-      --thumbnail-overlay-color: rgba(64,64,64,0.2);
-      --modal-item-background: rgba(255,255,255,0.08);
-      --modal-divider-color: rgba(255,255,255,0.2);
-      --button-quiet-bg: rgba(255,255,255,0.08);
-      --button-quiet-hover: rgba(255,255,255,0.16);
-      --button-quiet-active: rgba(255,255,255,0.24);
-      --text-on-accent: #ffffff;
-      --text-on-tile-title: #ffffff;
 
       --transition-base: 300ms;
       --blur-base: 1rem;
@@ -94,8 +71,8 @@
 
       font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
       font-size: 12px;
-      background-color: var(--base-background-color);
-      color: var(--primary-font-color);
+      background-color: var(--surface-page);
+      color: var(--text-primary);
     }
 
     @media (prefers-reduced-motion) {
@@ -110,31 +87,7 @@
       display: none !important;
     }
 
-    html {
-      /* Dark mode defaults */
-      --bg-page: #0a0b0e;
-      --bg-elevated: #111317;
-      --bg-modal: hsla(var(--theme-hue), var(--sat-muted), 14%, 0.5);
-      --bg-tile: var(--theme-900);
-      --bg-tile-title: var(--theme-700);
-      --text-primary: #f5f7fa;
-      --text-secondary: #c7ccd4;
-      --text-on-tile-title: #ffffff;
-      --text-on-accent: #ffffff;
-      --modal-item-background: rgba(255,255,255,0.08);
-      --modal-divider-color: rgba(255,255,255,0.2);
-      --button-quiet-bg: rgba(255,255,255,0.08);
-      --button-quiet-hover: rgba(255,255,255,0.16);
-      --button-quiet-active: rgba(255,255,255,0.24);
-      --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
-      --accent-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
-    }
-
-    :fullscreen html      { --base-background-color: hsl(var(--theme-hue), var(--sat-strong), 4%); }
-
-    :fullscreen, :fullscreen * {
-      --modal-background-color: var(--bg-modal);
-    }
+    :fullscreen html      { background-color: hsl(var(--theme-hue), var(--sat-strong), 4%); }
 
     body {
       display: grid;
@@ -316,7 +269,7 @@
       max-width: 100vw;
       overflow-x: auto;
 
-      color: var(--modal-font-color);
+      color: var(--text-on-overlay);
 
       margin: 0;
       transform: translateX(-100vw);
@@ -333,10 +286,11 @@
 
       list-style: none;
 
-      background-color: var(--modal-background-color);
-      border-right: 8px solid var(--modal-background-color);
-      border-bottom: 8px solid var(--modal-background-color);
+      background-color: var(--surface-modal);
+      border-right: 8px solid var(--surface-modal);
+      border-bottom: 8px solid var(--surface-modal);
       border-bottom-right-radius: 1rem;
+      box-shadow: 0.1rem 0.1rem 2rem rgba(0, 0, 0, 0.3);
       background-image: linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0));
       -webkit-backdrop-filter: blur(var(--blur-base));
       backdrop-filter: blur(var(--blur-base));
@@ -376,7 +330,7 @@
       display: block;
       width: 100%;
       padding: 0.5rem 0.25rem;
-      color: var(--text-primary);
+      color: var(--text-on-overlay);
       text-shadow: none;
       font-weight: bold;
       text-transform: uppercase;
@@ -404,7 +358,7 @@
       z-index: 200;
     }
     .modal .modal-close-btn svg {
-      fill: var(--modal-font-color);
+      fill: var(--text-on-overlay);
     }
     .modal .modal-close-btn:hover svg,
     .modal .modal-close-btn:focus-visible svg {
@@ -422,7 +376,7 @@
       width: 100%;
       position: relative;
       margin: 0;
-      background-color: var(--modal-item-background);
+      background-color: var(--surface-modal-item);
     }
     .modal-item:first-of-type {
       border-top-left-radius: 0.75rem;
@@ -442,7 +396,7 @@
       background: transparent;
       border: 0 none;
       border-radius: 0.25rem;
-      color: var(--modal-font-color);
+      color: var(--text-on-overlay);
       padding: 0;
       margin: 0;
       cursor: pointer;
@@ -450,10 +404,10 @@
     }
     .subtitle-item:has(.subtitle-choice:hover),
     .subtitle-item:has(.subtitle-choice:focus-visible) {
-      background-color: var(--button-quiet-hover);
+      background-color: var(--surface-quiet-hover);
     }
     .subtitle-item:has(.subtitle-choice:active) {
-      background-color: var(--button-quiet-active);
+      background-color: var(--surface-quiet-active);
     }
     .modal-section-heading,
     .subtitle-section-heading {
@@ -462,7 +416,7 @@
       padding: 0.6rem 0.25rem;
       background: transparent;
       border-radius: 0 !important;
-      color: var(--text-primary);
+      color: var(--text-on-overlay);
       text-shadow: none;
       font-weight: bold;
       text-transform: uppercase;
@@ -473,7 +427,7 @@
     .fileinfo-actions-heading {
       margin-top: 0.75rem;
       padding-top: 0.85rem;
-      border-top: 1px solid var(--modal-divider-color);
+      border-top: 1px solid var(--border-subtle);
     }
 
     .fileinfo-item,
@@ -519,7 +473,7 @@
       align-items: center;
       width: 12ch;
       padding: 0.75em;
-      border-radius: var(--tile-border-radius);
+      border-radius: var(--radius-card);
       background-color: #333;
       text-align: center;
       gap: 1rem;
@@ -548,7 +502,6 @@
       outline: none;
 
       --input-background-color: #999;
-      --input-slider-color: #FFF;
     }
 
     .modal select {
@@ -570,7 +523,7 @@
       text-align-last: left;
     }
     .modal input:checked {
-      --input-background-color: var(--theme-color);
+      --input-background-color: var(--accent);
     }
 
     .modal .reset-defaults {
@@ -634,7 +587,7 @@
       padding: 0;
       background-color: var(--input-background-color);
     }
-    .modal input.setting-hue { --input-background-color: var(--theme-color); }
+    .modal input.setting-hue { --input-background-color: var(--accent); }
     .modal input.setting-subtitle-color { --input-background-color: var(--subtitle-color); }
     .modal input.setting-subtitle-background { --input-background-color: var(--subtitle-background-color); }
 
@@ -711,8 +664,9 @@
       padding: 0.35rem 0.75rem;
       font-weight: bold;
       border-radius: 1rem;
-      background-color: var(--button-quiet-bg);
-      color: var(--modal-font-color);
+      background-color: var(--surface-modal-button);
+      box-shadow: inset 0 0 0 1px var(--border-modal-button);
+      color: var(--text-on-overlay);
       border: 0 none;
       gap: 0.35rem;
       transition:
@@ -721,20 +675,20 @@
         transform var(--transition-base);
     }
     .playlist .playlist-controls button:not(:has(> svg:only-child)):hover {
-      background-color: var(--button-quiet-hover);
+      background-color: var(--surface-modal-button-hover);
     }
     .playlist .playlist-controls button:not(:has(> svg:only-child)):active {
-      background-color: var(--button-quiet-active);
+      background-color: var(--surface-modal-button-active);
       transform: translateY(1px);
     }
     .playlist .playlist-controls button:not(:has(> svg:only-child)):focus-visible {
-      background-color: var(--button-quiet-hover);
+      background-color: var(--surface-modal-button-hover);
     }
 
     .playlist .playlist-controls button svg {
       width: 1rem;
       height: 1rem;
-      fill: var(--modal-font-color);
+      fill: var(--text-on-overlay);
     }
 
     .playlist-item {
@@ -790,7 +744,7 @@
     .playlist-item .playlist-actions svg {
       width: 1.5rem;
       height: 1.5rem;
-      fill: var(--modal-font-color);
+      fill: var(--text-on-overlay);
     }
 
     .playlist-empty {
@@ -809,7 +763,7 @@
       width: 100%;
     }
     .open-url .open-url-label {
-      color: var(--text-primary);
+      color: var(--text-on-overlay);
       font-weight: bold;
       line-height: 1.2;
     }
@@ -818,7 +772,7 @@
       min-width: 0;
       height: 2.25rem;
       border-radius: 0.75rem;
-      border: 1px solid var(--modal-divider-color);
+      border: 1px solid var(--border-subtle);
       background-color: rgba(255,255,255,0.92);
       color: #111;
       padding: 0 0.75rem;
@@ -862,18 +816,18 @@
       transform: translateY(1px);
     }
     .open-url .open-url-actions .open-url-cancel {
-      background-color: var(--button-quiet-bg);
+      background-color: var(--surface-modal-button);
+      box-shadow: inset 0 0 0 1px var(--border-modal-button);
     }
     .open-url .open-url-actions .open-url-cancel:hover,
     .open-url .open-url-actions .open-url-cancel:focus-visible {
-      background-color: var(--button-quiet-hover);
+      background-color: var(--surface-modal-button-hover);
     }
     .open-url .open-url-actions .open-url-cancel:active {
-      background-color: var(--button-quiet-active);
+      background-color: var(--surface-modal-button-active);
     }
 
     .color-scheme-change-transition, .color-scheme-change-transition * {
-      --transition-args: calc(var(--transition-base) * 3) ease;
       transition:
         background-color var(--transition-base),
         background-image var(--transition-base),
@@ -882,13 +836,15 @@
     }
 
     .controls {
+      --progress-height: 1rem;
+
       grid-area: controls;
 
       display: grid;
       grid-template-areas:
         "progress-bar       progress-bar     progress-bar"
         "secondary-controls primary-controls settings-controls";
-      grid-template-rows: calc(1rem + var(--progress-bar-height)) min-content;
+      grid-template-rows: calc(1rem + var(--progress-height)) min-content;
       grid-template-columns: 1fr auto 1fr;
       row-gap: 1.25rem;
 
@@ -897,7 +853,7 @@
       width: 100%;
       text-align: center;
 
-      color: var(--primary-font-color);
+      color: var(--text-primary);
 
       transition: transform var(--transition-base);
       will-change: transform;
@@ -907,16 +863,14 @@
     :-webkit-full-screen .controls {
       position: absolute;
       bottom: 0;
-      background-color: rgba(var(--base-overlay-color), 1);
-      --base-overlay-color: 0,0,0;
+      background-color: rgba(0, 0, 0, 1);
 
       transform: none;
     }
     :fullscreen .controls  {
       position: absolute;
       bottom: 0;
-      background-color: rgba(var(--base-overlay-color), 1);
-      --base-overlay-color: 0,0,0;
+      background-color: rgba(0, 0, 0, 1);
 
       transform: none;
     }
@@ -968,11 +922,11 @@
     }
     .controls button:not(:has(svg)):hover,
     .controls button:not(:has(svg)):focus-visible {
-      background-color: var(--button-quiet-hover);
+      background-color: var(--surface-quiet-hover);
       border-radius: 999px;
     }
     .controls button:not(:has(svg)):active {
-      background-color: var(--button-quiet-active);
+      background-color: var(--surface-quiet-active);
       border-radius: 999px;
       transform: translateY(1px);
     }
@@ -1008,7 +962,7 @@
     .controls .btn-playback-rate:after {
       display: block;
 
-      color: var(--base-background-color);
+      color: var(--text-on-accent);
       content: var(--playback-rate) 'x';
       position: absolute;
       text-align: center;
@@ -1071,7 +1025,7 @@
       position: absolute;
       right: 0;
       top: 0;
-      margin-top: calc(0.6rem + var(--progress-bar-height));
+      margin-top: calc(0.6rem + var(--progress-height));
     }
 
     .current-timestamp .position:before { content: var(--absolute-position); }
@@ -1079,10 +1033,15 @@
     .current-timestamp .divider:before  { content: ' / '; }
 
     .progress-track {
+      --progress-background-color: var(--theme-100);
+      --progress-position-color: var(--accent);
+      --progress-buffer-color: var(--theme-300);
+      --preview-width: max(10vw, 100px);
+
       grid-area: progress-bar;
       position: relative;
       width: 100%;
-      height: var(--progress-bar-height);
+      height: var(--progress-height);
       overflow: visible;
       z-index: 2000;
     }
@@ -1098,11 +1057,11 @@
       top: 0;
       left: 0;
       width: 100%;
-      height: var(--progress-bar-height);
+      height: var(--progress-height);
 
       border-radius: 10rem;
 
-      background-color: var(--progress-bar-background-color);
+      background-color: var(--progress-background-color);
     }
 
     .progress-bar::after, .progress-bar::before {
@@ -1129,8 +1088,8 @@
       left: 0;
       height: 100%;
       width: var(--relative-position);
-      background-color: var(--progress-bar-position-color);
-      margin-bottom: calc(0.4rem + var(--progress-bar-height));
+      background-color: var(--progress-position-color);
+      margin-bottom: calc(0.4rem + var(--progress-height));
     }
 
     /* Indicator */
@@ -1140,7 +1099,7 @@
       position: absolute;
 
       --indicator-position: clamp(0.45rem, var(--relative-position), calc(100% - 0.45rem));
-      --indicator-size: calc(var(--progress-bar-height) + 0.4rem);
+      --indicator-size: calc(var(--progress-height) + 0.4rem);
       left: clamp(
         calc(var(--indicator-size) / 2),
         var(--indicator-position),
@@ -1161,14 +1120,14 @@
       align-items: center;
       justify-content: center;
       --trick-gap: 0.35rem;
-      --trick-preview-height: calc(var(--trick-preview-width) * var(--player-aspect-ratio));
+      --trick-preview-height: calc(var(--preview-width) * var(--player-aspect-ratio));
       top: calc(100% + var(--trick-gap));
       left: clamp(
-        calc(var(--trick-preview-width) / 2),
+        calc(var(--preview-width) / 2),
         var(--trick-position),
-        calc(100% - (var(--trick-preview-width) / 2))
+        calc(100% - (var(--preview-width) / 2))
       );
-      width: var(--trick-preview-width);
+      width: var(--preview-width);
       transform: translateX(-50%) translateY(-0.25rem);
 
       position: absolute;
@@ -1296,7 +1255,7 @@
       min-width: 0;
       height: 2.75rem;
       border-radius: 999px;
-      border: 1px solid var(--modal-divider-color);
+      border: 1px solid var(--border-subtle);
       background-color: rgba(255,255,255,0.92);
       color: #111;
       padding: 0 1rem;
@@ -1348,6 +1307,12 @@
     }
 
     .links {
+      --tile-min-width: 23rem;
+      --tile-width-ratio: 16;
+      --tile-height-ratio: 9;
+      --tile-arrow-size: 20%;
+      --tile-arrow-size-active: 33.333%;
+
       z-index: 500;
 
       display: grid;
@@ -1368,11 +1333,11 @@
       aspect-ratio: var(--tile-width-ratio) / var(--tile-height-ratio);
 
       padding: 0;
-      border-radius: var(--tile-border-radius);
+      border-radius: var(--radius-card);
 
-      background-color: var(--tile-background-color);
+      background-color: var(--surface-tile);
       box-shadow: 0 0.15rem 0.6rem rgba(0, 0, 0, 0.18);
-      color: var(--tile-font-color);
+      color: var(--text-on-overlay);
       text-decoration: none;
 
       /* Oversize the background to crop off bad video edges */
@@ -1407,7 +1372,7 @@
       padding: 1rem;
 
       background-color: hsla(var(--theme-hue), var(--sat-muted), 25%, 0.8);
-      border-radius: 0 0 var(--tile-border-radius) var(--tile-border-radius);
+      border-radius: 0 0 var(--radius-card) var(--radius-card);
 
       -webkit-backdrop-filter: blur(calc(var(--blur-base) / 2));
       backdrop-filter: blur(calc(var(--blur-base) / 2));
@@ -1527,8 +1492,8 @@
         height var(--transition-options);
       will-change: fill, background-blend-mode, transform, width, height;
     }
-    .file svg { fill: var(--file-color); }
-    .folder svg { fill: var(--folder-color); }
+    .file svg { fill: #ffffff; }
+    .folder svg { fill: hsl(44, 100%, 68%); }
 
     .current { background-blend-mode: luminosity; }
     .current::before {
@@ -1542,10 +1507,10 @@
     }
 
     .file:hover .arrow svg,
-    .file .btn-add-to-playlist:hover svg { fill: var(--theme-color); }
+    .file .btn-add-to-playlist:hover svg { fill: var(--accent); }
     .current .arrow svg {
-      fill: var(--playing-color);
-      filter: drop-shadow(0px 0px 3px var(--playing-color));
+      fill: var(--theme-300);
+      filter: drop-shadow(0px 0px 3px var(--theme-300));
     }
 
     .folder .arrow .closed,
@@ -1562,7 +1527,7 @@
 
     footer a {
       text-decoration: none;
-      color: var(--secondary-font-color);
+      color: var(--text-secondary);
     }
 
     html[data-blur="disabled"] { --blur-base: 0rem; }
@@ -1570,7 +1535,7 @@
     .no-volume .btn-volume { display: none; }
 
     @media (max-width: 650px) {
-      html { --progress-bar-height: 1.25rem; }
+      .controls { --progress-height: 1.25rem; }
       .controls {
         grid-template-areas:
           "progress-bar       progress-bar"
@@ -1605,64 +1570,16 @@
 
     @media (prefers-color-scheme: light) {
       html {
-        --bg-page: #f8f9fb;
-        --bg-elevated: #ffffff;
-        --bg-modal: hsla(var(--theme-hue), var(--sat-soft), 95%, 0.5);
-        --bg-tile: var(--theme-100);
-        --bg-tile-title: var(--theme-700);
+        --surface-page: #f8f9fb;
+        --surface-modal: hsla(var(--theme-hue), var(--sat-soft), 95%, 0.5);
+        --surface-tile: var(--theme-100);
         --text-primary: #111111;
         --text-secondary: #3a3a3a;
-        --text-on-tile-title: #ffffff;
-        --text-on-accent: #ffffff;
-        --modal-item-background: rgba(0,0,0,0.08);
-        --modal-divider-color: rgba(0,0,0,0.2);
-        --button-quiet-bg: rgba(0,0,0,0.08);
-        --button-quiet-hover: rgba(0,0,0,0.14);
-        --button-quiet-active: rgba(0,0,0,0.22);
-        --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
+        --surface-modal-item: rgba(64, 64, 64, 0.5);
+        --border-subtle: rgba(0,0,0,0.2);
+        --surface-quiet: rgba(0,0,0,0.08);
+        --surface-quiet-hover: rgba(0,0,0,0.14);
+        --surface-quiet-active: rgba(0,0,0,0.22);
         --accent-active: hsl(var(--theme-hue), var(--sat-strong), 36%);
       }
-    }
-
-    /* @media (prefers-color-scheme: dark) {
-    } */
-
-    /* Light mode override */
-    html[data-color-scheme="light"] {
-      --bg-page: #f8f9fb;
-      --bg-elevated: #ffffff;
-      --bg-modal: hsla(var(--theme-hue), var(--sat-soft), 95%, 0.5);
-      --bg-tile: var(--theme-100);
-      --bg-tile-title: var(--theme-700);
-      --text-primary: #111111;
-      --text-secondary: #3a3a3a;
-      --text-on-tile-title: #ffffff;
-      --text-on-accent: #ffffff;
-      --modal-item-background: rgba(0,0,0,0.08);
-      --modal-divider-color: rgba(0,0,0,0.2);
-      --button-quiet-bg: rgba(0,0,0,0.08);
-      --button-quiet-hover: rgba(0,0,0,0.14);
-      --button-quiet-active: rgba(0,0,0,0.22);
-      --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
-      --accent-active: hsl(var(--theme-hue), var(--sat-strong), 36%);
-    }
-
-    /* Dark mode override */
-    html[data-color-scheme="dark"] {
-      --bg-page: #0a0b0e;
-      --bg-elevated: #111317;
-      --bg-modal: hsla(var(--theme-hue), var(--sat-muted), 14%, 0.5);
-      --bg-tile: var(--theme-900);
-      --bg-tile-title: var(--theme-700);
-      --text-primary: #f5f7fa;
-      --text-secondary: #c7ccd4;
-      --text-on-tile-title: #ffffff;
-      --text-on-accent: #ffffff;
-      --modal-item-background: rgba(255,255,255,0.08);
-      --modal-divider-color: rgba(255,255,255,0.2);
-      --button-quiet-bg: rgba(255,255,255,0.08);
-      --button-quiet-hover: rgba(255,255,255,0.16);
-      --button-quiet-active: rgba(255,255,255,0.24);
-      --accent-hover: hsl(var(--theme-hue), var(--sat-strong), 80%);
-      --accent-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
     }

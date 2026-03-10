@@ -2286,7 +2286,7 @@
     }
 
     const rangesToGradient = (ranges, duration) => {
-      const color = 'var(--progress-bar-buffer-color)';
+      const color = 'var(--progress-buffer-color)';
 
       const gradient = ranges.reduce((acc, range) => {
         const relativeStart = `${(range.start / duration) * 100}%`;
@@ -4311,7 +4311,7 @@
     const getSVGPoster = (colorValue) => {
       const color = (isString(colorValue) && colorValue.trim().length > 0
         ? colorValue.trim()
-        : String(getCSSVariable('--theme-color')).trim());
+        : String(getCSSVariable('--accent')).trim());
 
       const svg = `<?xml version='1.0' encoding='UTF-8' standalone='no'?>
         <svg  width='32' height='32' viewBox='9 7 32 33' version='1.1' xmlns='http://www.w3.org/2000/svg'>
@@ -4447,7 +4447,6 @@
       const saturation = normalizeThemeSaturation(saturationValue, settings.saturation.default);
       setCSSVariableNumber('--theme-hue', hue, $html);
       setCSSVariableNumber('--theme-saturation', `${saturation}%`, $html);
-      setCSSVariableNumber('--theme-color-base', `${hue}, ${saturation}%, 50%`, $html);
       const hex = HSLToHex(hue, saturation, 50);
       const textOnAccent = (() => {
         const parseHex = (value) => {

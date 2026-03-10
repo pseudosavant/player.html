@@ -16,7 +16,7 @@
       const metadata = await imageMetadata(icon);
       const startUrl = window.location.href.split('#')[0];
       const scopeUrl = new URL('./', startUrl).toString();
-      const themeColor = resolveManifestColor(getCSSVariable('--theme-color'));
+      const themeColor = resolveManifestColor(getCSSVariable('--accent'));
 
       return {
         short_name: manifestTitle,
