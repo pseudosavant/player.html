@@ -709,6 +709,7 @@
       width: auto;
       height: auto;
       padding: 0.35rem 0.75rem;
+      font-weight: bold;
       border-radius: 1rem;
       background-color: var(--button-quiet-bg);
       color: var(--modal-font-color);
@@ -845,7 +846,7 @@
       padding: 0.35rem 0.9rem;
       border-radius: 999px;
       border: 0 none;
-      color: var(--text-on-accent);
+      color: #fff;
       background-color: var(--accent);
       transition:
         background-color var(--transition-base),
