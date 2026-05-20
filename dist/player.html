@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.33.0'>
+  <meta name='version' content='2.34.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -6103,6 +6103,7 @@ const fetchBytes = async (url, opts) => {
       } else {
         $body.removeClass('playlist-multiple');
       }
+      updateMediaSessionActionHandlers();
     }
 
     const clearPlaylist = () => {
@@ -6956,6 +6957,7 @@ const fetchBytes = async (url, opts) => {
 
       setAriaPressed('.btn-play-pause', state === 'play');
       if (state === 'stop') resetPlayerBackground();
+      updateMediaSessionPlaybackState(state);
     }
 
     const getRanges = () => {
@@ -7044,6 +7046,7 @@ const fetchBytes = async (url, opts) => {
         $player.once('error', onPlaybackError);
         $player.once('play', () => logInfo(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
+        $player.once('loadedmetadata', updateMediaSessionPositionState);
         loadMedia(false);
         $body.addClass('is-loaded');
 
@@ -7058,6 +7061,7 @@ const fetchBytes = async (url, opts) => {
         });
 
         document.querySelector('.media-title').innerText = urlToLabel(url);
+        updateMediaSessionMetadata();
 
         const scrollOpts = {
           behavior: 'smooth',
@@ -7077,6 +7081,7 @@ const fetchBytes = async (url, opts) => {
         $body.removeClass('is-loaded');
 
         resetPlayerBackground();
+        resetMediaSession();
         logInfo(`Playback stopped`);
       }
 
@@ -7575,8 +7580,185 @@ const fetchBytes = async (url, opts) => {
     const seek = (delta) => {
       const duration = getMediaDuration();
       const newTime = $player.currentTime + delta;
-      if (!duration) return $player.currentTime = Math.max(0, newTime);
-      return $player.currentTime = minmax(0, newTime, duration);
+      if (!duration) {
+        $player.currentTime = Math.max(0, newTime);
+      } else {
+        $player.currentTime = minmax(0, newTime, duration);
+      }
+      updateMediaSessionPositionState();
+      return $player.currentTime;
+    }
+
+    const mediaSessionAvailable = () => ('mediaSession' in navigator);
+
+    const setMediaSessionActionHandler = (action, handler) => {
+      if (!mediaSessionAvailable()) return;
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch (e) {
+        if (isDebug()) console.warn(`Media Session action not supported: ${action}`, e);
+      }
+    }
+
+    const getCurrentPlaylistItem = () => {
+      const currentIndex = getPlaylistCurrentIndex();
+      if (currentIndex < 0 || !Array.isArray(app.playlist)) return null;
+      return app.playlist[currentIndex] || null;
+    }
+
+    const getMediaSessionTitle = () => {
+      const currentItem = getCurrentPlaylistItem();
+      if (currentItem && currentItem.label) return currentItem.label;
+      const mediaUrl = $player.currentSrc || $player.src || hashState.media;
+      return (mediaUrl ? urlToLabel(mediaUrl) : document.title);
+    }
+
+    const getMediaSessionAlbum = () => {
+      const mediaUrl = $player.currentSrc || $player.src || hashState.media;
+      if (!mediaUrl || mediaUrl.startsWith('blob:')) return document.title;
+      try {
+        const folder = new URL(urlToFolder(mediaUrl));
+        const parts = folder.pathname.split('/').filter((part) => part.length > 0);
+        const folderName = parts.length > 0 ? parts[parts.length - 1] : folder.host;
+        return decodeURIComponent(folderName);
+      } catch (e) {
+        return document.title;
+      }
+    }
+
+    const cssUrlToMediaImageUrl = (value) => {
+      const match = String(value || '').trim().match(/^url\((["']?)(.*)\1\)$/);
+      return (match && match[2] ? match[2] : '');
+    }
+
+    const getMediaImageType = (url) => {
+      const clean = String(url || '').split('?')[0].split('#')[0].toLowerCase();
+      if (clean.startsWith('data:image/')) {
+        const match = clean.match(/^data:(image\/[^;,]+)/);
+        return match ? match[1] : undefined;
+      }
+      if (clean.endsWith('.jpg') || clean.endsWith('.jpeg')) return 'image/jpeg';
+      if (clean.endsWith('.png')) return 'image/png';
+      if (clean.endsWith('.webp')) return 'image/webp';
+      if (clean.endsWith('.gif')) return 'image/gif';
+      if (clean.endsWith('.svg')) return 'image/svg+xml';
+      return undefined;
+    }
+
+    const getMediaSessionArtwork = () => {
+      const mediaUrl = $player.currentSrc || $player.src || hashState.media;
+      const tileArtwork = getTileArtworkCssUrl(mediaUrl);
+      const tileArtworkUrl = tileArtwork ? cssUrlToMediaImageUrl(tileArtwork.value) : '';
+      const fallbackIcon = document.querySelector('link[rel="shortcut icon"], link[rel="icon"]');
+      const candidates = [tileArtworkUrl, fallbackIcon ? fallbackIcon.href : ''].filter((url) => url && url.length > 0);
+
+      return candidates.map((url) => {
+        const type = getMediaImageType(url);
+        const image = { src: url };
+        if (type) image.type = type;
+        return image;
+      });
+    }
+
+    const updateMediaSessionMetadata = () => {
+      if (!mediaSessionAvailable() || typeof MediaMetadata !== 'function') return;
+
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: getMediaSessionTitle(),
+          artist: getMediaSessionAlbum(),
+          album: document.title,
+          artwork: getMediaSessionArtwork()
+        });
+      } catch (e) {
+        if (isDebug()) console.warn('Unable to update Media Session metadata', e);
+      }
+    }
+
+    const updateMediaSessionPlaybackState = (state) => {
+      if (!mediaSessionAvailable()) return;
+      try {
+        navigator.mediaSession.playbackState = state === 'play' ? 'playing' : (state === 'pause' ? 'paused' : 'none');
+      } catch (e) {
+        if (isDebug()) console.warn('Unable to update Media Session playback state', e);
+      }
+    }
+
+    const updateMediaSessionPositionState = () => {
+      if (!mediaSessionAvailable() || typeof navigator.mediaSession.setPositionState !== 'function') return;
+      const duration = getMediaDuration();
+      const position = Number.isFinite($player.currentTime) ? $player.currentTime : 0;
+      const playbackRate = Number.isFinite($player.playbackRate) && $player.playbackRate > 0 ? $player.playbackRate : 1;
+
+      try {
+        if (!duration || !Number.isFinite(duration) || duration <= 0) {
+          navigator.mediaSession.setPositionState(null);
+          return;
+        }
+        navigator.mediaSession.setPositionState({
+          duration: duration,
+          playbackRate: playbackRate,
+          position: minmax(0, position, duration)
+        });
+      } catch (e) {
+        if (isDebug()) console.warn('Unable to update Media Session position state', e);
+      }
+    }
+
+    const resetMediaSession = () => {
+      if (!mediaSessionAvailable()) return;
+      try {
+        navigator.mediaSession.metadata = null;
+        navigator.mediaSession.playbackState = 'none';
+        if (typeof navigator.mediaSession.setPositionState === 'function') {
+          navigator.mediaSession.setPositionState(null);
+        }
+      } catch (e) {
+        if (isDebug()) console.warn('Unable to reset Media Session state', e);
+      }
+    }
+
+    const setupMediaSession = () => {
+      if (!mediaSessionAvailable()) return;
+
+      setMediaSessionActionHandler('play', () => {
+        if ($player.src) $player.play();
+      });
+      setMediaSessionActionHandler('pause', () => {
+        if ($player.src) $player.pause();
+      });
+      setMediaSessionActionHandler('stop', actionStop);
+      setMediaSessionActionHandler('seekbackward', () => {
+        if (!$player.src) return;
+        actionReplay();
+      });
+      setMediaSessionActionHandler('seekforward', () => {
+        if (!$player.src) return;
+        actionSkip();
+      });
+      setMediaSessionActionHandler('seekto', (details = {}) => {
+        if (!$player.src || !Number.isFinite(details.seekTime)) return;
+        const seekTime = minmax(0, details.seekTime, getMediaDuration());
+        if (details.fastSeek && typeof $player.fastSeek === 'function') {
+          $player.fastSeek(seekTime);
+        } else {
+          $player.currentTime = seekTime;
+        }
+        updateMediaSessionPositionState();
+      });
+
+      updateMediaSessionActionHandlers();
+    }
+
+    const updateMediaSessionActionHandlers = () => {
+      if (!mediaSessionAvailable()) return;
+      if (hasMultiPlaylist()) {
+        setMediaSessionActionHandler('previoustrack', playPreviousTrack);
+        setMediaSessionActionHandler('nexttrack', playNextTrack);
+      } else {
+        setMediaSessionActionHandler('previoustrack', null);
+        setMediaSessionActionHandler('nexttrack', null);
+      }
     }
 
     const updateVolumeSupport = () => {
@@ -7766,6 +7948,7 @@ const fetchBytes = async (url, opts) => {
         updateAbsolutePosition($player.currentTime);
         updateRanges();
         updateProgressBarAria();
+        updateMediaSessionPositionState();
 
         throttledUpdateHashAndTitle();
       }
@@ -7934,6 +8117,7 @@ const fetchBytes = async (url, opts) => {
       $body.on('paste', actionPasteAndPlay);
       updatePlaylistLoop();
       renderPlaylist();
+      setupMediaSession();
     }
 
     const setupPrimaryControls = () => {
@@ -8008,6 +8192,8 @@ const fetchBytes = async (url, opts) => {
         updateSubtitleToggleVisibility();
         applySubtitlePositionPreference();
         setTimeout(applySubtitlePositionPreference, 0);
+        updateMediaSessionMetadata();
+        updateMediaSessionPositionState();
       });
       $player.on('loadeddata', syncTrickSrc);
       $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
@@ -8026,6 +8212,7 @@ const fetchBytes = async (url, opts) => {
       $player.on('dblclick', actionFullscreenToggle);
       $player.on('volumechange', updateVolume);
       $player.on('ratechange', updatePlaybackRate);
+      $player.on('ratechange', updateMediaSessionPositionState);
 
       if (window.PointerEvent) {
         $progressBar.on('pointermove', queueProgressBarTrickHover);
@@ -9108,6 +9295,7 @@ const fetchBytes = async (url, opts) => {
         $player.style.backgroundImage = tileArtwork.value;
         audioArtworkActive = true;
         audioArtworkForUrl = url;
+        updateMediaSessionMetadata();
         return;
       }
 
@@ -9129,6 +9317,7 @@ const fetchBytes = async (url, opts) => {
           if (tileArtwork && tileArtwork.$tile && !hasPreRenderedThumbnail(tileArtwork.$tile)) {
             tileArtwork.$tile.style.setProperty('--image-url-0', cssUrl);
           }
+          updateMediaSessionMetadata();
           return;
         }
       } catch (e) {
