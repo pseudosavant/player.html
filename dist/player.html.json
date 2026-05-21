@@ -1,0 +1,86 @@
+{
+  "debug": false,
+  "startLocation": "/",
+  "cloud": {
+    "onedrive": {
+      "clientId": "98a393da-bb36-4061-82df-f847ed49ce8a"
+    },
+    "gdrive": {
+      "developerKey": "AIzaSyASwr9ZqtB_DGszfJ7E1nIq-SRO44rsXdc",
+      "clientId": "350482528905-uplflng9avfo3p5sghlgr0g059r04v0b.apps.googleusercontent.com",
+      "appId": "350482528905"
+    }
+  },
+  "thumbnails": {
+    "timestamps": [
+      0.005,
+      0.01,
+      0.015
+    ],
+    "size": 320,
+    "mime": {
+      "type": "image/webp",
+      "quality": 0.2
+    },
+    "cache": true,
+    "resizeQuality": "high",
+    "concurrency": 1
+  },
+  "audioThumbnails": {
+    "concurrency": 4,
+    "sidecarConcurrency": 4
+  },
+  "settings": {
+    "hue": 323,
+    "saturation": 100,
+    "blur": true,
+    "transitions": true,
+    "auto-subtitles": false,
+    "subtitle-font": "sans",
+    "subtitle-size": "100%",
+    "subtitle-position": "author",
+    "subtitle-color": "#ffffff",
+    "subtitle-background": "#000000",
+    "subtitle-shadow": false,
+    "poster-image": "",
+    "thumbnailing": true,
+    "animate": true,
+    "playlist-depth": 2
+  },
+  "volumeExponent": 1.8,
+  "updateRate": {
+    "timeupdate": 200,
+    "trickHover": 100
+  },
+  "supportedTypes": {
+    "extensions": [
+      "mp4",
+      "m4v",
+      "mov",
+      "3gp",
+      "webm",
+      "mkv",
+      "mkv",
+      "wav",
+      "mp3",
+      "aac",
+      "m4a",
+      "ogg",
+      "mka",
+      "mka"
+    ],
+    "mime": [
+      "video/mp4",
+      "video/webm",
+      "video/x-matroska",
+      "video/matroska",
+      "audio/wav",
+      "audio/mpeg",
+      "audio/aac",
+      "audio/mp4",
+      "audio/ogg",
+      "audio/x-matroska",
+      "audio/matroska"
+    ]
+  }
+}

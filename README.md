@@ -5,9 +5,9 @@ It can be used as:
 * A web player for folders of media on a server (NAS/home server/shared hosting).
 * A local media player by installing it as a PWA (where supported).
 
-![player.html in action](https://github.com/user-attachments/assets/7bc13981-52ad-4871-be0f-c0625ec565f2)
-![player.html for video](https://github.com/user-attachments/assets/c65fac9c-56c2-4772-9ee6-bac3151f75af)
-![player.html for music](https://github.com/user-attachments/assets/53e98efe-ea84-45e0-b3ae-1281c3542fa2)
+![player.html in action](https://github.com/user-attachments/assets/5e4ccd1a-6c8b-44d2-aaf6-32e92b79e315)
+![player.html for video](https://github.com/user-attachments/assets/701ae4a9-b465-4a04-b453-2b2b68a76cf5)
+![player.html for music](https://github.com/user-attachments/assets/ae5c990e-71b2-4b64-b594-8fa3baec02e8)
 
 ## What player.html can do
 * Play videos with external subtitles (`.srt` / `.vtt`).
