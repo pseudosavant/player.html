@@ -1664,7 +1664,10 @@
             <svg><use xlink:href='#svg-playlist-add'/></svg>
             <span>Add All</span>
           </button>
-          <button class='btn-playlist-clear' type='button' title='Clear playlist'>Clear</button>
+          <button class='btn-playlist-clear' type='button' title='Clear playlist'>
+            <svg><use xlink:href='#svg-delete-dismiss'/></svg>
+            <span>Clear</span>
+          </button>
         </li>
       `;
 
@@ -2215,7 +2218,10 @@
         <li class='modal-item modal-section-heading fileinfo-actions-heading'>Actions</li>
         <li class='modal-item setting-item fileinfo-action-item'>
           <span class='key'>Take screenshot (Shift+S)</span>
-          <button type='button' class='fileinfo-screenshot'>Capture</button>
+          <button type='button' class='fileinfo-screenshot'>
+            <svg><use xlink:href='#svg-screenshot'/></svg>
+            <span>Capture</span>
+          </button>
         </li>
       `;
     }
@@ -3568,7 +3574,11 @@
       const $openModal = document.querySelector('.modal.show');
       if ($openModal) {
         if (e.key === 'Tab' && trapModalFocus(e, $openModal)) return;
-        if (e.key !== 'Escape') return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          hideModals();
+        }
+        return;
       }
       const target = e.target;
       if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
@@ -3800,6 +3810,10 @@
           }
         }
 
+        const buttonIcon = setting.icon
+          ? `<svg><use xlink:href="#${escapeAttr(setting.icon)}"/></svg>`
+          : '';
+        const buttonLabel = escapeHtml(setting.buttonLabel || 'Action');
         const control = (isSelect
           ? (() => {
               const hasSelectedOption = (setting.options || []).some((opt) => {
@@ -3822,7 +3836,7 @@
               return `<select class='setting-${key}'${attrs}>${options}</select>`;
             })()
           : (type === 'button'
-            ? `<button type="button" class='setting-${key}'${attrs}>${escapeHtml(setting.buttonLabel || 'Action')}</button>`
+            ? `<button type="button" class='setting-${key}'${attrs}>${buttonIcon}<span>${buttonLabel}</span></button>`
             : `<input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}>`
           )
         );
@@ -4134,6 +4148,7 @@
       'poster-upload': {
         label: 'Custom poster image',
         buttonLabel: 'Upload',
+        icon: 'svg-image-add',
         desc: 'Upload a custom player poster image (resized to fit 1920x1080 and encoded as WebP when supported).',
         event: 'click',
         type: 'button',
@@ -4144,6 +4159,7 @@
       'poster-reset': {
         label: 'Reset poster image',
         buttonLabel: 'Reset',
+        icon: 'svg-image-reset',
         desc: 'Clear custom poster image and return to configured/default poster.',
         event: 'click',
         type: 'button',
@@ -4154,6 +4170,7 @@
       'subtitle-reset': {
         label: 'Reset subtitle settings',
         buttonLabel: 'Reset',
+        icon: 'svg-arrow-reset',
         desc: 'Reset subtitle-specific settings to their defaults.',
         event: 'click',
         type: 'button',
@@ -4248,6 +4265,7 @@
       cache: {
         label: 'Thumbnail cache',
         buttonLabel: 'Clear',
+        icon: 'svg-broom',
         desc: 'Amount of localStorage space in your browser that is being used to cache thumbnails',
         event: 'click',
         type: 'button',
@@ -4265,6 +4283,7 @@
       'export-config': {
         label: 'Export settings file',
         buttonLabel: 'Export',
+        icon: 'svg-document-download',
         desc: `Download the current configuration as ${playerConfigFilename}`,
         event: 'click',
         type: 'button',
@@ -4275,6 +4294,7 @@
       'export-manifest': {
         label: 'Export manifest.json',
         buttonLabel: 'Export',
+        icon: 'svg-document-download',
         desc: `Download a starter ${manifestFilename} for hosting next to player.html`,
         event: 'click',
         type: 'button',
@@ -4285,6 +4305,7 @@
       reset: {
         label: 'Reset to defaults',
         buttonLabel: 'Reset',
+        icon: 'svg-arrow-reset',
         desc: 'Reset all settings to their defaults',
         event: 'click',
         type: 'button',
