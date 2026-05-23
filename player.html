@@ -4,7 +4,7 @@
   <title>player.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.35.0'>
+  <meta name='version' content='2.36.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -55,7 +55,7 @@
       --color-field-bg: rgba(255,255,255,0.92);
       --color-field-text: #111111;
       --color-field-placeholder: rgba(0,0,0,0.5);
-      --color-danger: #ffb4b4;
+      --color-danger: #ffb4ab;
       --color-border-subtle: rgba(255,255,255,0.2);
       --color-surface-quiet: rgba(255,255,255,0.08);
       --color-surface-quiet-hover: rgba(255,255,255,0.16);
@@ -76,10 +76,11 @@
       --control-bg-hover: color-mix(in srgb, var(--theme-accent) 36%, rgba(255,255,255,0.12));
       --control-bg-active: color-mix(in srgb, var(--theme-accent) 46%, rgba(0,0,0,0.18));
 
-      --button-primary-bg: var(--theme-accent);
-      --button-primary-bg-hover: var(--theme-accent-hover);
-      --button-primary-bg-active: var(--theme-accent-active);
-      --button-primary-text: var(--text-on-accent);
+      --button-primary-saturation: clamp(0%, var(--theme-saturation), 50%);
+      --button-primary-bg: hsl(var(--theme-hue), var(--button-primary-saturation), 32%);
+      --button-primary-bg-hover: hsl(var(--theme-hue), clamp(0%, var(--theme-saturation), 40%), 34%);
+      --button-primary-bg-active: hsl(var(--theme-hue), var(--button-primary-saturation), 28%);
+      --button-primary-text: #ffffff;
       --button-secondary-bg: rgba(255,255,255,0.18);
       --button-secondary-bg-hover: rgba(255,255,255,0.26);
       --button-secondary-bg-active: rgba(255,255,255,0.34);
@@ -243,6 +244,7 @@
 
       position: relative;
       width: 100%;
+      min-width: 0;
 
       z-index: 1000;
     }
@@ -267,6 +269,10 @@
       justify-content: center;
     }
 
+    .player-container.drop .player{
+      opacity: 0.3;
+    }
+
     .player-container.drop:before {
       display: flex;
       align-items: center;
@@ -277,19 +283,32 @@
       width: 100%;
       height: 100%;
       content: "Drop Here";
+      color: var(--color-text-overlay);
+      background-color: rgba(0,0,0,0.2);
       font-size: 5rem;
-      text-shadow: 0px 0px 1.5rem #000;
-      background-color: rgba(64,64,64,0.5);
-      background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjRweCIgaGVpZ2h0PSIyNHB4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PHBhdGggZmlsbD0iaHNsKDMyMywgMTAwJSwgNTAlKSIgZD0iTTEyLDIgQzE3LjUyMjgsMiAyMiw2LjQ3NzE1IDIyLDEyIEMyMiwxNy41MjI4IDE3LjUyMjgsMjIgMTIsMjIgQzYuNDc3MTUsMjIgMiwxNy41MjI4IDIsMTIgQzIsNi40NzcxNSA2LjQ3NzE1LDIgMTIsMiBaIE0xMiw0IEM3LjU4MTcyLDQgNCw3LjU4MTcyIDQsMTIgQzQsMTYuNDE4MyA3LjU4MTcyLDIwIDEyLDIwIEMxNi40MTgzLDIwIDIwLDE2LjQxODMgMjAsMTIgQzIwLDcuNTgxNzIgMTYuNDE4Myw0IDEyLDQgWiBNMTIsNiBDMTUuMzEzNyw2IDE4LDguNjg2MjkgMTgsMTIgQzE4LDE1LjMxMzcgMTUuMzEzNywxOCAxMiwxOCBDOC42ODYyOSwxOCA2LDE1LjMxMzcgNiwxMiBDNiw4LjY4NjI5IDguNjg2MjksNiAxMiw2IFogTTEyLDggQzkuNzkwODYsOCA4LDkuNzkwODYgOCwxMiBDOCwxNC4yMDkxIDkuNzkwODYsMTYgMTIsMTYgQzE0LjIwOTEsMTYgMTYsMTQuMjA5MSAxNiwxMiBDMTYsOS43OTA4NiAxNC4yMDkxLDggMTIsOCBaIE0xMiwxMCBDMTMuMTA0NiwxMCAxNCwxMC44OTU0IDE0LDEyIEMxNCwxMy4xMDQ2IDEzLjEwNDYsMTQgMTIsMTQgQzEwLjg5NTQsMTQgMTAsMTMuMTA0NiAxMCwxMiBDMTAsMTAuODk1NCAxMC44OTU0LDEwIDEyLDEwIFoiPjwvcGF0aD48L3N2Zz4=');
-      background-size: 25%;
-      background-position: center;
-      background-repeat: no-repeat;
+      text-shadow: 0px 0px 0.75rem #000;
+      z-index: 2000;
+    }
+
+    .player-container.drop:after {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 25%;
+      aspect-ratio: 1;
+      content: "";
+      background-color: var(--accent);
+      -webkit-mask: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjRweCIgaGVpZ2h0PSIyNHB4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PHBhdGggZmlsbD0iaHNsKDMyMywgMTAwJSwgNTAlKSIgZD0iTTEyLDIgQzE3LjUyMjgsMiAyMiw2LjQ3NzE1IDIyLDEyIEMyMiwxNy41MjI4IDE3LjUyMjgsMjIgMTIsMjIgQzYuNDc3MTUsMjIgMiwxNy41MjI4IDIsMTIgQzIsNi40NzcxNSA2LjQ3NzE1LDIgMTIsMiBaIE0xMiw0IEM3LjU4MTcyLDQgNCw3LjU4MTcyIDQsMTIgQzQsMTYuNDE4MyA3LjU4MTcyLDIwIDEyLDIwIEMxNi40MTgzLDIwIDIwLDE2LjQxODMgMjAsMTIgQzIwLDcuNTgxNzIgMTYuNDE4Myw0IDEyLDQgWiBNMTIsNiBDMTUuMzEzNyw2IDE4LDguNjg2MjkgMTgsMTIgQzE4LDE1LjMxMzcgMTUuMzEzNywxOCAxMiwxOCBDOC42ODYyOSwxOCA2LDE1LjMxMzcgNiwxMiBDNiw4LjY4NjI5IDguNjg2MjksNiAxMiw2IFogTTEyLDggQzkuNzkwODYsOCA4LDkuNzkwODYgOCwxMiBDOCwxNC4yMDkxIDkuNzkwODYsMTYgMTIsMTYgQzE0LjIwOTEsMTYgMTYsMTQuMjA5MSAxNiwxMiBDMTYsOS43OTA4NiAxNC4yMDkxLDggMTIsOCBaIE0xMiwxMCBDMTMuMTA0NiwxMCAxNCwxMC44OTU0IDE0LDEyIEMxNCwxMy4xMDQ2IDEzLjEwNDYsMTQgMTIsMTQgQzEwLjg5NTQsMTQgMTAsMTMuMTA0NiAxMCwxMiBDMTAsMTAuODk1NCAxMC44OTU0LDEwIDEyLDEwIFoiPjwvcGF0aD48L3N2Zz4=') center / contain no-repeat;
+      mask: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjRweCIgaGVpZ2h0PSIyNHB4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+PHBhdGggZmlsbD0iaHNsKDMyMywgMTAwJSwgNTAlKSIgZD0iTTEyLDIgQzE3LjUyMjgsMiAyMiw2LjQ3NzE1IDIyLDEyIEMyMiwxNy41MjI4IDE3LjUyMjgsMjIgMTIsMjIgQzYuNDc3MTUsMjIgMiwxNy41MjI4IDIsMTIgQzIsNi40NzcxNSA2LjQ3NzE1LDIgMTIsMiBaIE0xMiw0IEM3LjU4MTcyLDQgNCw3LjU4MTcyIDQsMTIgQzQsMTYuNDE4MyA3LjU4MTcyLDIwIDEyLDIwIEMxNi40MTgzLDIwIDIwLDE2LjQxODMgMjAsMTIgQzIwLDcuNTgxNzIgMTYuNDE4Myw0IDEyLDQgWiBNMTIsNiBDMTUuMzEzNyw2IDE4LDguNjg2MjkgMTgsMTIgQzE4LDE1LjMxMzcgMTUuMzEzNywxOCAxMiwxOCBDOC42ODYyOSwxOCA2LDE1LjMxMzcgNiwxMiBDNiw4LjY4NjI5IDguNjg2MjksNiAxMiw2IFogTTEyLDggQzkuNzkwODYsOCA4LDkuNzkwODYgOCwxMiBDOCwxNC4yMDkxIDkuNzkwODYsMTYgMTIsMTYgQzE0LjIwOTEsMTYgMTYsMTQuMjA5MSAxNiwxMiBDMTYsOS43OTA4NiAxNC4yMDkxLDggMTIsOCBaIE0xMiwxMCBDMTMuMTA0NiwxMCAxNCwxMC44OTU0IDE0LDEyIEMxNCwxMy4xMDQ2IDEzLjEwNDYsMTQgMTIsMTQgQzEwLjg5NTQsMTQgMTAsMTMuMTA0NiAxMCwxMiBDMTAsMTAuODk1NCAxMC44OTU0LDEwIDEyLDEwIFoiPjwvcGF0aD48L3N2Zz4=') center / contain no-repeat;
+      transform: translate(-50%, -50%);
       animation: pulse calc(2 * var(--transition-base)) ease-in-out alternate infinite;
-      z-index: 2000;    }
+      pointer-events: none;
+      z-index: 1999;
+    }
 
     @keyframes pulse {
-      0%   { opacity: 100%; }
-      100% { opacity: 50% }
+      0%   { opacity: 70%; }
+      100% { opacity: 40% }
     }
 
     /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
@@ -299,6 +318,7 @@
     .media-container {
       position: relative;
       width: 100%;
+      min-width: 0;
       background: black;
       overflow: hidden;
     }
@@ -334,7 +354,7 @@
       width: 100%;
       max-height: 75vh;
       margin: auto;
-      background-image: var(--player-poster-image, url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnIHN0YW5kYWxvbmU9J25vJz8+DQo8c3ZnIHdpZHRoPSc1NycgaGVpZ2h0PSczNScgdmlld0JveD0nMCAwIDU1IDM2JyB2ZXJzaW9uPScxLjEnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+DQogIDxnIHRyYW5zZm9ybT0ndHJhbnNsYXRlKDQsLTYuOTUyNTA4KSc+DQogICAgPHBhdGggc3R5bGU9J2ZpbGw6IGhzbCggIDMyMywgMTAwJSwgNTAlKScgZD0nTSAxMy43NTAxMzQsOC40MTIxMjAzIDM4LjE2NzE4OSwyMS4xMTY5MjkgYyAxLjU5MjI3NiwwLjgyODUwMiAyLjIxMTQzOCwyLjc5MDkyOSAxLjM4MjkzNiw0LjM4MzIwNSAtMC4zMDgwNTEsMC41OTIwMzcgLTAuNzkwODk5LDEuMDc0ODg1IC0xLjM4MjkzNiwxLjM4MjkzNyBMIDEzLjc1MDEzNCwzOS41ODc4OCBDIDEyLjE1Nzg1OCw0MC40MTYzODEgMTAuMTk1NDMxLDM5Ljc5NzIxOSA5LjM2NjkyOTMsMzguMjA0OTQzIDkuMTI1ODYzLDM3Ljc0MTY0NCA5LDM3LjIyNzA3MiA5LDM2LjcwNDgwOSBWIDExLjI5NTE5MSBjIDAsLTEuNzk0OTI1NCAxLjQ1NTA3NSwtMy4yNSAzLjI1LC0zLjI1IDAuNDQ3NjU0LDAgMC44ODk2NTgsMC4wOTI0NzEgMS4yOTg1NjYsMC4yNzA2OTk1IHogbSAtMS4xNTM5NDksMi4yMTc3NDY3IC0wLjExMDQ4NywtMC4wNDY2OCBjIC0wLjA3NTc5LC0wLjAyNTA5IC0wLjE1NTM1LC0wLjAzOCAtMC4yMzU2OTgsLTAuMDM4IC0wLjQxNDIxNCwwIC0wLjc1LDAuMzM1Nzg2IC0wLjc1LDAuNzUgdiAyNS40MDk2MTggYyAwLDAuMTIwNTIyIDAuMDI5MDQsMC4yMzkyNyAwLjA4NDY4LDAuMzQ2MTg1IDAuMTkxMTkzLDAuMzY3NDQ4IDAuNjQ0MDYxLDAuNTEwMzMyIDEuMDExNTA5LDAuMzE5MTM5IEwgMzcuMDEzMjQsMjQuNjY1MzI0IGMgMC4xMzY2MjQsLTAuMDcxMDkgMC4yNDgwNSwtMC4xODI1MTUgMC4zMTkxMzksLTAuMzE5MTM5IDAuMTkxMTkyLC0wLjM2NzQ0OSAwLjA0ODMxLC0wLjgyMDMxNiAtMC4zMTkxMzksLTEuMDExNTA5IHonLz4NCiAgPC9nPg0KPC9zdmc+'));
+      background-image: var(--player-poster-image, url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnIHN0YW5kYWxvbmU9J25vJz8+DQo8c3ZnIHdpZHRoPSczNy4xMDEyNjgnIGhlaWdodD0nMzguMjkyMzQ2JyB2aWV3Qm94PSc1LjkwODIyOCA0Ljg1NDE2MiAzNy4xMDEyNjggMzguMjkyMzQ2JyB2ZXJzaW9uPScxLjEnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+CiAgPHBhdGggc3R5bGU9J2ZpbGw6IGhzbCggIDMyMywgMTAwJSwgNTAlKScgZD0nTSAxMy43NTAxMzQsOC40MTIxMjAzIDM4LjE2NzE4OSwyMS4xMTY5MjkgYyAxLjU5MjI3NiwwLjgyODUwMiAyLjIxMTQzOCwyLjc5MDkyOSAxLjM4MjkzNiw0LjM4MzIwNSAtMC4zMDgwNTEsMC41OTIwMzcgLTAuNzkwODk5LDEuMDc0ODg1IC0xLjM4MjkzNiwxLjM4MjkzNyBMIDEzLjc1MDEzNCwzOS41ODc4OCBDIDEyLjE1Nzg1OCw0MC40MTYzODEgMTAuMTk1NDMxLDM5Ljc5NzIxOSA5LjM2NjkyOTMsMzguMjA0OTQzIDkuMTI1ODYzLDM3Ljc0MTY0NCA5LDM3LjIyNzA3MiA5LDM2LjcwNDgwOSBWIDExLjI5NTE5MSBjIDAsLTEuNzk0OTI1NCAxLjQ1NTA3NSwtMy4yNSAzLjI1LC0zLjI1IDAuNDQ3NjU0LDAgMC44ODk2NTgsMC4wOTI0NzEgMS4yOTg1NjYsMC4yNzA2OTk1IHogbSAtMS4xNTM5NDksMi4yMTc3NDY3IC0wLjExMDQ4NywtMC4wNDY2OCBjIC0wLjA3NTc5LC0wLjAyNTA5IC0wLjE1NTM1LC0wLjAzOCAtMC4yMzU2OTgsLTAuMDM4IC0wLjQxNDIxNCwwIC0wLjc1LDAuMzM1Nzg2IC0wLjc1LDAuNzUgdiAyNS40MDk2MTggYyAwLDAuMTIwNTIyIDAuMDI5MDQsMC4yMzkyNyAwLjA4NDY4LDAuMzQ2MTg1IDAuMTkxMTkzLDAuMzY3NDQ4IDAuNjQ0MDYxLDAuNTEwMzMyIDEuMDExNTA5LDAuMzE5MTM5IEwgMzcuMDEzMjQsMjQuNjY1MzI0IGMgMC4xMzY2MjQsLTAuMDcxMDkgMC4yNDgwNSwtMC4xODI1MTUgMC4zMTkxMzksLTAuMzE5MTM5IDAuMTkxMTkyLC0wLjM2NzQ0OSAwLjA0ODMxLC0wLjgyMDMxNiAtMC4zMTkxMzksLTEuMDExNTA5IHonLz4KPC9zdmc+Cg=='));
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -953,10 +973,8 @@
       color: var(--color-field-placeholder);
     }
     .open-url .open-url-error {
-      min-height: 1.2em;
       margin: 0;
       color: var(--color-danger);
-      font-size: 0.9rem;
       line-height: 1.2;
     }
     .open-url .open-url-actions {
@@ -1015,13 +1033,15 @@
       display: grid;
       grid-template-areas:
         "progress-bar       progress-bar     progress-bar"
+        "timestamp          timestamp        timestamp"
         "secondary-controls primary-controls settings-controls";
-      grid-template-rows: calc(1rem + var(--progress-height)) min-content;
+      grid-template-rows: min-content min-content min-content;
       grid-template-columns: 1fr auto 1fr;
-      row-gap: 1rem;
+      row-gap: 0.5rem;
 
       position: relative;
       width: 100%;
+      min-width: 0;
       margin: 0 auto;
       padding: 1rem clamp(0.85rem, 2vw, 1rem) 1rem;
       text-align: center;
@@ -1102,9 +1122,6 @@
       max-width: 2rem;
       max-height: 2rem;
       margin: auto;
-      filter:
-        drop-shadow(0 -1px 0 rgba(255,255,255,0.22))
-        drop-shadow(0 1px 1px rgba(0,0,0,0.42));
       transition: none;
     }
 
@@ -1203,7 +1220,6 @@
       font-size: 0.62rem;
       font-family: Arial, Helvetica, sans-serif;
       line-height: 1;
-      margin-top: 0.3rem;
       margin-right: 0.1rem;
       text-shadow:
         0 -1px 0 rgba(255,255,255,0.24),
@@ -1264,12 +1280,11 @@
     }
 
     .current-timestamp {
-      grid-area: progress-bar;
+      grid-area: timestamp;
       display: block;
-      position: absolute;
-      right: 0;
-      top: 0;
-      margin-top: calc(0.6rem + var(--progress-height));
+      position: static;
+      margin-top: 0.35rem;
+      justify-self: end;
     }
 
     .current-timestamp .position:before { content: var(--absolute-position); }
@@ -1448,6 +1463,7 @@
       grid-area: primary-controls;
       display: flex;
       width: 100%;
+      min-width: 0;
       position: relative;
       justify-content: center;
       align-items: end;
@@ -1458,6 +1474,7 @@
       grid-area: settings-controls;
 
       display: flex;
+      min-width: 0;
       justify-content: flex-end;
       align-items: center;
       gap: 0.42rem;
@@ -1466,6 +1483,7 @@
     .controls-sources {
       grid-area: secondary-controls;
       display: flex;
+      min-width: 0;
       justify-content: flex-start;
       align-items: center;
       gap: 0.42rem;
@@ -1478,6 +1496,7 @@
       display: grid;
       gap: 2rem;
 
+      min-width: 0;
       max-width: 100vw;
       margin-top: 2rem;
       padding-inline: 1rem;
@@ -1836,14 +1855,7 @@
           "primary-controls   primary-controls"
           "secondary-controls settings-controls";
         grid-template-rows: min-content min-content min-content min-content;
-        grid-template-columns: auto;
-      }
-
-      .current-timestamp {
-        position: static;
-        grid-area: timestamp;
-        margin-top: 0.35rem;
-        justify-self: end;
+        grid-template-columns: minmax(0, 1fr) auto;
       }
 
       .controls-sources   { justify-content: flex-start; gap: 0.75rem; }
@@ -1866,6 +1878,7 @@
         --color-page: #f8f9fb;
         --color-text: #111111;
         --color-text-muted: #3a3a3a;
+        --color-danger: #b42318;
         --color-border-subtle: rgba(0,0,0,0.2);
         --color-surface-quiet: rgba(0,0,0,0.08);
         --color-surface-quiet-hover: rgba(0,0,0,0.14);
@@ -1879,10 +1892,6 @@
         --control-bg-hover: color-mix(in srgb, var(--accent) 16%, rgba(255,255,255,0.72));
         --control-bg-active: color-mix(in srgb, var(--accent) 22%, rgba(255,255,255,0.64));
 
-        --button-primary-bg: var(--theme-accent);
-        --button-primary-bg-hover: hsl(var(--theme-hue), var(--sat-strong), 56%);
-        --button-primary-bg-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
-        --button-primary-text: white;
         --button-secondary-bg: rgba(0,0,0,0.08);
         --button-secondary-bg-hover: rgba(0,0,0,0.14);
         --button-secondary-bg-active: rgba(0,0,0,0.22);
@@ -9540,7 +9549,7 @@ const fetchBytes = async (url, opts) => {
         : String(getCSSVariable('--accent')).trim());
 
       const svg = `<?xml version='1.0' encoding='UTF-8' standalone='no'?>
-        <svg  width='32' height='32' viewBox='9 7 32 33' version='1.1' xmlns='http://www.w3.org/2000/svg'>
+        <svg width='37.101268' height='38.292346' viewBox='5.908228 4.854162 37.101268 38.292346' version='1.1' xmlns='http://www.w3.org/2000/svg'>
           <path style='fill: ${color}' d='M 13.750134,8.4121203 38.167189,21.116929 c 1.592276,0.828502 2.211438,2.790929 1.382936,4.383205 -0.308051,0.592037 -0.790899,1.074885 -1.382936,1.382937 L 13.750134,39.58788 C 12.157858,40.416381 10.195431,39.797219 9.3669293,38.204943 9.125863,37.741644 9,37.227072 9,36.704809 V 11.295191 c 0,-1.7949254 1.455075,-3.25 3.25,-3.25 0.447654,0 0.889658,0.092471 1.298566,0.2706995 z m -1.153949,2.2177467 -0.110487,-0.04668 c -0.07579,-0.02509 -0.15535,-0.038 -0.235698,-0.038 -0.414214,0 -0.75,0.335786 -0.75,0.75 v 25.409618 c 0,0.120522 0.02904,0.23927 0.08468,0.346185 0.191193,0.367448 0.644061,0.510332 1.011509,0.319139 L 37.01324,24.665324 c 0.136624,-0.07109 0.24805,-0.182515 0.319139,-0.319139 0.191192,-0.367449 0.04831,-0.820316 -0.319139,-1.011509 z'/>
         </svg>`;
 
