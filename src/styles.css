@@ -42,7 +42,7 @@
       --color-field-bg: rgba(255,255,255,0.92);
       --color-field-text: #111111;
       --color-field-placeholder: rgba(0,0,0,0.5);
-      --color-danger: #ffb4b4;
+      --color-danger: #ffb4ab;
       --color-border-subtle: rgba(255,255,255,0.2);
       --color-surface-quiet: rgba(255,255,255,0.08);
       --color-surface-quiet-hover: rgba(255,255,255,0.16);
@@ -63,10 +63,11 @@
       --control-bg-hover: color-mix(in srgb, var(--theme-accent) 36%, rgba(255,255,255,0.12));
       --control-bg-active: color-mix(in srgb, var(--theme-accent) 46%, rgba(0,0,0,0.18));
 
-      --button-primary-bg: var(--theme-accent);
-      --button-primary-bg-hover: var(--theme-accent-hover);
-      --button-primary-bg-active: var(--theme-accent-active);
-      --button-primary-text: var(--text-on-accent);
+      --button-primary-saturation: clamp(0%, var(--theme-saturation), 50%);
+      --button-primary-bg: hsl(var(--theme-hue), var(--button-primary-saturation), 32%);
+      --button-primary-bg-hover: hsl(var(--theme-hue), clamp(0%, var(--theme-saturation), 40%), 34%);
+      --button-primary-bg-active: hsl(var(--theme-hue), var(--button-primary-saturation), 28%);
+      --button-primary-text: #ffffff;
       --button-secondary-bg: rgba(255,255,255,0.18);
       --button-secondary-bg-hover: rgba(255,255,255,0.26);
       --button-secondary-bg-active: rgba(255,255,255,0.34);
@@ -230,6 +231,7 @@
 
       position: relative;
       width: 100%;
+      min-width: 0;
 
       z-index: 1000;
     }
@@ -254,6 +256,10 @@
       justify-content: center;
     }
 
+    .player-container.drop .player{
+      opacity: 0.3;
+    }
+
     .player-container.drop:before {
       display: flex;
       align-items: center;
@@ -264,19 +270,32 @@
       width: 100%;
       height: 100%;
       content: "Drop Here";
+      color: var(--color-text-overlay);
+      background-color: rgba(0,0,0,0.2);
       font-size: 5rem;
-      text-shadow: 0px 0px 1.5rem #000;
-      background-color: rgba(64,64,64,0.5);
-      background-image: url('./assets/drop-target.svg');
-      background-size: 25%;
-      background-position: center;
-      background-repeat: no-repeat;
+      text-shadow: 0px 0px 0.75rem #000;
+      z-index: 2000;
+    }
+
+    .player-container.drop:after {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 25%;
+      aspect-ratio: 1;
+      content: "";
+      background-color: var(--accent);
+      -webkit-mask: url('./assets/drop-target.svg') center / contain no-repeat;
+      mask: url('./assets/drop-target.svg') center / contain no-repeat;
+      transform: translate(-50%, -50%);
       animation: pulse calc(2 * var(--transition-base)) ease-in-out alternate infinite;
-      z-index: 2000;    }
+      pointer-events: none;
+      z-index: 1999;
+    }
 
     @keyframes pulse {
-      0%   { opacity: 100%; }
-      100% { opacity: 50% }
+      0%   { opacity: 70%; }
+      100% { opacity: 40% }
     }
 
     /* These two declarations must be separate. When combining the selectors Firefox doesn't apply this CSS */
@@ -286,6 +305,7 @@
     .media-container {
       position: relative;
       width: 100%;
+      min-width: 0;
       background: black;
       overflow: hidden;
     }
@@ -940,10 +960,8 @@
       color: var(--color-field-placeholder);
     }
     .open-url .open-url-error {
-      min-height: 1.2em;
       margin: 0;
       color: var(--color-danger);
-      font-size: 0.9rem;
       line-height: 1.2;
     }
     .open-url .open-url-actions {
@@ -1002,13 +1020,15 @@
       display: grid;
       grid-template-areas:
         "progress-bar       progress-bar     progress-bar"
+        "timestamp          timestamp        timestamp"
         "secondary-controls primary-controls settings-controls";
-      grid-template-rows: calc(1rem + var(--progress-height)) min-content;
+      grid-template-rows: min-content min-content min-content;
       grid-template-columns: 1fr auto 1fr;
-      row-gap: 1rem;
+      row-gap: 0.5rem;
 
       position: relative;
       width: 100%;
+      min-width: 0;
       margin: 0 auto;
       padding: 1rem clamp(0.85rem, 2vw, 1rem) 1rem;
       text-align: center;
@@ -1089,9 +1109,6 @@
       max-width: 2rem;
       max-height: 2rem;
       margin: auto;
-      filter:
-        drop-shadow(0 -1px 0 rgba(255,255,255,0.22))
-        drop-shadow(0 1px 1px rgba(0,0,0,0.42));
       transition: none;
     }
 
@@ -1190,7 +1207,6 @@
       font-size: 0.62rem;
       font-family: Arial, Helvetica, sans-serif;
       line-height: 1;
-      margin-top: 0.3rem;
       margin-right: 0.1rem;
       text-shadow:
         0 -1px 0 rgba(255,255,255,0.24),
@@ -1251,12 +1267,11 @@
     }
 
     .current-timestamp {
-      grid-area: progress-bar;
+      grid-area: timestamp;
       display: block;
-      position: absolute;
-      right: 0;
-      top: 0;
-      margin-top: calc(0.6rem + var(--progress-height));
+      position: static;
+      margin-top: 0.35rem;
+      justify-self: end;
     }
 
     .current-timestamp .position:before { content: var(--absolute-position); }
@@ -1435,6 +1450,7 @@
       grid-area: primary-controls;
       display: flex;
       width: 100%;
+      min-width: 0;
       position: relative;
       justify-content: center;
       align-items: end;
@@ -1445,6 +1461,7 @@
       grid-area: settings-controls;
 
       display: flex;
+      min-width: 0;
       justify-content: flex-end;
       align-items: center;
       gap: 0.42rem;
@@ -1453,6 +1470,7 @@
     .controls-sources {
       grid-area: secondary-controls;
       display: flex;
+      min-width: 0;
       justify-content: flex-start;
       align-items: center;
       gap: 0.42rem;
@@ -1465,6 +1483,7 @@
       display: grid;
       gap: 2rem;
 
+      min-width: 0;
       max-width: 100vw;
       margin-top: 2rem;
       padding-inline: 1rem;
@@ -1823,14 +1842,7 @@
           "primary-controls   primary-controls"
           "secondary-controls settings-controls";
         grid-template-rows: min-content min-content min-content min-content;
-        grid-template-columns: auto;
-      }
-
-      .current-timestamp {
-        position: static;
-        grid-area: timestamp;
-        margin-top: 0.35rem;
-        justify-self: end;
+        grid-template-columns: minmax(0, 1fr) auto;
       }
 
       .controls-sources   { justify-content: flex-start; gap: 0.75rem; }
@@ -1853,6 +1865,7 @@
         --color-page: #f8f9fb;
         --color-text: #111111;
         --color-text-muted: #3a3a3a;
+        --color-danger: #b42318;
         --color-border-subtle: rgba(0,0,0,0.2);
         --color-surface-quiet: rgba(0,0,0,0.08);
         --color-surface-quiet-hover: rgba(0,0,0,0.14);
@@ -1866,10 +1879,6 @@
         --control-bg-hover: color-mix(in srgb, var(--accent) 16%, rgba(255,255,255,0.72));
         --control-bg-active: color-mix(in srgb, var(--accent) 22%, rgba(255,255,255,0.64));
 
-        --button-primary-bg: var(--theme-accent);
-        --button-primary-bg-hover: hsl(var(--theme-hue), var(--sat-strong), 56%);
-        --button-primary-bg-active: hsl(var(--theme-hue), var(--sat-strong), 44%);
-        --button-primary-text: white;
         --button-secondary-bg: rgba(0,0,0,0.08);
         --button-secondary-bg-hover: rgba(0,0,0,0.14);
         --button-secondary-bg-active: rgba(0,0,0,0.22);
