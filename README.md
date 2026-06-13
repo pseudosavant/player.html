@@ -104,7 +104,7 @@ Use `player.html` with your own look and branding:
 * Theme color via hue+saturation controls
 * Custom poster/icon image via upload or config (`settings.poster-image`)
 
-![player.html with custom branding (theme color + custom poster/icon)](https://github.com/user-attachments/assets/3f48779b-09a2-45f9-9fc7-de09e7cb14a1)
+![player.html with custom branding (theme color + custom poster/icon)](https://github.com/user-attachments/assets/ad0cacd6-5c66-4553-b42d-c02e781edfd1)
 
 ### Keyboard & Convenience
 * Keyboard shortcuts (press `?` in the app to see the list).
