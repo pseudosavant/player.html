@@ -17,6 +17,7 @@ It can be used as:
 * Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
 * Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
 * Client-side search across indexed media filenames from the current library root.
+* Open a local folder as a browsable media source in browsers that support the File System Access API, with file-picker fallback elsewhere.
 * Load default behavior from `player.html.json`, and optionally host a static `manifest.json` for PWA install metadata.
 * Upload a custom player poster image (or set one in `player.html.json`) with sensible precedence and export support.
 * Install as a PWA so it can behave like a local media player (launchable like an app; local file handling where supported).
@@ -64,6 +65,7 @@ If you are customizing a hosted deployment, the usual pairing is:
 * External subtitle support (`.srt` and `.vtt`).
 * Subtitle display settings in the subtitles modal: font, size, fallback vertical position, text color, background color, and optional text-shadow background mode.
 * Authored subtitle cue positioning is preserved. The subtitle position setting is only used as a fallback for cues without authored position.
+* Transcript search for the loaded subtitle file, with timestamped results that jump playback to matching cues.
 * Picture-in-picture support.
 * Playback controls: play/pause, seek, stop, volume, playback rate, fullscreen, PiP.
 * Progress bar with timestamp preview thumbnail on hover/click/drag.
@@ -86,12 +88,34 @@ If you are customizing a hosted deployment, the usual pairing is:
 * Video thumbnails use pre-rendered server-side thumbnails when present (recommended for large libraries).
 * Video thumbnails fall back to in-browser thumbnail generation otherwise.
 * Animated thumbnails (optional).
-* Thumbnail caching using `localStorage` (view cache size, clear cache).
+* Thumbnail caching using IndexedDB (view cache size, clear cache).
 
 ### PWA & Sharing
 * Installable as a PWA (generated manifest by default, or hosted `manifest.json` if present).
 * Shareable URL that resumes `player.html` in the same library root, folder, search, playlist, media item, timestamp, and subtitle selection.
+* Direct media URL launcher for easy generated links without building the full encoded `#dr=` share-state value.
+* Local folder browsing via `showDirectoryPicker()` where supported; browsers without folder access fall back to opening one local media file with `<input type="file">`.
+* Optional Wake Lock support to prevent screen sleep while media is playing.
+* Optional playback history that remembers recent media positions and watched state.
 * Standard page metadata (`title`, `description`) plus favicon and PWA manifest support.
+
+#### Direct media URL links
+
+If you want to generate simple links into your own `player.html` instance, append `#url=<media-url>` instead of constructing the full encoded `#dr=` state value.
+
+Example:
+
+```
+https://example.com/player.html#url=https://example.com/videos/example.webm
+```
+
+For this repository served locally:
+
+```
+http://localhost:8080/dist/player.html#url=http://localhost:8080/videos/webm-big-buck-bunny_trailer.webm
+```
+
+The player loads and attempts to play the media URL, then best-effort browses the containing folder so the file browser is populated. Folder browsing requires same-origin access or CORS support. If the media URL contains characters such as `#` or `&`, URL-encode the media URL before appending it.
 
 ### UI & Metadata
 * Select your own theme color with hue+saturation theming (including grayscale themes at `saturation: 0`).
@@ -278,6 +302,8 @@ Notes:
     "subtitle-color": "#ffffff",
     "subtitle-background": "#000000",
     "subtitle-shadow": false,
+    "wake-lock": true,
+    "watch-history": true,
     "thumbnailing": true,
     "animate": true,
     "search-depth": 3
@@ -341,6 +367,8 @@ User-facing display and subtitle defaults (most commonly customized):
 * `settings.subtitle-background`: Hex color (for example `#000000`)
 * `settings.subtitle-shadow`: `true` uses transparent cue backgrounds with offset text shadow based on `settings.subtitle-background`; `false` uses solid cue background
 * `settings.poster-image`: Optional custom player poster image URL. Supports relative URL, absolute URL, or data URI.
+* `settings.wake-lock`: Prevent screen sleep while media is playing, when supported (`true`/`false`)
+* `settings.watch-history`: Remember recent playback positions and watched state in IndexedDB (`true`/`false`)
 * `settings.blur`: Enable UI blur effects (`true`/`false`)
 * `settings.transitions`: Enable UI transitions (`true`/`false`)
 * `settings.thumbnailing`: Enable video thumbnail generation (`true`/`false`)
@@ -364,7 +392,7 @@ Thumbnail timing and generation:
 * `thumbnails.size`: Max thumbnail width in px
 * `thumbnails.mime.type`: Output image mime type (for example `image/webp`)
 * `thumbnails.mime.quality`: Output quality (`0.0` to `1.0`)
-* `thumbnails.cache`: Enable thumbnail cache in `localStorage` (`true`/`false`)
+* `thumbnails.cache`: Enable thumbnail cache in IndexedDB (`true`/`false`). Generated video thumbnails are stored as image `Blob`s and materialized as temporary object URLs when tiles render.
 * `thumbnails.resizeQuality`: Canvas resize quality (`low`, `medium`, `high`)
 * `thumbnails.concurrency`: Concurrent video thumbnail generation jobs
 

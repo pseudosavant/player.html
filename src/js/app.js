@@ -93,6 +93,24 @@
     app.playlistIndex = -1;
     app.playlistLoop = true;
     const playlistStorageKey = 'playlist-saved';
+    const watchHistoryDbName = 'player-watch-history';
+    const watchHistoryDbVersion = 1;
+    const watchHistoryStoreName = 'items';
+    const watchHistoryMaxItems = 75;
+    const watchHistoryNearEndSeconds = 30;
+    const watchHistoryNearEndRatio = 0.97;
+    const localObjectUrlMetadata = new Map();
+    const localSourceSessions = new Map();
+    const localObjectUrls = new Map();
+    const thumbnailObjectUrls = new Set();
+    let localSourceCounter = 0;
+    let currentMediaUrl = '';
+    const thumbnailCacheDbName = 'player-thumbnail-cache';
+    const thumbnailCacheDbVersion = 1;
+    const thumbnailCacheStoreName = 'items';
+    const thumbnailCacheMaxItems = 300;
+    let thumbnailCacheMigrationPromise = null;
+    let thumbnailCacheUnavailable = false;
     const searchIndexSessionPrefix = 'player-search-index:v2:';
     const searchResultLimit = 100;
     const searchInputDebounceMs = 120;
@@ -131,6 +149,20 @@
       var pieces = absoluteUrl.split('/'); // Break the URL into pieces
       pieces.pop(); // Remove the last piece (the filename)
       return pieces.join('/') + '/'; // Put it back together with a trailing /
+    }
+    const urlToContainingFolder = (url) => {
+      const absoluteUrl = resolveUrl(url);
+      if (!absoluteUrl) return '';
+      try {
+        const parsed = new URL(absoluteUrl);
+        if (!parsed.pathname || parsed.pathname.endsWith('/')) return parsed.toString();
+        parsed.hash = '';
+        parsed.search = '';
+        parsed.pathname = parsed.pathname.substring(0, parsed.pathname.lastIndexOf('/') + 1);
+        return parsed.toString();
+      } catch (e) {
+        return '';
+      }
     }
 
     const getParentFolder = (url) => {
@@ -247,12 +279,154 @@
       return output;
     }
 
+    const localSourceSupported = () => typeof window.showDirectoryPicker === 'function';
+    const isLocalUrl = (url) => {
+      try {
+        return new URL(url).protocol === 'local:';
+      } catch (e) {
+        return false;
+      }
+    }
+    const localSessionUrl = (sessionId, pathParts = [], isFolderUrl = false) => {
+      const path = pathParts.map((part) => encodeURIComponent(part)).join('/');
+      return `local://${sessionId}/${path}${isFolderUrl ? '/' : ''}`;
+    }
+    const parseLocalUrl = (url) => {
+      const parsed = new URL(url);
+      const sessionId = parsed.hostname;
+      const pathParts = parsed.pathname
+        .split('/')
+        .filter((part) => part.length > 0)
+        .map((part) => decodeURIComponent(part));
+      const key = pathParts.join('/');
+      return { sessionId, pathParts, key };
+    }
+    const getLocalSession = (url) => {
+      try {
+        const { sessionId } = parseLocalUrl(url);
+        return localSourceSessions.get(sessionId) || null;
+      } catch (e) {
+        return null;
+      }
+    }
+    const registerLocalFolder = (handle) => {
+      const sessionId = `folder-${Date.now().toString(36)}-${(++localSourceCounter).toString(36)}`;
+      const rootUrl = localSessionUrl(sessionId, [], true);
+      const session = {
+        id: sessionId,
+        rootUrl,
+        name: handle.name || 'Local folder',
+        rootHandle: handle,
+        folders: new Map([['', handle]]),
+        files: new Map()
+      };
+      localSourceSessions.set(sessionId, session);
+      return session;
+    }
+    const getLocalParentUrl = (url) => {
+      const { sessionId, pathParts } = parseLocalUrl(url);
+      if (pathParts.length === 0) return '';
+      return localSessionUrl(sessionId, pathParts.slice(0, -1), true);
+    }
+    const createLocalLinks = async (folderUrl) => {
+      const { sessionId, pathParts, key } = parseLocalUrl(folderUrl);
+      const session = localSourceSessions.get(sessionId);
+      if (!session) throw new Error('Local folder handle is no longer available');
+      const handle = session.folders.get(key);
+      if (!handle) throw new Error('Local folder not found');
+
+      const folders = [];
+      const files = [];
+      if (pathParts.length > 0) {
+        folders.push({
+          kind: 'folder',
+          url: getLocalParentUrl(folderUrl),
+          name: 'Parent',
+          rawName: '..',
+          role: 'parent',
+          size: null,
+          date: null
+        });
+      }
+
+      for await (const [name, child] of handle.entries()) {
+        const childParts = [...pathParts, name];
+        const childKey = childParts.join('/');
+        if (child.kind === 'directory') {
+          const childUrl = localSessionUrl(sessionId, childParts, true);
+          session.folders.set(childKey, child);
+          folders.push({
+            kind: 'folder',
+            url: childUrl,
+            name,
+            rawName: name,
+            role: 'child',
+            size: null,
+            date: null
+          });
+        } else if (child.kind === 'file') {
+          const childUrl = localSessionUrl(sessionId, childParts, false);
+          session.files.set(childKey, child);
+          files.push({
+            kind: 'file',
+            url: childUrl,
+            name,
+            rawName: name,
+            size: null,
+            date: null
+          });
+        }
+      }
+
+      folders.sort((a, b) => (a.role === 'parent' ? -1 : b.role === 'parent' ? 1 : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })));
+      files.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+      return {
+        url: folderUrl,
+        root: { kind: 'folder', url: folderUrl, name: pathParts[pathParts.length - 1] || session.name, children: folders, files },
+        folders,
+        files,
+        entries: [...folders, ...files],
+        generatedAt: new Date().toISOString(),
+        errors: [],
+        stats: { fetches: 0, iframes: 0, heads: 0, durationMs: 0, maxDepth: 0 }
+      };
+    }
+
+    const getLocalFileHandle = (url) => {
+      if (!isLocalUrl(url)) return null;
+      const parsed = parseLocalUrl(url);
+      const session = localSourceSessions.get(parsed.sessionId);
+      return session ? session.files.get(parsed.key) || null : null;
+    }
+
+    const getPlayableUrlForMedia = async (url) => {
+      if (!isLocalUrl(url)) return url;
+      if (localObjectUrls.has(url)) return localObjectUrls.get(url);
+      const handle = getLocalFileHandle(url);
+      if (!handle) throw new Error('Local file handle is no longer available');
+      const file = await handle.getFile();
+      const objectUrl = URL.createObjectURL(file);
+      localObjectUrls.set(url, objectUrl);
+      localObjectUrlMetadata.set(url, {
+        historyId: getLocalFileHistoryId(file),
+        label: removeFileExtension(file.name || urlToFilename(url)),
+        source: 'local-file',
+        sourceUrl: file.name || url
+      });
+      return objectUrl;
+    }
+
     const createLinks = async (url) => {
       const targetUrl = url || window.location.href;
       const folder = urlToFolder(targetUrl) || urlToFolder(window.location.href);
       if (!folder) throw new Error('Invalid folder URL');
-      const mode = (isSameOriginUrl(folder) ? 'auto' : 'fetch');
-      const links = await folderApiRequest(folder, { mode });
+      const links = isLocalUrl(folder)
+        ? await createLocalLinks(folder)
+        : await (async () => {
+            const mode = (isSameOriginUrl(folder) ? 'auto' : 'fetch');
+            return folderApiRequest(folder, { mode });
+          })();
 
       if (Array.isArray(links.folders)) {
         links.folders = links.folders.filter((item) => !(item && item.role === 'self'));
@@ -418,6 +592,7 @@
 
     const renderLinksHtml = (html = '') => {
       clearThumbnailQueue();
+      revokeThumbnailObjectUrls();
       $links.innerHTML = html;
 
       const $renderedLinks = [...document.querySelectorAll('.file, .folder')];
@@ -660,8 +835,12 @@
 
       try {
         const depth = Math.max(0, getSearchDepth() - 1);
-        const mode = (isSameOriginUrl(rootUrl) ? 'auto' : 'fetch');
-        const links = await folderApiRequest(rootUrl, { mode, maxDepth: depth });
+        const links = isLocalUrl(rootUrl)
+          ? app.links
+          : await (async () => {
+              const mode = (isSameOriginUrl(rootUrl) ? 'auto' : 'fetch');
+              return folderApiRequest(rootUrl, { mode, maxDepth: depth });
+            })();
         if (requestId !== searchIndexRequestId) return false;
 
         searchState.entries = buildSearchIndexEntries(links, rootUrl);
@@ -740,8 +919,8 @@
       }
 
       const playMedia = (opts.playMedia !== false);
-      const mediaUrl = (isMedia(resolved) ? resolved : '');
-      const folderUrl = urlToFolder(mediaUrl || resolved);
+      const mediaUrl = (opts.forceMedia ? resolved : (isMedia(resolved) ? resolved : ''));
+      const folderUrl = (opts.forceMedia ? urlToContainingFolder(resolved) : urlToFolder(mediaUrl || resolved));
       if (!folderUrl) {
         console.warn('Invalid folder URL');
         return false;
@@ -750,15 +929,18 @@
       const previousRoot = getHashRootLocation();
       const nextRoot = resolveRootForLocation(folderUrl, opts.rootUrl);
       const rootChanged = (!!nextRoot && nextRoot !== previousRoot);
+      let openedLinks = false;
 
       try {
         clearThumbnailQueue();
         setHashRootLocation(nextRoot || folderUrl);
         await createLinks(folderUrl);
+        openedLinks = true;
       } catch (e) {
         const reason = classifyLocationOpenError(e);
         console.warn(`Unable to open URL (${reason})`, e);
-        return false;
+        if (!mediaUrl) return false;
+        hashState.location = folderUrl;
       }
 
       if (mediaUrl && playMedia) {
@@ -770,7 +952,7 @@
         updateHash({ push: !!opts.pushHash });
       }
 
-      if (rootChanged || !searchState.rootUrl) {
+      if (openedLinks && (rootChanged || !searchState.rootUrl)) {
         setSearchRootUrl(nextRoot || folderUrl);
         refreshSearchIndex({ force: false, rootUrl: (nextRoot || folderUrl) });
       }
@@ -832,22 +1014,31 @@
 
       const medias = files.filter((file) => isMedia(file.url));
       medias.sort(sortFiles);
+      const watchRecords = await getWatchHistoryRecords(medias.map((file) => file.url));
 
-      medias.forEach((file) => {
+      for (const file of medias) {
         const rawUrl = file.url;
         const url = decodeURI(rawUrl).replace(base, '');
         const label = urlToLabel(url);
         const cssClasses = [];
+        const watchRecord = watchRecords.get(rawUrl);
+        const watchProgress = watchRecord && Number.isFinite(watchRecord.progress)
+          ? minmax(0, watchRecord.progress, 1)
+          : 0;
 
         const preRenderedThumbnail = findThumbnail(file.url, links.files);
         const preRenderedThumbnailAvailable = preRenderedThumbnail && preRenderedThumbnail.url;
-        const thumbnailUrl = (preRenderedThumbnailAvailable ? preRenderedThumbnail.url : '');
+        const thumbnailUrl = preRenderedThumbnailAvailable
+          ? (isLocalUrl(preRenderedThumbnail.url) ? await getPlayableUrlForMedia(preRenderedThumbnail.url) : preRenderedThumbnail.url)
+          : '';
 
         if (preRenderedThumbnailAvailable) cssClasses.push('prerendered');
-        if (rawUrl === $player.src) cssClasses.push('current');
+        if (rawUrl === getMediaUrl()) cssClasses.push('current');
+        if (watchRecord && watchRecord.completed) cssClasses.push('watched');
+        else if (watchProgress > 0) cssClasses.push('in-progress');
 
-        html += createFileTemplate(rawUrl, label, cssClasses.join(' '), thumbnailUrl);
-      });
+        html += createFileTemplate(rawUrl, label, cssClasses.join(' '), thumbnailUrl, watchProgress);
+      }
 
       renderLinksHtml(html);
     }
@@ -897,19 +1088,21 @@
       updateHash();
     }
 
-    const createFileTemplate = (url, label, optionalClasses = '', preRenderedThumbnailUrl = '' ) => {
+    const createFileTemplate = (url, label, optionalClasses = '', preRenderedThumbnailUrl = '', watchProgress = 0) => {
       const escapedUrl = escapeAttr(url);
       const safeLabel = escapeHtml(label);
       const safeTitle = escapeAttr(`Play ${url}`);
-      const styleValue = preRenderedThumbnailUrl
-        ? `--image-url-0: url('${escapeCssUrl(preRenderedThumbnailUrl)}')`
-        : '';
+      const styleParts = [];
+      if (preRenderedThumbnailUrl) styleParts.push(`--image-url-0: url('${escapeCssUrl(preRenderedThumbnailUrl)}')`);
+      if (watchProgress > 0) styleParts.push(`--watch-progress: ${limitPrecision(watchProgress * 100, 2)}%`);
+      const styleValue = styleParts.join('; ');
       const safeStyle = escapeAttr(styleValue);
       const isAudioClass = (isAudio(url) ? 'audio-file' : '');
 
       return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='${safeTitle}' style='${safeStyle}' draggable='false'>
                 <div class='title' draggable='false'>
                   <span class='label'>${safeLabel}</span>
+                  <svg class='watched-icon' aria-hidden='true' focusable='false'><use xlink:href='#svg-checkmark-circle'/></svg>
                   <button class='btn-add-to-playlist' type='button' title='Add to playlist' aria-label='Add to playlist'>
                     <svg><use xlink:href='#svg-playlist-add'/></svg>
                   </button>
@@ -970,12 +1163,12 @@
       if (
         app.playlistIndex >= 0 &&
         app.playlistIndex < app.playlist.length &&
-        (!$player.src || app.playlist[app.playlistIndex].url === $player.src)
+        (!getMediaUrl() || app.playlist[app.playlistIndex].url === getMediaUrl())
       ) {
         return app.playlistIndex;
       }
-      if (!$player.src) return -1;
-      return app.playlist.findIndex((item) => item.url === $player.src);
+      if (!getMediaUrl()) return -1;
+      return app.playlist.findIndex((item) => item.url === getMediaUrl());
     }
 
     const syncPlaylistCurrent = () => {
@@ -999,7 +1192,7 @@
 
     const setPlaylistFromUrls = (urls) => {
       app.playlist = (Array.isArray(urls) ? urls.map(playlistItemFromUrl) : []);
-      app.playlistIndex = app.playlist.findIndex((item) => item.url === $player.src);
+      app.playlistIndex = app.playlist.findIndex((item) => item.url === getMediaUrl());
       renderPlaylist();
     }
 
@@ -1033,6 +1226,477 @@
     const getSearchDepthDefault = () => normalizeSearchDepth(getOptionSettingDefault('search-depth', 3), 3);
     const getSearchDepth = () => normalizeSearchDepth(retrieveSetting('search-depth'), getSearchDepthDefault());
     const isSearchEnabled = () => getSearchDepth() > 0;
+    const getWatchHistoryDefault = () => normalizeBooleanSetting(getOptionSettingDefault('watch-history', true), true);
+    const shouldRememberWatchHistory = () => normalizeBooleanSetting(retrieveSetting('watch-history'), getWatchHistoryDefault());
+
+    let watchHistoryDbPromise = null;
+    const openWatchHistoryDb = () => {
+      if (watchHistoryDbPromise) return watchHistoryDbPromise;
+      if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+      watchHistoryDbPromise = new Promise((resolve) => {
+        const request = indexedDB.open(watchHistoryDbName, watchHistoryDbVersion);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(watchHistoryStoreName)) {
+            const store = db.createObjectStore(watchHistoryStoreName, { keyPath: 'id' });
+            store.createIndex('updatedAt', 'updatedAt');
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => {
+          console.warn('Unable to open watch history database', request.error);
+          resolve(null);
+        };
+      });
+      return watchHistoryDbPromise;
+    }
+
+    const runWatchHistoryStore = async (mode, callback) => {
+      const db = await openWatchHistoryDb();
+      if (!db) return undefined;
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(watchHistoryStoreName, mode);
+        const store = tx.objectStore(watchHistoryStoreName);
+        let result;
+        try {
+          result = callback(store);
+        } catch (e) {
+          reject(e);
+          return;
+        }
+        tx.oncomplete = () => resolve(result);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    const idbRequest = (request) => new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const getLocalFileHistoryId = (file) => {
+      const name = file && file.name ? file.name : 'local-file';
+      const size = file && Number.isFinite(file.size) ? file.size : 0;
+      const modified = file && Number.isFinite(file.lastModified) ? file.lastModified : 0;
+      return `local-file:${name}:${size}:${modified}`;
+    }
+
+    const getWatchHistoryId = (url) => {
+      const mediaUrl = url || getMediaUrl();
+      if (!mediaUrl) return '';
+      if (localObjectUrlMetadata.has(mediaUrl)) return localObjectUrlMetadata.get(mediaUrl).historyId;
+      if (mediaUrl.startsWith('blob:')) return '';
+      return resolveUrl(mediaUrl) || mediaUrl;
+    }
+
+    const getWatchHistoryRecord = async (url) => {
+      if (!shouldRememberWatchHistory()) return null;
+      const id = getWatchHistoryId(url);
+      if (!id) return null;
+      try {
+        return await runWatchHistoryStore('readonly', (store) => idbRequest(store.get(id)));
+      } catch (e) {
+        console.warn('Unable to read watch history', e);
+        return null;
+      }
+    }
+
+    const getWatchHistoryRecords = async (urls) => {
+      if (!shouldRememberWatchHistory() || !Array.isArray(urls) || urls.length === 0) return new Map();
+      const ids = urls.map((url) => [url, getWatchHistoryId(url)]).filter((pair) => pair[1]);
+      if (ids.length === 0) return new Map();
+      try {
+        const records = await runWatchHistoryStore('readonly', (store) => Promise.all(ids.map(([url, id]) =>
+          idbRequest(store.get(id)).then((record) => [url, record || null])
+        )));
+        return new Map((records || []).filter((pair) => pair[1]));
+      } catch (e) {
+        console.warn('Unable to read watch history records', e);
+        return new Map();
+      }
+    }
+
+    const pruneWatchHistory = async () => {
+      try {
+        await runWatchHistoryStore('readwrite', async (store) => {
+          const all = await idbRequest(store.getAll());
+          if (!Array.isArray(all) || all.length <= watchHistoryMaxItems) return;
+          all
+            .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+            .slice(watchHistoryMaxItems)
+            .forEach((record) => store.delete(record.id));
+        });
+      } catch (e) {
+        console.warn('Unable to prune watch history', e);
+      }
+    }
+
+    const clearWatchHistory = async () => {
+      try {
+        await runWatchHistoryStore('readwrite', (store) => store.clear());
+        if (app.links && Array.isArray(app.links.files)) showLinks(app.links);
+      } catch (e) {
+        console.warn('Unable to clear watch history', e);
+      }
+    }
+
+    const isWatchHistoryComplete = (position, duration) => {
+      if (!duration || !Number.isFinite(duration) || duration <= 0) return false;
+      const safePosition = Math.max(0, position || 0);
+      const remaining = Math.max(0, duration - safePosition);
+      return remaining <= watchHistoryNearEndSeconds || safePosition / duration >= watchHistoryNearEndRatio;
+    }
+
+    const updateWatchHistoryTile = (url, record) => {
+      if (!url || !record) return;
+      const $tile = $(`.file[href='${url}']`);
+      if (!$tile) return;
+      $tile.classList.toggle('watched', !!record.completed);
+      $tile.classList.toggle('in-progress', !record.completed && record.progress > 0);
+      if (record.progress > 0) {
+        $tile.style.setProperty('--watch-progress', `${limitPrecision(minmax(0, record.progress, 1) * 100, 2)}%`);
+      } else {
+        $tile.style.removeProperty('--watch-progress');
+      }
+    }
+
+    const writeWatchHistory = async (reason = 'update') => {
+      if (!shouldRememberWatchHistory()) return;
+      const url = getMediaUrl();
+      const id = getWatchHistoryId(url);
+      const duration = getMediaDuration();
+      if (!id || !url || !duration || !Number.isFinite(duration) || duration <= 0) return;
+      const current = Number.isFinite($player.currentTime) ? $player.currentTime : 0;
+      const completed = reason === 'ended' || isWatchHistoryComplete(current, duration);
+      const metadata = localObjectUrlMetadata.get(url) || {};
+      const position = completed ? duration : Math.max(0, current);
+      const record = {
+        id,
+        url: metadata.sourceUrl || url,
+        source: metadata.source || (url.startsWith('blob:') ? 'local-file' : 'http'),
+        title: metadata.label || urlToLabel(url),
+        position,
+        duration,
+        progress: duration ? minmax(0, position / duration, 1) : 0,
+        completed,
+        subtitle: hashState.subtitle || '',
+        updatedAt: Date.now()
+      };
+
+      try {
+        await runWatchHistoryStore('readwrite', (store) => store.put(record));
+        updateWatchHistoryTile(url, record);
+        pruneWatchHistory();
+      } catch (e) {
+        console.warn('Unable to write watch history', e);
+      }
+    }
+
+    const writeWatchHistoryThrottled = throttle(() => writeWatchHistory('timeupdate'), 30000);
+
+    const applyWatchHistoryResume = async (url) => {
+      const record = await getWatchHistoryRecord(url);
+      if (!record || record.completed) return;
+      const duration = getMediaDuration();
+      if (!duration || !Number.isFinite(record.position) || record.position <= 0) return;
+      if (isWatchHistoryComplete(record.position, duration)) return;
+      $player.currentTime = minmax(0, record.position, duration);
+      updateProgress();
+      updateMediaSessionPositionState();
+    }
+
+    let thumbnailCacheDbPromise = null;
+    const openThumbnailCacheDb = () => {
+      if (thumbnailCacheUnavailable) return Promise.resolve(null);
+      if (thumbnailCacheDbPromise) return thumbnailCacheDbPromise;
+      if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+      thumbnailCacheDbPromise = new Promise((resolve) => {
+        let settled = false;
+        const finish = (db) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          if (!db) {
+            thumbnailCacheDbPromise = null;
+            thumbnailCacheUnavailable = true;
+          }
+          resolve(db || null);
+        };
+        const timeoutId = setTimeout(() => {
+          console.warn('Timed out opening thumbnail cache database');
+          finish(null);
+        }, 1500);
+        const request = indexedDB.open(thumbnailCacheDbName, thumbnailCacheDbVersion);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(thumbnailCacheStoreName)) {
+            const store = db.createObjectStore(thumbnailCacheStoreName, { keyPath: 'key' });
+            store.createIndex('lastAccessedAt', 'lastAccessedAt');
+          }
+        };
+        request.onsuccess = () => finish(request.result);
+        request.onblocked = () => {
+          console.warn('Thumbnail cache database is blocked by another tab');
+          finish(null);
+        };
+        request.onerror = () => {
+          console.warn('Unable to open thumbnail cache database', request.error);
+          finish(null);
+        };
+      });
+      return thumbnailCacheDbPromise;
+    }
+
+    const runThumbnailCacheStore = async (mode, callback) => {
+      const db = await openThumbnailCacheDb();
+      if (!db) return undefined;
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(thumbnailCacheStoreName, mode);
+        const store = tx.objectStore(thumbnailCacheStoreName);
+        let result;
+        try {
+          result = callback(store);
+        } catch (e) {
+          reject(e);
+          return;
+        }
+        tx.oncomplete = () => resolve(result);
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    const getThumbnailCacheKey = (url, kind, timestamps) => {
+      const thumbnailOpts = app.options.thumbnails || {};
+      const payload = {
+        version: 2,
+        kind,
+        url,
+        timestamps,
+        size: thumbnailOpts.size,
+        mime: thumbnailOpts.mime,
+        animate: settings && settings.animate ? settings.animate.get() : true
+      };
+      return base64EncodeUTF(JSON.stringify(payload));
+    }
+
+    const createThumbnailObjectUrl = (blob) => {
+      const objectUrl = URL.createObjectURL(blob);
+      thumbnailObjectUrls.add(objectUrl);
+      return objectUrl;
+    }
+
+    const revokeThumbnailObjectUrls = () => {
+      thumbnailObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+      thumbnailObjectUrls.clear();
+    }
+
+    const getThumbnailCacheItems = (record) => {
+      if (!record) return [];
+      if (Array.isArray(record.items)) return record.items;
+      return [];
+    }
+
+    const thumbnailCacheItemSize = (item) => {
+      if (!item) return 0;
+      if (item instanceof Blob) return item.size || 0;
+      if (item.blob instanceof Blob) return item.blob.size || item.size || 0;
+      if (isString(item.url)) return item.size || item.url.length;
+      if (isString(item)) return item.length;
+      return item.size || 0;
+    }
+
+    const thumbnailCacheItemToUrl = (item) => {
+      if (!item) return '';
+      if (item instanceof Blob) return createThumbnailObjectUrl(item);
+      if (item.blob instanceof Blob) return createThumbnailObjectUrl(item.blob);
+      if (isString(item.url)) return item.url;
+      if (isString(item)) return item;
+      return '';
+    }
+
+    const applyThumbnailCacheItems = (node, items) => {
+      if (!node || !Array.isArray(items) || items.length === 0) return null;
+      const urls = items.map(thumbnailCacheItemToUrl).filter((item) => item);
+      urls.forEach((thumbnailUrl, i) => {
+        node.style.setProperty(`--image-url-${i}`, `url('${escapeCssUrl(thumbnailUrl)}')`);
+      });
+      return urls.length > 0 ? { URI: urls[0] } : null;
+    }
+
+    const dataUriToBlob = async (dataUri) => {
+      if (!isString(dataUri) || !dataUri.startsWith('data:image/')) return null;
+      try {
+        return await fetch(dataUri).then((response) => response.blob());
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const parseLegacyThumbnailCacheKey = (key) => {
+      if (!isString(key)) return null;
+      const re = /^video-thumbnail\.js-(\d{13,})-(\d+\.?\d{0,2})-(\d{1,5})\|(\w{3,4})\|([\d.]+)\|(.+)$/i;
+      const parts = re.exec(key);
+      if (!parts) return null;
+      const size = Number(parts[3]);
+      const timestamp = Number(parts[5]);
+      if (!Number.isFinite(size) || !Number.isFinite(timestamp)) return null;
+      return {
+        key,
+        size,
+        mime: { type: `image/${parts[4].toLowerCase()}` },
+        timestamp,
+        url: parts[6]
+      };
+    }
+
+    const migrateThumbnailLocalStorageCache = async () => {
+      if (thumbnailCacheMigrationPromise) return thumbnailCacheMigrationPromise;
+      thumbnailCacheMigrationPromise = (async () => {
+        if (!app.options.thumbnails.cache || typeof localStorage === 'undefined') return;
+        const legacyKeys = [];
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('video-thumbnail.js-')) legacyKeys.push(key);
+          }
+        } catch (e) {
+          return;
+        }
+        if (legacyKeys.length === 0) return;
+
+        const thumbnailOpts = app.options.thumbnails || {};
+        const configuredTimestamps = Array.isArray(thumbnailOpts.timestamps) && thumbnailOpts.timestamps.length > 0
+          ? [...thumbnailOpts.timestamps]
+          : [0];
+        const currentMime = thumbnailOpts.mime || {};
+        const groups = new Map();
+
+        for (const key of legacyKeys) {
+          const parsed = parseLegacyThumbnailCacheKey(key);
+          if (!parsed) continue;
+          let dataUri = '';
+          try {
+            dataUri = localStorage.getItem(key);
+          } catch (e) {
+            continue;
+          }
+          const blob = await dataUriToBlob(dataUri);
+          if (!blob) continue;
+          const groupKey = `${parsed.url}|${parsed.size}|${parsed.mime.type}`;
+          if (!groups.has(groupKey)) {
+            groups.set(groupKey, { url: parsed.url, size: parsed.size, mime: parsed.mime, entries: [] });
+          }
+          groups.get(groupKey).entries.push({ timestamp: parsed.timestamp, blob, key });
+        }
+
+        for (const group of groups.values()) {
+          group.entries.sort((a, b) => a.timestamp - b.timestamp);
+          const timestamps = group.entries.map((entry) => entry.timestamp);
+          const items = group.entries.map((entry) => ({
+            blob: entry.blob,
+            size: entry.blob.size,
+            mime: entry.blob.type || group.mime.type || ''
+          }));
+          const mime = {
+            ...currentMime,
+            type: group.mime.type || currentMime.type
+          };
+          const oldMime = thumbnailOpts.mime;
+          thumbnailOpts.mime = mime;
+          try {
+            await putThumbnailCacheRecord(getThumbnailCacheKey(group.url, 'video', timestamps), items);
+            if (
+              timestamps.length === configuredTimestamps.length &&
+              timestamps.every((timestamp, index) => timestamp === configuredTimestamps[index])
+            ) {
+              await putThumbnailCacheRecord(getThumbnailCacheKey(group.url, 'video', configuredTimestamps), items);
+            }
+          } finally {
+            thumbnailOpts.mime = oldMime;
+          }
+        }
+
+        legacyKeys.forEach((key) => {
+          try {
+            localStorage.removeItem(key);
+          } catch (e) { }
+        });
+        settings.cache.update();
+      })();
+      return thumbnailCacheMigrationPromise;
+    }
+
+    const readThumbnailCache = async (key) => {
+      if (!app.options.thumbnails.cache) return null;
+      try {
+        const record = await runThumbnailCacheStore('readwrite', async (store) => {
+          const item = await idbRequest(store.get(key));
+          if (item) {
+            item.lastAccessedAt = Date.now();
+            store.put(item);
+          }
+          return item || null;
+        });
+        return record;
+      } catch (e) {
+        console.warn('Unable to read thumbnail cache', e);
+        return null;
+      }
+    }
+
+    const putThumbnailCacheRecord = async (key, items) => {
+      await runThumbnailCacheStore('readwrite', (store) => store.put({
+        key,
+        items,
+        size: items.reduce((acc, item) => acc + thumbnailCacheItemSize(item), 0),
+        createdAt: Date.now(),
+        lastAccessedAt: Date.now()
+      }));
+    }
+
+    const writeThumbnailCache = async (key, items) => {
+      if (!app.options.thumbnails.cache || !Array.isArray(items) || items.length === 0 || isPlaying()) return;
+      try {
+        await putThumbnailCacheRecord(key, items);
+        pruneThumbnailCache();
+      } catch (e) {
+        console.warn('Unable to write thumbnail cache', e);
+      }
+    }
+
+    const pruneThumbnailCache = async () => {
+      try {
+        await runThumbnailCacheStore('readwrite', async (store) => {
+          const all = await idbRequest(store.getAll());
+          if (!Array.isArray(all) || all.length <= thumbnailCacheMaxItems) return;
+          all
+            .sort((a, b) => (b.lastAccessedAt || 0) - (a.lastAccessedAt || 0))
+            .slice(thumbnailCacheMaxItems)
+            .forEach((record) => store.delete(record.key));
+        });
+      } catch (e) {
+        console.warn('Unable to prune thumbnail cache', e);
+      }
+    }
+
+    const clearThumbnailCache = async () => {
+      try {
+        await runThumbnailCacheStore('readwrite', (store) => store.clear());
+      } catch (e) {
+        console.warn('Unable to clear thumbnail cache', e);
+      }
+    }
+
+    const getThumbnailCacheSize = async () => {
+      try {
+        const all = await runThumbnailCacheStore('readonly', (store) => idbRequest(store.getAll()));
+        if (!Array.isArray(all)) return 0;
+        return all.reduce((acc, item) => acc + (item.size || 0), 0);
+      } catch (e) {
+        console.warn('Unable to calculate thumbnail cache size', e);
+        return 0;
+      }
+    }
 
     const playerConfigFilename = 'player.html.json';
     const manifestFilename = 'manifest.json';
@@ -1921,9 +2585,32 @@
       return state;
     }
     const getBaseLocation = (l) => l.protocol + '//' + l.host;
-    const getMediaUrl = () => $player.src;
+    const getMediaUrl = () => currentMediaUrl || $player.src;
 
     const compressedHashPrefix = 'dr=';
+
+    const getHashParam = (hash, key) => {
+      if (!isString(hash) || !isString(key)) return undefined;
+      const query = (hash.startsWith('?') ? hash.substring(1) : hash);
+      const keyPrefix = `${key.toLowerCase()}=`;
+      const part = query.split('&').find((item) => item.toLowerCase().startsWith(keyPrefix));
+      if (!part) return undefined;
+      const value = part.substring(keyPrefix.length);
+      try {
+        return decodeURIComponent(value);
+      } catch (e) {
+        return value;
+      }
+    }
+
+    const decodeHashParams = (hash) => {
+      const url = getHashParam(hash, 'url');
+      if (!isString(url) || url.trim().length === 0) return undefined;
+      return {
+        directUrl: true,
+        url: url.trim()
+      };
+    }
 
     const bytesToBase64 = (bytes) => {
       var binary = '';
@@ -1987,6 +2674,9 @@
       const urlHash = window.location.hash.substr(1);
       if (!urlHash || urlHash.length === 0) return {};
 
+      const paramHash = decodeHashParams(urlHash);
+      if (paramHash) return paramHash;
+
       var hash = {};
       try {
         hash = await decodeHash(urlHash);
@@ -1995,6 +2685,37 @@
       }
 
       return hash;
+    }
+
+    const hashValueIsLocalUrl = (value) => isString(value) && isLocalUrl(value);
+    const hashContainsUnrestorableLocalLocation = (hash) => (
+      !!hash && (
+        hashValueIsLocalUrl(hash.url) ||
+        hashValueIsLocalUrl(hash.root) ||
+        hashValueIsLocalUrl(hash.location) ||
+        hashValueIsLocalUrl(hash.media)
+      )
+    );
+    const sanitizeRestoredHash = (hash) => {
+      if (!hash || !isObjectRecord(hash)) return {};
+      if (hashContainsUnrestorableLocalLocation(hash)) {
+        console.info('Ignoring saved local folder state because file handles are not available after reload.');
+        return {};
+      }
+      const restored = { ...hash };
+      if (hashValueIsLocalUrl(restored.subtitle)) delete restored.subtitle;
+      if (restored.playlist && Array.isArray(restored.playlist.urls)) {
+        const urls = restored.playlist.urls.filter((url) => !hashValueIsLocalUrl(url));
+        if (urls.length > 0) {
+          restored.playlist = { ...restored.playlist, urls };
+          if (!Number.isFinite(restored.playlist.index) || restored.playlist.index >= urls.length) {
+            restored.playlist.index = -1;
+          }
+        } else {
+          delete restored.playlist;
+        }
+      }
+      return restored;
     }
 
     let hashWriteQueue = Promise.resolve();
@@ -2074,7 +2795,7 @@
       const height = $player.videoHeight;
       const currentTime = (Number.isFinite($player.currentTime) ? $player.currentTime : 0);
       const roundedTimeMs = Math.max(0, Math.round(currentTime * 1000));
-      const label = sanitizeFilename(urlToLabel($player.currentSrc || $player.src), 'screenshot');
+      const label = sanitizeFilename(urlToLabel(getMediaUrl() || $player.currentSrc || $player.src), 'screenshot');
       const filename = `${label}-${roundedTimeMs}ms.png`;
       const $canvas = document.createElement('canvas');
       $canvas.width = width;
@@ -2267,6 +2988,7 @@
       setAriaPressed('.btn-play-pause', state === 'play');
       if (state === 'stop') resetPlayerBackground();
       updateMediaSessionPlaybackState(state);
+      updateWakeLock();
     }
 
     const getRanges = () => {
@@ -2310,15 +3032,17 @@
       const shouldAutoplay = (opts.autoplay !== false);
 
       // Don't restart playback if it is the currently playing media
-      if (url === $player.currentSrc && $player.src.length > 0) return;
+      if (url === getMediaUrl() && $player.src.length > 0) return;
 
+      if (getMediaUrl()) writeWatchHistory('mediachange');
       resetPlayer();
 
       // Being playback if there is a URL
       if (!!url) {
+        currentMediaUrl = hashState.media = url;
         logInfo(`Loading media: ${url}`);
         $player.autoplay = shouldAutoplay;
-        const crossOriginTarget = !isSameOriginUrl(url);
+        const crossOriginTarget = !isLocalUrl(url) && !isSameOriginUrl(url);
         let retriedWithoutCors = false;
 
         const applyCrossOriginMode = (disableCrossOrigin) => {
@@ -2333,10 +3057,12 @@
           }
         }
 
-        const loadMedia = (disableCrossOrigin = false) => {
+        const loadMedia = async (disableCrossOrigin = false) => {
           applyCrossOriginMode(disableCrossOrigin);
-          $player.src = hashState.media = url;
-          $trick.src = url;
+          const playbackUrl = await getPlayableUrlForMedia(url);
+          currentMediaUrl = hashState.media = url;
+          $player.src = playbackUrl;
+          $trick.src = playbackUrl;
           $player.load();
         }
 
@@ -2356,8 +3082,23 @@
         $player.once('play', () => logInfo(`Playback started: ${url}`));
         $player.once('loadedmetadata', () => updateDuration($player.duration));
         $player.once('loadedmetadata', updateMediaSessionPositionState);
-        loadMedia(false);
+        if (opts.resumeHistory !== false) {
+          $player.once('loadedmetadata', () => applyWatchHistoryResume(url));
+        }
         $body.addClass('is-loaded');
+        loadMedia(false)
+          .then(() => {
+            if (shouldAutoplay) {
+              const playPromise = $player.play();
+              if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch((e) => console.warn('Unable to autoplay media', e));
+              }
+            }
+          })
+          .catch((e) => {
+            console.warn(`Unable to load media: ${url}`, e);
+            advancePlaylist('error');
+          });
 
         $player.once('loadedmetadata', () => {
           if ($player.videoWidth === 0 && $player.videoHeight === 0) {
@@ -2386,6 +3127,7 @@
         unloadMediaSrc($player);
         unloadMediaSrc($trick);
 
+        currentMediaUrl = '';
         hashState.media = undefined;
         $body.removeClass('is-loaded');
 
@@ -2407,7 +3149,14 @@
             const url = URL.createObjectURL(file);
 
             const label = (file.name ? removeFileExtension(file.name) : urlToLabel(url));
-            setPlaylistFromItem({ url, label: (label ? label : urlToFilename(url)) }, true);
+            const itemLabel = (label ? label : urlToFilename(url));
+            localObjectUrlMetadata.set(url, {
+              historyId: getLocalFileHistoryId(file),
+              label: itemLabel,
+              source: 'local-file',
+              sourceUrl: file.name || url
+            });
+            setPlaylistFromItem({ url, label: itemLabel }, true);
           }
         });
       }
@@ -2422,6 +3171,286 @@
     const autoPositionedSubtitleCues = new WeakSet();
     let autoSubtitleAttemptedFor = '';
     let autoSubtitlePlaybackStartedFor = '';
+    let wakeLockSentinel = null;
+    let wakeLockRequestInFlight = null;
+    let wakeLockReleasedByApp = false;
+    const subtitleTranscriptState = {
+      worker: null,
+      workerUrl: '',
+      requestId: 0,
+      pending: new Map(),
+      activeUrl: '',
+      status: 'empty',
+      cueCount: 0,
+      query: '',
+      results: [],
+      error: ''
+    };
+    let subtitleTranscriptSearchTimer = null;
+
+    const getWakeLockDefault = () => normalizeBooleanSetting(getOptionSettingDefault('wake-lock', true), true);
+    const shouldUseWakeLock = () => normalizeBooleanSetting(retrieveSetting('wake-lock'), getWakeLockDefault());
+    const wakeLockAvailable = () => !!(navigator && navigator.wakeLock && typeof navigator.wakeLock.request === 'function');
+
+    const releaseWakeLock = async () => {
+      wakeLockReleasedByApp = true;
+      const sentinel = wakeLockSentinel;
+      wakeLockSentinel = null;
+      if (!sentinel || sentinel.released) return;
+      try {
+        await sentinel.release();
+      } catch (e) {
+        if (isDebug()) console.warn('Unable to release Wake Lock', e);
+      }
+    }
+
+    const updateWakeLock = async () => {
+      if (!wakeLockAvailable() || !shouldUseWakeLock()) {
+        await releaseWakeLock();
+        return;
+      }
+      const shouldHold = !!($player && $player.src && !$player.paused && !$player.ended && document.visibilityState === 'visible');
+      if (!shouldHold) {
+        await releaseWakeLock();
+        return;
+      }
+      if (wakeLockSentinel && !wakeLockSentinel.released) return;
+      if (wakeLockRequestInFlight) return wakeLockRequestInFlight;
+
+      wakeLockReleasedByApp = false;
+      wakeLockRequestInFlight = navigator.wakeLock.request('screen')
+        .then((sentinel) => {
+          wakeLockSentinel = sentinel;
+          sentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+            if (!wakeLockReleasedByApp && shouldUseWakeLock() && !$player.paused && document.visibilityState === 'visible') {
+              setTimeout(updateWakeLock, 0);
+            }
+          });
+          return sentinel;
+        })
+        .catch((e) => {
+          if (isDebug()) console.warn('Unable to request Wake Lock', e);
+          return null;
+        })
+        .finally(() => {
+          wakeLockRequestInFlight = null;
+        });
+
+      return wakeLockRequestInFlight;
+    }
+
+    const setupWakeLock = () => {
+      document.addEventListener('visibilitychange', updateWakeLock);
+      window.addEventListener('pagehide', releaseWakeLock);
+      window.addEventListener('pagehide', () => writeWatchHistory('pagehide'));
+    }
+
+    const subtitleTranscriptWorkerSource = () => {
+      const normalizeSearchText = (value) => String(value || '')
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const parseTimestamp = (value) => {
+        const match = String(value || '').trim().match(/(?:(\d{2,}):)?(\d{2}):(\d{2})[.,](\d{3})/);
+        if (!match) return null;
+        const hours = parseInt(match[1] || '0', 10);
+        const minutes = parseInt(match[2], 10);
+        const seconds = parseInt(match[3], 10);
+        const ms = parseInt(match[4], 10);
+        return hours * 3600 + minutes * 60 + seconds + ms / 1000;
+      };
+
+      const decodeEntities = (value) => String(value || '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'");
+
+      const cueTextToPlainText = (value) => decodeEntities(String(value || '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/\{\\[^}]+\}/g, '')
+        .replace(/[ \t]*\n[ \t]*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim());
+
+      const parseCues = (text) => {
+        const normalized = String(text || '')
+          .replace(/^\uFEFF/, '')
+          .replace(/\r\n/g, '\n')
+          .replace(/\r/g, '\n');
+        const blocks = normalized.split(/\n{2,}/);
+        const cues = [];
+
+        blocks.forEach((block) => {
+          const lines = block.split('\n').map((line) => line.trimEnd());
+          while (lines.length && lines[0].trim() === '') lines.shift();
+          if (!lines.length) return;
+          const first = lines[0].trim();
+          if (/^WEBVTT(?:\s|$)/i.test(first)) return;
+          if (/^(NOTE|STYLE|REGION)(?:\s|$)/i.test(first)) return;
+
+          const timingIndex = lines.findIndex((line) => line.includes('-->'));
+          if (timingIndex < 0) return;
+          const timing = lines[timingIndex].split('-->');
+          const start = parseTimestamp(timing[0]);
+          const end = parseTimestamp(timing[1]);
+          if (start === null || end === null) return;
+
+          const plainText = cueTextToPlainText(lines.slice(timingIndex + 1).join('\n'));
+          if (!plainText) return;
+          cues.push({
+            index: cues.length,
+            start,
+            end,
+            text: plainText,
+            normalizedText: normalizeSearchText(plainText)
+          });
+        });
+
+        return cues;
+      };
+
+      let cues = [];
+      self.onmessage = (event) => {
+        const message = event.data || {};
+        try {
+          if (message.type === 'parse') {
+            cues = parseCues(message.text);
+            self.postMessage({ id: message.id, type: 'parsed', cueCount: cues.length });
+            return;
+          }
+          if (message.type === 'search') {
+            const terms = normalizeSearchText(message.query).split(' ').filter(Boolean);
+            const limit = Math.max(1, Math.min(100, message.limit || 30));
+            const results = [];
+            if (terms.length > 0) {
+              for (const cue of cues) {
+                if (terms.every((term) => cue.normalizedText.includes(term))) {
+                  results.push({
+                    index: cue.index,
+                    start: cue.start,
+                    end: cue.end,
+                    text: cue.text
+                  });
+                  if (results.length >= limit) break;
+                }
+              }
+            }
+            self.postMessage({ id: message.id, type: 'results', results, totalCues: cues.length });
+            return;
+          }
+          if (message.type === 'clear') {
+            cues = [];
+            self.postMessage({ id: message.id, type: 'cleared' });
+          }
+        } catch (e) {
+          self.postMessage({ id: message.id, type: 'error', error: e && e.message ? e.message : String(e) });
+        }
+      };
+    };
+
+    const getSubtitleTranscriptWorker = () => {
+      if (subtitleTranscriptState.worker) return subtitleTranscriptState.worker;
+      if (typeof Worker !== 'function' || typeof Blob !== 'function' || typeof URL === 'undefined') return null;
+
+      const source = `(${subtitleTranscriptWorkerSource.toString()})()`;
+      const blob = new Blob([source], { type: 'text/javascript' });
+      const workerUrl = URL.createObjectURL(blob);
+      const worker = new Worker(workerUrl);
+      worker.onmessage = (event) => {
+        const message = event.data || {};
+        const pending = subtitleTranscriptState.pending.get(message.id);
+        if (!pending) return;
+        subtitleTranscriptState.pending.delete(message.id);
+        if (message.type === 'error') pending.reject(new Error(message.error || 'Subtitle transcript worker error'));
+        else pending.resolve(message);
+      };
+      worker.onerror = (event) => {
+        subtitleTranscriptState.pending.forEach((pending) => pending.reject(event.error || new Error(event.message || 'Subtitle transcript worker error')));
+        subtitleTranscriptState.pending.clear();
+      };
+      subtitleTranscriptState.worker = worker;
+      subtitleTranscriptState.workerUrl = workerUrl;
+      return worker;
+    }
+
+    const postSubtitleTranscriptWorker = (type, payload = {}) => {
+      const worker = getSubtitleTranscriptWorker();
+      if (!worker) return Promise.reject(new Error('Subtitle transcript search is not supported in this browser'));
+      const id = ++subtitleTranscriptState.requestId;
+      const message = { id, type, ...payload };
+      const promise = new Promise((resolve, reject) => {
+        subtitleTranscriptState.pending.set(id, { resolve, reject });
+      });
+      worker.postMessage(message);
+      return promise;
+    }
+
+    const fetchText = async (url) => {
+      if (isLocalUrl(url)) {
+        const handle = getLocalFileHandle(url);
+        if (!handle) throw new Error('Local text file handle is no longer available');
+        const file = await handle.getFile();
+        return file.text();
+      }
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Unable to fetch ${url}: ${response.status}`);
+      return response.text();
+    }
+
+    const convertSrtTextToVtt = (text) => {
+      const re = /(\d{2}:\d{2}:\d{2}),(\d{3})/g;
+      return `WEBVTT\r\n\r\n${String(text || '').replace(re, "$1.$2")}`;
+    }
+
+    const textToObjectUrl = (text, type) => {
+      const blob = new Blob([text], { type: type || 'text/plain' });
+      return URL.createObjectURL(blob);
+    }
+
+    const prepareSubtitleTranscript = async (sourceUrl, vttText) => {
+      subtitleTranscriptState.activeUrl = sourceUrl;
+      subtitleTranscriptState.status = 'loading';
+      subtitleTranscriptState.cueCount = 0;
+      subtitleTranscriptState.results = [];
+      subtitleTranscriptState.query = '';
+      subtitleTranscriptState.error = '';
+      renderSubtitleTranscriptControls();
+
+      try {
+        const result = await postSubtitleTranscriptWorker('parse', { text: vttText });
+        if (subtitleTranscriptState.activeUrl !== sourceUrl) return;
+        subtitleTranscriptState.status = 'ready';
+        subtitleTranscriptState.cueCount = result.cueCount || 0;
+      } catch (e) {
+        if (subtitleTranscriptState.activeUrl !== sourceUrl) return;
+        subtitleTranscriptState.status = 'error';
+        subtitleTranscriptState.error = e && e.message ? e.message : String(e);
+      }
+
+      renderSubtitleTranscriptControls();
+    }
+
+    const clearSubtitleTranscript = () => {
+      if (subtitleTranscriptSearchTimer) {
+        clearTimeout(subtitleTranscriptSearchTimer);
+        subtitleTranscriptSearchTimer = null;
+      }
+      subtitleTranscriptState.activeUrl = '';
+      subtitleTranscriptState.status = 'empty';
+      subtitleTranscriptState.cueCount = 0;
+      subtitleTranscriptState.query = '';
+      subtitleTranscriptState.results = [];
+      subtitleTranscriptState.error = '';
+      postSubtitleTranscriptWorker('clear').catch(() => {});
+      renderSubtitleTranscriptControls();
+    }
 
     const getAutoSubtitleDefault = () => {
       const fromSettings = getOptionSettingDefault('auto-subtitles', undefined);
@@ -2507,7 +3536,7 @@
     }
 
     const markAutoSubtitlePlaybackStarted = () => {
-      const mediaUrl = $player.currentSrc || $player.src;
+      const mediaUrl = getMediaUrl() || $player.currentSrc || $player.src;
       if (mediaUrl) autoSubtitlePlaybackStartedFor = mediaUrl;
     }
 
@@ -2528,7 +3557,7 @@
     const maybeAutoLoadSubtitles = () => {
       if (!shouldAutoLoadMatchingSubtitles()) return;
 
-      const mediaUrl = $player.currentSrc || $player.src;
+      const mediaUrl = getMediaUrl() || $player.currentSrc || $player.src;
       if (!mediaUrl) return;
       if (autoSubtitlePlaybackStartedFor !== mediaUrl) return;
       if (!Array.isArray(app.links.files)) return;
@@ -2558,10 +3587,16 @@
     }
 
     const createDisableSubtitlesItem = () => {
-      const $toggle = $(`<li class='subtitle-item modal-item disable-subtitles'><button type='button' class='subtitle-choice disable-subtitles-btn'>Turn off subtitles</button></li>`);
-      const $btn = $toggle.querySelector('button');
-      $($btn).on('click', (e) => {
+      const $toggle = $(`<li class='subtitle-item modal-item subtitle-choice disable-subtitles' tabindex='0'>Turn off subtitles</li>`);
+      $($toggle).on('click', (e) => {
         e.preventDefault();
+        e.stopImmediatePropagation();
+        clearSubtitles({ updateHash: true });
+      });
+      $($toggle).on('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
         clearSubtitles({ updateHash: true });
       });
       return $toggle;
@@ -2643,16 +3678,134 @@
     }
 
     const updateSubtitleDurations = () => {
-      const items = [...$subtitles.querySelectorAll('button[data-subtitle-url]')];
-      items.forEach(async (btn) => {
-        if (btn.dataset.subtitleDurationReady === 'true') return;
-        const url = btn.dataset.subtitleUrl;
+      const items = [...$subtitles.querySelectorAll('.subtitle-choice[data-subtitle-url]')];
+      items.forEach(async (choice) => {
+        if (choice.dataset.subtitleDurationReady === 'true') return;
+        const url = choice.dataset.subtitleUrl;
         if (!url) return;
         const duration = await getSubtitleDurationCached(url);
-        const name = btn.dataset.subtitleName ? decodeURIComponent(btn.dataset.subtitleName) : btn.textContent;
-        btn.textContent = `${name} (${secondsToString(duration)})`;
-        btn.dataset.subtitleDurationReady = 'true';
+        const name = choice.dataset.subtitleName ? decodeURIComponent(choice.dataset.subtitleName) : choice.textContent;
+        choice.textContent = `${name} (${secondsToString(duration)})`;
+        choice.dataset.subtitleDurationReady = 'true';
       });
+    }
+
+    const removeSubtitleTranscriptControls = () => {
+      if (!$subtitles) return;
+      [...$subtitles.querySelectorAll('.subtitle-transcript-heading, .subtitle-transcript-item')].forEach((el) => $(el).remove());
+    }
+
+    const seekToSubtitleCue = (seconds) => {
+      if (!$player || !$player.src || !Number.isFinite(seconds)) return;
+      const duration = getMediaDuration();
+      $player.currentTime = duration ? minmax(0, seconds, duration) : Math.max(0, seconds);
+      updateProgress();
+      updateMediaSessionPositionState();
+    }
+
+    const renderSubtitleTranscriptControls = () => {
+      if (!$subtitles) return '';
+      const activeInput = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('subtitle-transcript-input')
+        ? document.activeElement
+        : null;
+      const selectionStart = activeInput ? activeInput.selectionStart : null;
+      const selectionEnd = activeInput ? activeInput.selectionEnd : null;
+      removeSubtitleTranscriptControls();
+      if (subtitleTranscriptState.status === 'empty') return '';
+
+      const cueCount = subtitleTranscriptState.cueCount || 0;
+      const statusText = (() => {
+        if (subtitleTranscriptState.status === 'loading') return 'Indexing subtitle transcript...';
+        if (subtitleTranscriptState.status === 'error') return `Transcript search unavailable: ${subtitleTranscriptState.error || 'Unknown error'}`;
+        if (cueCount === 0) return 'No searchable subtitle cues found';
+        return `${cueCount} searchable cues`;
+      })();
+      const disabled = subtitleTranscriptState.status === 'ready' && cueCount > 0 ? '' : ' disabled';
+      const query = escapeAttr(subtitleTranscriptState.query || '');
+      const resultItems = (subtitleTranscriptState.status === 'ready' && subtitleTranscriptState.query.trim().length > 0)
+        ? (subtitleTranscriptState.results.length > 0
+          ? subtitleTranscriptState.results.map((result) => `
+              <li class='subtitle-transcript-item subtitle-transcript-result modal-item' tabindex='0' data-seek-time='${escapeAttr(result.start)}'>
+                <span class='subtitle-transcript-time'>${secondsToString(result.start)}</span>
+                <span class='subtitle-transcript-text'>${escapeHtml(result.text)}</span>
+              </li>
+            `).join('')
+          : `<li class='subtitle-transcript-item modal-item subtitle-transcript-empty'>No matching cues</li>`)
+        : '';
+
+      const html = `
+        <li class='modal-item subtitle-section-heading subtitle-transcript-heading'>Transcript search</li>
+        <li class='subtitle-transcript-item modal-item subtitle-transcript-search'>
+          <label class='subtitle-transcript-search-label'>
+            <input class='subtitle-transcript-input' type='search' placeholder='Search loaded subtitles' value='${query}' autocomplete='off' spellcheck='false'${disabled}>
+            <span class='subtitle-transcript-status'>${escapeHtml(statusText)}</span>
+          </label>
+        </li>
+        ${resultItems}
+      `;
+
+      const settingsStart = $subtitles.querySelector('.subtitle-settings-heading');
+      if (settingsStart) settingsStart.insertAdjacentHTML('beforebegin', html);
+      else $subtitles.insertAdjacentHTML('beforeend', html);
+
+      const $input = $('.subtitle-transcript-input');
+      if ($input) {
+        $input.on('click', (e) => e.stopImmediatePropagation());
+        $input.on('input', actionSubtitleTranscriptSearchInput);
+        if (activeInput) {
+          $input.focus();
+          if (Number.isFinite(selectionStart) && Number.isFinite(selectionEnd)) {
+            $input.setSelectionRange(selectionStart, selectionEnd);
+          }
+        }
+      }
+      [...$subtitles.querySelectorAll('.subtitle-transcript-result')].forEach((btn) => {
+        $(btn).on('click', (e) => {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          seekToSubtitleCue(parseFloat(btn.dataset.seekTime));
+        });
+        $(btn).on('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          seekToSubtitleCue(parseFloat(btn.dataset.seekTime));
+        });
+      });
+
+      return html;
+    }
+
+    const searchSubtitleTranscript = async (query) => {
+      const activeUrl = subtitleTranscriptState.activeUrl;
+      subtitleTranscriptState.query = query;
+      if (subtitleTranscriptState.status !== 'ready' || query.trim().length === 0) {
+        subtitleTranscriptState.results = [];
+        renderSubtitleTranscriptControls();
+        return;
+      }
+
+      try {
+        const result = await postSubtitleTranscriptWorker('search', { query, limit: 30 });
+        if (subtitleTranscriptState.activeUrl !== activeUrl || subtitleTranscriptState.query !== query) return;
+        subtitleTranscriptState.results = result.results || [];
+      } catch (e) {
+        if (subtitleTranscriptState.activeUrl !== activeUrl) return;
+        subtitleTranscriptState.status = 'error';
+        subtitleTranscriptState.error = e && e.message ? e.message : String(e);
+      }
+      renderSubtitleTranscriptControls();
+    }
+
+    const actionSubtitleTranscriptSearchInput = (e) => {
+      e.stopImmediatePropagation();
+      const query = e.target.value || '';
+      subtitleTranscriptState.query = query;
+      if (subtitleTranscriptSearchTimer) clearTimeout(subtitleTranscriptSearchTimer);
+      subtitleTranscriptSearchTimer = setTimeout(() => {
+        subtitleTranscriptSearchTimer = null;
+        searchSubtitleTranscript(query);
+      }, 120);
     }
 
     const populateSubtitles = async (subtitles) => {
@@ -2670,36 +3823,58 @@
           const safeUrl = escapeAttr(url);
           const safeName = escapeHtml(name);
           const encodedName = encodeURIComponent(name);
-          html += `<li class='subtitle-item modal-item' title='${safeUrl}'><button type='button' class='subtitle-choice' data-subtitle-url='${safeUrl}' data-subtitle-name='${encodedName}'>${safeName}</button></li>`
+          html += `<li class='subtitle-item modal-item subtitle-choice' tabindex='0' title='${safeUrl}' data-subtitle-url='${safeUrl}' data-subtitle-name='${encodedName}'>${safeName}</li>`
         }
       }
 
       $subtitles.html(`${getModalCloseButtonHtml()}${html}`);
 
-      const list = [...$subtitles.querySelectorAll('button[data-subtitle-url]')];
-      list.forEach((btn) => {
-        const $btn = $(btn);
-        $btn.on('click', (e) => {
+      const list = [...$subtitles.querySelectorAll('.subtitle-choice[data-subtitle-url]')];
+      list.forEach((choice) => {
+        const $choice = $(choice);
+        $choice.on('click', (e) => {
           e.preventDefault();
-          loadSubtitle(btn.dataset.subtitleUrl);
+          e.stopImmediatePropagation();
+          loadSubtitle(choice.dataset.subtitleUrl);
+        });
+        $choice.on('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          loadSubtitle(choice.dataset.subtitleUrl);
         });
       })
 
       renderSubtitleSettingsControls();
+      renderSubtitleTranscriptControls();
       updateSubtitleToggleVisibility();
       maybeAutoLoadSubtitles();
     }
 
     const loadSubtitle = async (url) => {
       const selectedSubtitleUrl = url;
-      clearSubtitles();
+      clearSubtitles({ preserveTranscript: true });
+      subtitleTranscriptState.activeUrl = selectedSubtitleUrl;
+      subtitleTranscriptState.status = 'loading';
+      subtitleTranscriptState.cueCount = 0;
+      subtitleTranscriptState.query = '';
+      subtitleTranscriptState.results = [];
+      subtitleTranscriptState.error = '';
+      renderSubtitleTranscriptControls();
 
-      if (isSRT(url)) {
-        url = await srtToVtt(url);
-      } else {
-        url = await urlToObjectUrl(url, 'text/vtt');
+      let rawText;
+      try {
+        rawText = await fetchText(selectedSubtitleUrl);
+      } catch (e) {
+        subtitleTranscriptState.status = 'error';
+        subtitleTranscriptState.error = e && e.message ? e.message : String(e);
+        renderSubtitleTranscriptControls();
+        throw e;
       }
+      const vttText = isSRT(selectedSubtitleUrl) ? convertSrtTextToVtt(rawText) : rawText;
+      url = textToObjectUrl(vttText, 'text/vtt');
 
+      prepareSubtitleTranscript(selectedSubtitleUrl, vttText);
       getSubtitleDurationCached(url);
 
       const $track = $(`<track src='${url}' label='${url}' default>`);
@@ -2727,6 +3902,7 @@
         });
       }
       hashState.subtitle = undefined;
+      if (!opts.preserveTranscript) clearSubtitleTranscript();
       updateSubtitleToggleVisibility();
       setAriaPressed('.btn-subtitles', false);
       if (opts.updateHash) updateHash();
@@ -2740,17 +3916,6 @@
       } catch (e) {
         return false;
       }
-    }
-
-    const srtToVtt = async (url) => {
-      const re = /(\d{2}:\d{2}:\d{2}),(\d{3})/g;
-
-      const srt = await fetch(url);
-      const text = await srt.text();
-      const converted = `WEBVTT\r\n\r\n${text.replace(re, "$1.$2")}`;
-
-      const blob = new Blob([converted], {type: 'text/vtt'})
-      return URL.createObjectURL(blob);
     }
 
     const getSubtitleDuration = async (url) => {
@@ -2778,23 +3943,11 @@
       return 0;
     }
 
-    const urlToObjectUrl = async (url, type) => {
-      const srt = await fetch(url);
-      const blob = await srt.blob();
-
-      if (type) {
-        return URL.createObjectURL(blob.slice(0, blob.size, type));
-      } else {
-        return URL.createObjectURL(blob);
-      }
-
-    }
-
     const setCurrentMediaTile = () => {
       const $former = $('.links .current')
       if ($former && $former.classList) $former.classList.remove('current');
 
-      const $current = $(`.file[href='${$player.src}']`);
+      const $current = $(`.file[href='${getMediaUrl()}']`);
       if ($current && $current.classList) $current.classList.add('current');
     }
 
@@ -2918,12 +4071,12 @@
     const getMediaSessionTitle = () => {
       const currentItem = getCurrentPlaylistItem();
       if (currentItem && currentItem.label) return currentItem.label;
-      const mediaUrl = $player.currentSrc || $player.src || hashState.media;
+      const mediaUrl = getMediaUrl() || $player.currentSrc || $player.src || hashState.media;
       return (mediaUrl ? urlToLabel(mediaUrl) : document.title);
     }
 
     const getMediaSessionAlbum = () => {
-      const mediaUrl = $player.currentSrc || $player.src || hashState.media;
+      const mediaUrl = getMediaUrl() || $player.currentSrc || $player.src || hashState.media;
       if (!mediaUrl || mediaUrl.startsWith('blob:')) return document.title;
       try {
         const folder = new URL(urlToFolder(mediaUrl));
@@ -2955,7 +4108,7 @@
     }
 
     const getMediaSessionArtwork = () => {
-      const mediaUrl = $player.currentSrc || $player.src || hashState.media;
+      const mediaUrl = getMediaUrl() || $player.currentSrc || $player.src || hashState.media;
       const tileArtwork = getTileArtworkCssUrl(mediaUrl);
       const tileArtworkUrl = tileArtwork ? cssUrlToMediaImageUrl(tileArtwork.value) : '';
       const fallbackIcon = document.querySelector('link[rel="shortcut icon"], link[rel="icon"]');
@@ -3319,14 +4472,39 @@
       if (!file) return;
       const url = URL.createObjectURL(file);
       const label = (file.name ? removeFileExtension(file.name) : urlToLabel(url));
-      return setPlaylistFromItem({ url, label: (label ? label : urlToFilename(url)) }, true);
+      const itemLabel = (label ? label : urlToFilename(url));
+      localObjectUrlMetadata.set(url, {
+        historyId: getLocalFileHistoryId(file),
+        label: itemLabel,
+        source: 'local-file',
+        sourceUrl: file.name || url
+      });
+      return setPlaylistFromItem({ url, label: itemLabel }, true);
     };
 
-    const actionOpenLocalFile = () => {
+    const actionOpenLocalFileFallback = () => {
       const supportedTypes = app.options.supportedTypes.mime.join(',');
       const $input = $(`<input type="file" accept="${supportedTypes}"/>`);
       $input.on('change', () => playFile($input.files[0]));
       $input.click();
+    }
+
+    const actionOpenLocalFile = async () => {
+      if (!localSourceSupported()) return actionOpenLocalFileFallback();
+      try {
+        const handle = await window.showDirectoryPicker({ mode: 'read' });
+        if (!handle) return;
+        const session = registerLocalFolder(handle);
+        setHashRootLocation(session.rootUrl);
+        await createLinks(session.rootUrl);
+        setSearchRootUrl(session.rootUrl);
+        refreshSearchIndex({ force: true, rootUrl: session.rootUrl });
+        updateHash();
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        console.warn('Unable to open local folder, falling back to file picker', e);
+        actionOpenLocalFileFallback();
+      }
     }
 
     const actionOpenUrl = () => {
@@ -3427,6 +4605,7 @@
       updatePlaylistLoop();
       renderPlaylist();
       setupMediaSession();
+      setupWakeLock();
     }
 
     const setupPrimaryControls = () => {
@@ -3505,8 +4684,14 @@
         updateMediaSessionPositionState();
       });
       $player.on('loadeddata', syncTrickSrc);
-      $player.on('timeupdate', throttle(updateProgress, app.options.updateRate.timeupdate));
-      $player.on('pause', () => updatePlaybackState('pause'));
+      $player.on('timeupdate', throttle(() => {
+        updateProgress();
+        writeWatchHistoryThrottled();
+      }, app.options.updateRate.timeupdate));
+      $player.on('pause', () => {
+        updatePlaybackState('pause');
+        writeWatchHistory('pause');
+      });
       $player.on('play',  () => {
         updatePlaybackState('play');
         markAutoSubtitlePlaybackStarted();
@@ -3514,6 +4699,7 @@
         maybeAutoLoadSubtitles();
       });
       $player.on('ended', () => {
+        writeWatchHistory('ended');
         updatePlaybackState('stop');
         advancePlaylist('ended');
       });
@@ -3746,6 +4932,7 @@
       setModalAccessibilityState($el, true);
       $el.addClass('show');
       if ($el === $subtitles) updateSubtitleDurations();
+      if ($el === $fileinfo) updateFileinfo({ diagnostics: true });
       $el.once('click', hideModals);
       const $focus = getModalFirstFocusable($el);
       if ($focus && typeof $focus.focus === 'function') $focus.focus();
@@ -3755,10 +4942,12 @@
       if (e && $(e.target).hasClass('value')) return;
 
       const modals = [...document.querySelectorAll('.modal.show')];
+      const closingFileinfo = modals.includes($fileinfo);
       modals.forEach((el) => {
         $(el).removeClass('show');
         setModalAccessibilityState(el, false);
       });
+      if (closingFileinfo) fileinfoRequestId += 1;
       setOpenUrlError('');
 
       if (!opts.suppressRestoreFocus && lastModalTrigger && typeof lastModalTrigger.focus === 'function') {
@@ -3781,6 +4970,24 @@
       'subtitle-reset'
     ]);
     const isSubtitleSetting = (key) => subtitleSettingKeys.has(key);
+    const generalSettingSections = [
+      {
+        label: 'Interface',
+        keys: ['hue', 'blur', 'transitions', 'poster-upload', 'poster-reset']
+      },
+      {
+        label: 'Playback & Library',
+        keys: ['wake-lock', 'watch-history', 'watch-history-clear', 'playlist-depth', 'search-depth']
+      },
+      {
+        label: 'Thumbnails & Storage',
+        keys: ['thumbnailing', 'animate', 'cache']
+      },
+      {
+        label: 'Configuration',
+        keys: ['export-config', 'export-manifest', 'reset']
+      }
+    ];
 
     const renderSettingRows = (keys, useDefaults, itemClass = 'setting-item') => {
       return keys.reduce((acc, key) => {
@@ -3849,6 +5056,23 @@
           </li>`;
       }, '');
     }
+    const getGeneralSettingKeys = () => Object.keys(settings).filter((key) => !isSubtitleSetting(key) && !settings[key].hidden);
+    const renderGeneralSettingSections = (keys, useDefaults) => {
+      const keySet = new Set(keys);
+      const renderedKeys = new Set();
+      const html = generalSettingSections.reduce((acc, section) => {
+        const sectionKeys = section.keys.filter((key) => keySet.has(key));
+        if (sectionKeys.length === 0) return acc;
+        sectionKeys.forEach((key) => renderedKeys.add(key));
+        return `${acc}
+          <li class='modal-item modal-section-heading settings-section-heading'>${escapeHtml(section.label)}</li>${renderSettingRows(sectionKeys, useDefaults, 'setting-item')}`;
+      }, '');
+
+      const ungroupedKeys = keys.filter((key) => !renderedKeys.has(key));
+      if (ungroupedKeys.length === 0) return html;
+      return `${html}
+          <li class='modal-item modal-section-heading settings-section-heading'>Other</li>${renderSettingRows(ungroupedKeys, useDefaults, 'setting-item')}`;
+    }
 
     const bindSettingControls = (keys) => {
       const updateWithoutPersisting = (setting) => {
@@ -3884,8 +5108,8 @@
 
     const renderSettingsControls = (useDefaults) => {
       refreshSettingDefaultsFromOptions();
-      const keys = Object.keys(settings).filter((key) => !isSubtitleSetting(key) && !settings[key].hidden);
-      const html = renderSettingRows(keys, useDefaults, 'setting-item');
+      const keys = getGeneralSettingKeys();
+      const html = renderGeneralSettingSections(keys, useDefaults);
       $settings.html(`${getModalCloseButtonHtml()}${html}`);
       bindSettingControls(keys);
       return html;
@@ -4167,6 +5391,45 @@
         set: () => clearCustomPosterImage(),
         update: () => {}
       },
+      'wake-lock': {
+        label: 'Prevent screen sleep',
+        desc: 'Keep the screen awake while audio or video is playing, when supported by the browser.',
+        event: 'change',
+        default: getWakeLockDefault(),
+        get: () => typeof retrieveSetting('wake-lock') !== 'undefined' ? retrieveSetting('wake-lock') : settings['wake-lock'].default,
+        set: (val) => persistSetting('wake-lock', val),
+        update: () => {
+          const $el = $('.setting-wake-lock');
+          const val = $el.checked;
+          settings['wake-lock'].set(val);
+          updateWakeLock();
+        }
+      },
+      'watch-history': {
+        label: 'Remember playback history',
+        desc: 'Remember playback positions and watched state for recently played media.',
+        event: 'change',
+        default: getWatchHistoryDefault(),
+        get: () => typeof retrieveSetting('watch-history') !== 'undefined' ? retrieveSetting('watch-history') : settings['watch-history'].default,
+        set: (val) => persistSetting('watch-history', val),
+        update: () => {
+          const $el = $('.setting-watch-history');
+          const val = $el.checked;
+          settings['watch-history'].set(val);
+          if (app.links && Array.isArray(app.links.files)) showLinks(app.links);
+        }
+      },
+      'watch-history-clear': {
+        label: 'Clear playback history',
+        buttonLabel: 'Clear',
+        icon: 'svg-broom',
+        desc: 'Clear remembered playback positions and watched state.',
+        event: 'click',
+        type: 'button',
+        get: () => {},
+        set: () => clearWatchHistory(),
+        update: () => {}
+      },
       'subtitle-reset': {
         label: 'Reset subtitle settings',
         buttonLabel: 'Reset',
@@ -4201,7 +5464,7 @@
       },
       animate: {
         label: 'Animate Thumbnails',
-        desc: 'Generate animated thumbnails. Disable this to save bandwidth and localStorage space.',
+        desc: 'Generate animated thumbnails. Disable this to save bandwidth and IndexedDB cache space.',
         event: 'change',
         default: normalizeBooleanSetting(getOptionSettingDefault('animate', true), true),
         get: () => typeof retrieveSetting('animate') !== 'undefined' ? retrieveSetting('animate') : settings.animate.default,
@@ -4266,18 +5529,19 @@
         label: 'Thumbnail cache',
         buttonLabel: 'Clear',
         icon: 'svg-broom',
-        desc: 'Amount of localStorage space in your browser that is being used to cache thumbnails',
+        desc: 'Amount of IndexedDB space in your browser that is being used to cache thumbnails',
         event: 'click',
         type: 'button',
-        get: () => Math.floor(videoThumbnail.cacheSize() / 1024),
-        set: () => {
-          videoThumbnail.clearCache();
-          settings.cache.update();
+        get: async () => Math.floor(await getThumbnailCacheSize() / 1024),
+        set: async () => {
+          await clearThumbnailCache();
+          await settings.cache.update();
         },
-        update: () => {
-          const size = settings.cache.get();
+        update: async () => {
+          const size = await settings.cache.get();
           const formattedSize = addCommas(size);
-          $('.setting-cache + .metadata').html(formattedSize);
+          const $metadata = $('.setting-cache + .metadata');
+          if ($metadata) $metadata.html(formattedSize);
         }
       },
       'export-config': {
@@ -4332,13 +5596,15 @@
       settings['subtitle-background'].default = getSubtitleBackgroundDefault();
       settings['subtitle-shadow'].default = getSubtitleShadowDefault();
       settings['poster-image'].default = getPosterImageDefault();
+      settings['wake-lock'].default = getWakeLockDefault();
+      settings['watch-history'].default = getWatchHistoryDefault();
       settings.thumbnailing.default = normalizeBooleanSetting(getOptionSettingDefault('thumbnailing', true), true);
       settings.animate.default = normalizeBooleanSetting(getOptionSettingDefault('animate', true), true);
       settings['playlist-depth'].default = getPlaylistFolderDepthDefault();
       settings['search-depth'].default = getSearchDepthDefault();
     }
 
-    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'export-config', 'export-manifest']);
+    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'watch-history-clear', 'export-config', 'export-manifest']);
     const exportPlayerConfig = () => {
       const options = deepCloneValue(app.options);
       if (!isObjectRecord(options.settings)) options.settings = {};
@@ -4367,36 +5633,77 @@
       downloadJSON(manifestFilename, manifest);
     }
 
+    const headersToDiagnostics = (response) => {
+      const h = response.headers;
+      const data = {
+        httpStatus: response.status,
+        redirected: response.redirected,
+        finalUrl: response.url
+      };
+
+      if (h.has('Content-Length')) data.size = h.get('Content-Length');
+      if (h.has('Content-Type')) data.mimeType = h.get('Content-Type');
+      if (h.has('Last-Modified')) data.date = h.get('Last-Modified');
+      if (h.has('Accept-Ranges')) data.acceptRanges = h.get('Accept-Ranges');
+      if (h.has('Content-Range')) data.contentRange = h.get('Content-Range');
+      if (h.has('Content-Encoding')) data.contentEncoding = h.get('Content-Encoding');
+      if (h.has('Cache-Control')) data.cacheControl = h.get('Cache-Control');
+      if (h.has('ETag')) data.etag = h.get('ETag');
+
+      return data;
+    }
+
     const getHeaderData = async (url) => {
-      const opts = {
-        method: 'HEAD',
-        mode: 'cors',
+      if (isLocalUrl(url)) {
+        const handle = getLocalFileHandle(url);
+        if (!handle) return {};
+        const file = await handle.getFile();
+        return {
+          size: file.size,
+          mimeType: file.type || '',
+          date: file.lastModified ? new Date(file.lastModified).toUTCString() : ''
+        };
       }
-
-      const responseHeaders = (h) => {
-        const response = {};
-
-        if (h.has('Content-Length')) response.size =     h.get('Content-Length');
-        if (h.has('Content-Type'))   response.mimeType = h.get('Content-Type');
-        if (h.has('Last-Modified'))  response.date =     h.get('Last-Modified');
-
-        return response;
-      }
-
-      // Attempt with method = HEAD first
       try {
-        const f = await fetch(url, opts);
-        return responseHeaders(f.headers);
+        const response = await fetch(url, {
+          method: 'HEAD',
+          mode: 'cors',
+          cache: 'no-store'
+        });
+        return headersToDiagnostics(response);
       } catch (e) {
-        // Fallback on method = GET
-        try {
-          opts.method = 'GET';
-          const f = await fetch(url, opts);
-          return responseHeaders(f.headers);
-        } catch (e) {
-          console.warn(e);
-          return {};
-        }
+        return {
+          corsStatus: 'HEAD failed',
+          corsError: e && e.message ? e.message : String(e)
+        };
+      }
+    }
+
+    const getRangeDiagnostics = async (url) => {
+      if (isLocalUrl(url)) {
+        return { rangeRequests: 'Local file handle' };
+      }
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-store',
+          headers: { Range: 'bytes=0-0' }
+        });
+        const data = headersToDiagnostics(response);
+        delete data.size;
+        delete data.mimeType;
+        delete data.date;
+        delete data.httpStatus;
+        delete data.finalUrl;
+        delete data.redirected;
+        data.rangeRequests = response.status === 206 ? 'Supported (HTTP 206)' : `Unexpected (HTTP ${response.status})`;
+        return data;
+      } catch (e) {
+        return {
+          rangeRequests: 'Unavailable',
+          rangeError: e && e.message ? e.message : String(e)
+        };
       }
     }
 
@@ -4431,44 +5738,165 @@
 
     const supportsVideoFrameCallback = () => 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
     let fileinfoRequestId = 0;
+    const formatRanges = (ranges) => {
+      if (!ranges || ranges.length === 0) return 'none';
+      const output = [];
+      for (let i = 0; i < ranges.length; i++) {
+        output.push(`${secondsToString(ranges.start(i))}-${secondsToString(ranges.end(i))}`);
+      }
+      return output.join(', ');
+    }
+
+    const mediaErrorToString = (error) => {
+      if (!error) return 'none';
+      const codes = {
+        1: 'aborted',
+        2: 'network',
+        3: 'decode',
+        4: 'source not supported'
+      };
+      return `${codes[error.code] || error.code}${error.message ? `: ${error.message}` : ''}`;
+    }
+
+    const mediaReadyStateToString = (value) => ({
+      0: 'HAVE_NOTHING',
+      1: 'HAVE_METADATA',
+      2: 'HAVE_CURRENT_DATA',
+      3: 'HAVE_FUTURE_DATA',
+      4: 'HAVE_ENOUGH_DATA'
+    })[value] || String(value);
+
+    const mediaNetworkStateToString = (value) => ({
+      0: 'NETWORK_EMPTY',
+      1: 'NETWORK_IDLE',
+      2: 'NETWORK_LOADING',
+      3: 'NETWORK_NO_SOURCE'
+    })[value] || String(value);
+
+    const canPlayCurrentMediaType = (url, mimeType = '') => {
+      const candidate = String(mimeType || '').split(';')[0].trim();
+      const mediaEl = document.createElement(isAudio(url) ? 'audio' : 'video');
+      if (candidate) return mediaEl.canPlayType(candidate) || 'no';
+      return 'unknown';
+    }
+
+    const getPerformanceTimingDiagnostics = (url) => {
+      if (!performance || typeof performance.getEntriesByName !== 'function') return {};
+      const entries = performance.getEntriesByName(url, 'resource');
+      const entry = entries && entries.length ? entries[entries.length - 1] : null;
+      if (!entry) return {};
+      const data = {
+        requestDuration: entry.duration
+      };
+      if (typeof entry.transferSize === 'number') data.transferSize = entry.transferSize;
+      if (typeof entry.encodedBodySize === 'number') data.encodedBodySize = entry.encodedBodySize;
+      if (entry.transferSize === 0 && entry.encodedBodySize === 0) data.timingNote = 'Detailed timing may require Timing-Allow-Origin';
+      return data;
+    }
+
+    const getPlaybackQualityDiagnostics = () => {
+      if (!$player || typeof $player.getVideoPlaybackQuality !== 'function') return {};
+      const quality = $player.getVideoPlaybackQuality();
+      return {
+        totalVideoFrames: quality.totalVideoFrames,
+        droppedVideoFrames: quality.droppedVideoFrames,
+        corruptedVideoFrames: quality.corruptedVideoFrames
+      };
+    }
+
+    const getFeatureDiagnostics = () => ({
+      fullscreenSupport: !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
+      pictureInPictureSupport: !!document.pictureInPictureEnabled,
+      wakeLockSupport: wakeLockAvailable(),
+      mediaSessionSupport: mediaSessionAvailable(),
+      localFolderSupport: typeof window.showDirectoryPicker === 'function',
+      videoFrameCallbackSupport: supportsVideoFrameCallback()
+    });
+
+    const fileinfoGroups = {
+      media: 'Media',
+      network: 'HTTP & Range',
+      performance: 'Playback Performance',
+      playback: 'Playback State',
+      capabilities: 'Browser Capabilities'
+    };
+    const fileinfoGroupOrder = ['media', 'network', 'performance', 'playback', 'capabilities'];
     const fileinfoMapping = {
-      name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
-      url: 'URL',
-      size: {name: 'Size', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
-      mimeType: 'Type',
-      duration: {name: 'Duration (seconds)', format: (v) => limitPrecision(v, 2)},
-      bitrate: {name: 'Bitrate', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
-      date: { name: 'Date', format: (d) => dateFormat(new Date(d))},
-      framerate: {name: 'Estimated Framerate', format: (v) => `${limitPrecision(v, 3)}fps`},
-      width: 'Width',
-      height: 'Height',
-      subtitles: 'Embedded Subtitles',
-      audioTracks: 'Audio Tracks'
+      name: { name: 'Filename', group: 'media', desc: 'The decoded name of the currently loaded media file.', format: (v) => decodeURIComponent(v)},
+      duration: {name: 'Duration', group: 'media', desc: 'The media duration reported by the browser, in seconds.', format: (v) => limitPrecision(v, 2)},
+      width: {name: 'Width', group: 'media', desc: 'The intrinsic video width reported by the media element.'},
+      height: {name: 'Height', group: 'media', desc: 'The intrinsic video height reported by the media element.'},
+      subtitles: {name: 'Embedded Subtitles', group: 'media', desc: 'Number of text tracks currently exposed by the media element.'},
+      audioTracks: {name: 'Audio Tracks', group: 'media', desc: 'Number of audio tracks currently exposed by the browser, or 1 when track details are unavailable.'},
+      size: {name: 'Size', group: 'media', desc: 'File size from Content-Length, when the server exposes it.', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
+      mimeType: {name: 'Type', group: 'media', desc: 'Content-Type header reported by the server.'},
+      date: { name: 'Date', group: 'media', desc: 'Last-Modified header reported by the server.', format: (d) => dateFormat(new Date(d))},
+      bitrate: {name: 'Bitrate', group: 'media', desc: 'Estimated average bitrate from file size divided by duration.', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
+
+      url: {name: 'URL', group: 'network', desc: 'The current media URL being played.'},
+      redirected: {name: 'Redirected', group: 'network', desc: 'Whether fetch() reports that the media request followed a redirect.'},
+      corsStatus: {name: 'CORS', group: 'network', desc: 'Whether browser CORS policy allowed metadata requests for this media.'},
+      corsError: {name: 'CORS Error', group: 'network', desc: 'Error reported when a CORS metadata request failed.'},
+      rangeRequests: {name: 'Range Requests', group: 'network', desc: 'Result of a small byte-range probe used to check seeking support.'},
+      rangeError: {name: 'Range Error', group: 'network', desc: 'Error reported when the byte-range probe failed.'},
+      contentEncoding: {name: 'Content-Encoding', group: 'network', desc: 'HTTP content encoding applied by the server, if any.'},
+      cacheControl: {name: 'Cache-Control', group: 'network', desc: 'Server cache policy for the media response.'},
+      etag: {name: 'ETag', group: 'network', desc: 'Server validator used to identify a specific version of the file.'},
+
+      mediaError: {name: 'Media Error', group: 'playback', desc: 'Current HTMLMediaElement error state, if playback failed.'},
+      readyState: {name: 'Ready State', group: 'playback', desc: 'How much media data the browser currently has ready for playback.'},
+      networkState: {name: 'Network State', group: 'playback', desc: 'Current network loading state reported by the media element.'},
+      bufferedRanges: {name: 'Buffered', group: 'playback', desc: 'Time ranges already buffered by the browser.'},
+      seekableRanges: {name: 'Seekable', group: 'playback', desc: 'Time ranges the browser can seek within right now.'},
+      canPlayType: {name: 'canPlayType', group: 'playback', desc: 'Browser media engine confidence for the server-reported MIME type.'},
+
+      framerate: {name: 'Estimated Framerate', group: 'performance', desc: 'Approximate frame rate measured from requestVideoFrameCallback samples.', format: (v) => `${limitPrecision(v, 3)}fps`},
+      totalVideoFrames: {name: 'Total Video Frames', group: 'performance', desc: 'Total decoded/rendered video frames reported by getVideoPlaybackQuality().'},
+      droppedVideoFrames: {name: 'Dropped Video Frames', group: 'performance', desc: 'Frames the browser dropped during playback, indicating possible performance pressure.'},
+      corruptedVideoFrames: {name: 'Corrupted Video Frames', group: 'performance', desc: 'Frames reported as corrupted by the browser, when available.'},
+      requestDuration: {name: 'Request Duration', group: 'performance', desc: 'Resource timing duration for the media request, when available.', format: (v) => `${limitPrecision(v, 1)}ms`},
+      transferSize: {name: 'Transfer Size', group: 'performance', desc: 'Bytes transferred over the network from Resource Timing. Cross-origin values may be hidden.', format: (v) => `${limitPrecision(v / 1024, 1)}KB`},
+      encodedBodySize: {name: 'Encoded Body Size', group: 'performance', desc: 'Compressed response body size from Resource Timing. Cross-origin values may require Timing-Allow-Origin.', format: (v) => `${limitPrecision(v / 1024, 1)}KB`},
+      timingNote: {name: 'Timing Note', group: 'performance', desc: 'Explanation for missing or zeroed Resource Timing details.'},
+
+      fullscreenSupport: {name: 'Fullscreen Support', group: 'capabilities', desc: 'Whether this browser exposes the Fullscreen API for this page.'},
+      pictureInPictureSupport: {name: 'PiP Support', group: 'capabilities', desc: 'Whether this browser exposes native Picture-in-Picture for video.'},
+      wakeLockSupport: {name: 'Wake Lock Support', group: 'capabilities', desc: 'Whether this browser supports preventing screen sleep while playback is active.'},
+      mediaSessionSupport: {name: 'Media Session Support', group: 'capabilities', desc: 'Whether this browser supports OS media controls and lock-screen metadata.'},
+      localFolderSupport: {name: 'Local Folder Support', group: 'capabilities', desc: 'Whether this browser supports choosing a local folder with showDirectoryPicker().'},
+      videoFrameCallbackSupport: {name: 'Video Frame Callback Support', group: 'capabilities', desc: 'Whether this browser can report per-frame video timing through requestVideoFrameCallback().'}
     };
     const renderFileinfo = (metadata = {}) => {
       app.metadata = metadata;
 
       var html = '';
       const metadataKeys = Object.keys(metadata);
-      metadataKeys.forEach((key) => {
-        const map = fileinfoMapping[key];
-        if (!map) return;
-        const label = (typeof map === 'object' ? map.name : map);
-        const value = (typeof map === 'object' && typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
-        html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
+      fileinfoGroupOrder.forEach((group) => {
+        const groupKeys = metadataKeys.filter((key) => {
+          const map = fileinfoMapping[key];
+          return map && map.group === group;
+        });
+        if (groupKeys.length === 0) return;
+        html += `<li class='modal-item modal-section-heading fileinfo-section-heading'>${escapeHtml(fileinfoGroups[group])}</li>`;
+        groupKeys.forEach((key) => {
+          const map = fileinfoMapping[key];
+          const label = map.name;
+          const value = (typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
+          const desc = map.desc || label;
+          html += `<li class='fileinfo-item modal-item ${key}'><span class='key' title='${escapeAttr(desc)}'>${escapeHtml(label)}</span><span class="value">${escapeHtml(value)}</span></li>`;
+        });
       });
 
-      $fileinfo.html(`${getModalCloseButtonHtml()}${html}${getFileinfoActionSectionHtml()}`);
+      $fileinfo.html(`${getModalCloseButtonHtml()}${getFileinfoActionSectionHtml()}${html}`);
       bindFileinfoActionHandlers();
     }
 
-    const updateFileinfo = async () => {
-      const url = $player.currentSrc;
-      const requestId = ++fileinfoRequestId;
+    const getBasicFileinfoMetadata = () => {
+      const url = getMediaUrl();
       const subtitles =   ($player.textTracks  && $player.textTracks.length  ? $player.textTracks.length  : 0);
       const audioTracks = ($player.audioTracks && $player.audioTracks.length ? $player.audioTracks.length : 1);
 
-      const metadata = {
+      return {
         name: urlToFilename(url),
         url: url,
         duration: $player.duration,
@@ -4477,20 +5905,55 @@
         subtitles: subtitles,
         audioTracks: audioTracks,
       };
+    }
 
+    const getMediaElementDiagnostics = () => ({
+      mediaError: mediaErrorToString($player.error),
+      readyState: mediaReadyStateToString($player.readyState),
+      networkState: mediaNetworkStateToString($player.networkState),
+      bufferedRanges: formatRanges($player.buffered),
+      seekableRanges: formatRanges($player.seekable),
+      ...getPlaybackQualityDiagnostics(),
+      ...getFeatureDiagnostics(),
+      ...getPerformanceTimingDiagnostics($player.currentSrc)
+    });
+
+    const updateFileinfo = async (opts = {}) => {
+      const url = getMediaUrl();
+      const requestId = ++fileinfoRequestId;
+      if (!url) {
+        resetFileinfo();
+        return;
+      }
+
+      const metadata = getBasicFileinfoMetadata();
+
+      renderFileinfo(metadata);
+      if (!opts.diagnostics) return;
+      if (!$fileinfo.hasClass('show')) return;
+
+      metadata.diagnosticsStatus = 'Loading...';
+      Object.assign(metadata, getMediaElementDiagnostics());
       renderFileinfo(metadata);
 
       const headerData = await getHeaderData(url);
-      if (requestId !== fileinfoRequestId || $player.currentSrc !== url) return;
+      if (requestId !== fileinfoRequestId || getMediaUrl() !== url) return;
       if (headerData.size) metadata.bitrate = headerData.size / $player.duration;
 
       const headerKeys = Object.keys(headerData);
       headerKeys.forEach((k) => metadata[k] = headerData[k]);
+      metadata.canPlayType = canPlayCurrentMediaType(url, metadata.mimeType);
       renderFileinfo(metadata);
 
-      if (!isAudio(url) && supportsVideoFrameCallback()) {
+      const rangeData = await getRangeDiagnostics(url);
+      if (requestId !== fileinfoRequestId || getMediaUrl() !== url) return;
+      Object.assign(metadata, rangeData);
+      metadata.diagnosticsStatus = 'Loaded';
+      renderFileinfo(metadata);
+
+      if (!isAudio(url) && supportsVideoFrameCallback() && $fileinfo.hasClass('show')) {
         const framerate = await getFramerate($player);
-        if (requestId !== fileinfoRequestId || $player.currentSrc !== url) return;
+        if (requestId !== fileinfoRequestId || getMediaUrl() !== url) return;
         metadata.framerate = framerate;
         renderFileinfo(metadata);
       }
@@ -4510,7 +5973,7 @@
 
     const resetFileinfo = () => {
       fileinfoRequestId += 1;
-      $fileinfo.html(`${getModalCloseButtonHtml()}<li class="fileinfo-item modal-item">Metadata not yet loaded</li>${getFileinfoActionSectionHtml()}`);
+      $fileinfo.html(`${getModalCloseButtonHtml()}${getFileinfoActionSectionHtml()}<li class="fileinfo-item modal-item">Metadata not yet loaded</li>`);
       bindFileinfoActionHandlers();
       app.metadata = {};
     }
@@ -4629,7 +6092,8 @@
       }
 
       try {
-        const results = await audioThumbnail(url, getAudioThumbnailOptions());
+        const thumbnailUrl = await getPlayableUrlForMedia(url);
+        const results = await audioThumbnail(thumbnailUrl, getAudioThumbnailOptions());
         if (requestId !== audioArtworkRequestId) return;
 
         const best = (results && (results.best || results[0])) || null;
@@ -4719,17 +6183,34 @@
       const shouldAnimate = settings.animate.get();
       const timestamps = (shouldAnimate ? timestampList : [timestampList[0]]);
       const frameCount = (shouldAnimate ? timestamps.length : 1);
+      const kind = isAudio(url) ? 'audio' : 'video';
+      const cacheKey = getThumbnailCacheKey(url, kind, timestamps);
+      await migrateThumbnailLocalStorageCache();
+      const cached = await readThumbnailCache(cacheKey);
+      const cachedResult = applyThumbnailCacheItems(node, getThumbnailCacheItems(cached));
+      if (cachedResult) {
+        settings.cache.update();
+        return cachedResult;
+      }
+      const sourceUrl = await getPlayableUrlForMedia(url);
+      if (!node.isConnected) return null;
 
       if (isAudio(url) && typeof audioThumbnail === 'function') {
         const audioOpts = getAudioThumbnailOptions();
         try {
-          const results = await audioThumbnail(url, audioOpts);
+          const results = await audioThumbnail(sourceUrl, audioOpts);
+          if (!node.isConnected) return null;
           const best = (results && (results.best || results[0])) || null;
           if (best && best.URI) {
             const safeURI = escapeCssUrl(best.URI);
             for (let i = 0; i < frameCount; i++) {
               node.style.setProperty(`--image-url-${i}`, `url('${safeURI}')`);
             }
+            writeThumbnailCache(cacheKey, Array.from({ length: frameCount }, () => ({
+              url: best.URI,
+              size: best.URI.length
+            })));
+            settings.cache.update();
             return best;
           }
         } catch (e) {
@@ -4741,20 +6222,35 @@
       const opts = {
         size: thumbnailOpts.size,
         mime: {...thumbnailOpts.mime},
-        cache: thumbnailOpts.cache,
-        timestamps: timestamps,
-        cacheReadOnly: !thumbnailOpts.cache || isPlaying()
+        cache: false,
+        type: 'blob',
+        timestamps: timestamps
       }
       try {
-        const thumbnails = await videoThumbnail(url, opts);
+        const thumbnails = await videoThumbnail(sourceUrl, opts);
         settings.cache.update();
+        if (!node.isConnected) return null;
 
         if (thumbnails && thumbnails.length > 0) {
+          const cacheItems = [];
           thumbnails.forEach((thumbnail, i) => {
-            if (thumbnail && thumbnail.URI && thumbnail.URI.length > 30) {
-              node.style.setProperty(`--image-url-${i}`,`url('${thumbnail.URI}')`);
+            if (thumbnail && thumbnail.blob instanceof Blob) {
+              const thumbnailUrl = createThumbnailObjectUrl(thumbnail.blob);
+              cacheItems[i] = {
+                blob: thumbnail.blob,
+                size: thumbnail.blob.size,
+                mime: thumbnail.blob.type || (thumbnail.mime && thumbnail.mime.type) || ''
+              };
+              node.style.setProperty(`--image-url-${i}`,`url('${escapeCssUrl(thumbnailUrl)}')`);
+            } else if (thumbnail && thumbnail.URI && thumbnail.URI.length > 30) {
+              cacheItems[i] = {
+                url: thumbnail.URI,
+                size: thumbnail.URI.length
+              };
+              node.style.setProperty(`--image-url-${i}`,`url('${escapeCssUrl(thumbnail.URI)}')`);
             }
           });
+          writeThumbnailCache(cacheKey, cacheItems.filter(Boolean));
 
           return thumbnails[0];
         }
@@ -4897,74 +6393,82 @@
       updateVersionNumber();
       checkFileHandlerOpen();
 
-      const hash = await getHash();
+      const hash = sanitizeRestoredHash(await getHash());
 
       if (hash) {
-        const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
-        const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
-        const hasHashRoot = (isString(hash.root) && hash.root.length > 1);
-        const configuredStartLocation = getConfiguredStartLocation();
-        const targetRoot = normalizeFolderUrl(
-          hasHashRoot
-            ? hash.root
-            : (configuredStartLocation || (hasHashLocation ? hash.location : window.location.href))
-        );
-        const targetLocation = normalizeFolderUrl(hasHashLocation ? hash.location : (targetRoot || window.location.href));
-        const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
-
-        if (hasHashSubtitle) {
-          hashState.subtitle = hash.subtitle;
+        if (hash.directUrl && isString(hash.url) && hash.url.length > 0) {
+          await openLocation(hash.url, { playMedia: true, autoplay: true, forceMedia: true });
         } else {
-          hashState.subtitle = undefined;
-        }
-        if (isString(hash.search) && hash.search.trim().length > 0 && isSearchEnabled()) {
-          hashState.search = hash.search.trim();
-          searchState.query = hashState.search;
-          if ($linksSearchInput) $linksSearchInput.value = hashState.search;
-        } else {
-          hashState.search = '';
-          searchState.query = '';
-          if ($linksSearchInput) $linksSearchInput.value = '';
-        }
+          const restoredPlaylist = (hash.playlist ? applyPlaylistState(hash.playlist) : false);
+          const hasHashLocation = (isString(hash.location) && hash.location.length > 1);
+          const hasHashRoot = (isString(hash.root) && hash.root.length > 1);
+          const configuredStartLocation = getConfiguredStartLocation();
+          const targetRoot = normalizeFolderUrl(
+            hasHashRoot
+              ? hash.root
+              : (configuredStartLocation || (hasHashLocation ? hash.location : window.location.href))
+          );
+          const targetLocation = normalizeFolderUrl(hasHashLocation ? hash.location : (targetRoot || window.location.href));
+          const hasHashSubtitle = (isString(hash.subtitle) && hash.subtitle.length > 1 && !hash.subtitle.startsWith('blob:'));
 
-        if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
-          if (restoredPlaylist) {
-            actionPlay(hash.media, { autoplay: false });
+          if (hasHashSubtitle) {
+            hashState.subtitle = hash.subtitle;
           } else {
-            setPlaylistFromUrl(hash.media, false);
-            actionPlay(hash.media, { autoplay: false });
+            hashState.subtitle = undefined;
           }
-        }
+          if (isString(hash.search) && hash.search.trim().length > 0 && isSearchEnabled()) {
+            hashState.search = hash.search.trim();
+            searchState.query = hashState.search;
+            if ($linksSearchInput) $linksSearchInput.value = hashState.search;
+          } else {
+            hashState.search = '';
+            searchState.query = '';
+            if ($linksSearchInput) $linksSearchInput.value = '';
+          }
 
-        if (hash.time && hash.time > 0) $player.currentTime = hash.time;
+          if (hash.media && hash.media.length > 1 && !hash.media.startsWith('blob:')) {
+            if (restoredPlaylist) {
+              actionPlay(hash.media, { autoplay: false, resumeHistory: false });
+            } else {
+              setPlaylistFromUrl(hash.media, false);
+              actionPlay(hash.media, { autoplay: false, resumeHistory: false });
+            }
+          }
 
-        setHashRootLocation(targetRoot);
+          if (hash.time && hash.time > 0) $player.currentTime = hash.time;
 
-        if (targetLocation) {
-          await createLinksSafe(targetLocation);
-        } else if (configuredStartLocation) {
-          await createLinksSafe(configuredStartLocation);
-        } else {
-          await createLinksSafe();
-        }
+          setHashRootLocation(targetRoot);
 
-        setSearchRootUrl(targetRoot || targetLocation || window.location.href);
-        refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
+          if (targetLocation) {
+            await createLinksSafe(targetLocation);
+          } else if (configuredStartLocation) {
+            await createLinksSafe(configuredStartLocation);
+          } else {
+            await createLinksSafe();
+          }
 
-        if (hasHashSubtitle) {
-          try {
-            await loadSubtitle(hash.subtitle);
-          } catch (e) {
-            console.warn('Unable to load subtitle from hash state', e);
+          setSearchRootUrl(targetRoot || targetLocation || window.location.href);
+          refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
+
+          if (hasHashSubtitle) {
+            try {
+              await loadSubtitle(hash.subtitle);
+            } catch (e) {
+              console.warn('Unable to load subtitle from hash state', e);
+              clearSubtitles();
+            }
+          } else {
             clearSubtitles();
           }
-        } else {
-          clearSubtitles();
         }
       }
 
       $(window).on('popstate', async (e) => {
-        const hash = await getHash();
+        const hash = sanitizeRestoredHash(await getHash());
+        if (hash && hash.directUrl && isString(hash.url) && hash.url.length > 0) {
+          await openLocation(hash.url, { playMedia: true, autoplay: true, forceMedia: true, updateHash: false });
+          return;
+        }
         const configuredStartLocation = getConfiguredStartLocation();
         const hasHashLocation = !!(hash && hash.location && hash.location.length > 1);
         const hasHashRoot = !!(hash && hash.root && hash.root.length > 1);

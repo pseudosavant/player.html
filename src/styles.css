@@ -559,24 +559,21 @@
     .modal-item .desc { overflow: visible; }
 
     .subtitle-item { cursor: default; }
-    .subtitle-item .subtitle-choice {
-      display: block;
-      width: 100%;
+    .subtitle-choice,
+    .subtitle-transcript-result {
       text-align: left;
-      background: transparent;
-      border: 0 none;
-      border-radius: 0.25rem;
       color: var(--color-text);
-      padding: 0;
-      margin: 0;
       cursor: pointer;
-      font: inherit;
+      outline: none;
     }
-    .subtitle-item:has(.subtitle-choice:hover),
-    .subtitle-item:has(.subtitle-choice:focus-visible) {
+    .subtitle-choice:hover,
+    .subtitle-choice:focus-visible,
+    .subtitle-transcript-result:hover,
+    .subtitle-transcript-result:focus-visible {
       background-color: var(--color-surface-quiet-hover);
     }
-    .subtitle-item:has(.subtitle-choice:active) {
+    .subtitle-choice:active,
+    .subtitle-transcript-result:active {
       background-color: var(--color-surface-quiet-active);
     }
     .modal-section-heading,
@@ -594,10 +591,51 @@
       font-size: 0.8rem;
     }
     .subtitle-settings-heading,
+    .settings-section-heading,
+    .fileinfo-section-heading,
     .fileinfo-actions-heading {
       padding-top: 0.85rem;
-      padding-left: 1rem;
       border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .subtitle-transcript-search-label {
+      display: grid;
+      grid-template-columns: minmax(12rem, 1fr) auto;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .modal .subtitle-transcript-input {
+      width: 100%;
+      justify-content: flex-start;
+      padding: 0 0.85rem;
+      cursor: text;
+      background-color: var(--color-field-bg);
+      border: 0 none;
+      color: var(--color-field-text);
+    }
+
+    .subtitle-transcript-status {
+      color: var(--color-text-muted);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .subtitle-transcript-result {
+      display: block;
+    }
+
+    .subtitle-transcript-time {
+      color: var(--color-text-muted);
+      font-family: Consolas, 'Courier New', Courier, monospace;
+      margin-right: 0.75rem;
+    }
+
+    .subtitle-transcript-text {
+      display: inline;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .fileinfo-item,
@@ -1663,10 +1701,38 @@
     }
 
     .links a .title .label {
+      position: relative;
+      z-index: 1;
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 2rem;
+    }
+
+    .file.in-progress .title::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: var(--watch-progress, 0%);
+      height: 100%;
+      background: color-mix(in srgb, var(--accent) 45%, transparent);
+      mix-blend-mode: overlay;
+      border-bottom-left-radius: var(--radius-card);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .file .title .watched-icon {
+      display: none;
+      flex: 0 0 auto;
+      width: 1.5rem;
+      height: 1.5rem;
+      margin-left: 0.45rem;
+    }
+
+    .file.watched .title .watched-icon {
+      display: block;
     }
 
     .folder .title {
@@ -1687,6 +1753,8 @@
     }
 
     .links .btn-add-to-playlist {
+      position: relative;
+      z-index: 1;
       display: inline-flex;
       align-items: center;
       justify-content: center;

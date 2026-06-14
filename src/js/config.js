@@ -26,12 +26,12 @@
         },
         thumbnails: {
           timestamps: [0.005, 0.01, 0.015], // How far into the clip (relatively) should it grab the thumbnail from (e.g. 0.10 = 10%)
-          size: 320, // Maximum width of thumbnails. Setting this smaller will save localStorage space.
+          size: 320, // Maximum width of thumbnails. Setting this smaller will save IndexedDB space.
           mime: {
             type: 'image/webp',
             quality: 0.2
           },
-          cache: true, // Should thumbnails be written and read from localStorage cache
+          cache: true, // Should thumbnails be written and read from IndexedDB cache
           resizeQuality: 'high', // `<canvas>` resize quality
           concurrency: 1 // How many thumbnails should it generate at a time. WARNING: Be careful with this setting. Setting it higher than 1 can swamp your HTTP server with thumbnail requests and cause playback issues.
         },
@@ -61,6 +61,8 @@
           'subtitle-background': '#000000',
           'subtitle-shadow': false,
           'poster-image': '', // Optional custom poster image URL or data URI for the player background.
+          'wake-lock': true, // Prevent screen sleep while media is playing, when supported.
+          'watch-history': true, // Remember playback position and watched state in IndexedDB.
           thumbnailing: true,
           animate: true,
           'playlist-depth': 2,
