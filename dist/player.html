@@ -115,9 +115,9 @@
       --blur-base: 1rem;
 
       --subtitle-font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
-      --subtitle-size-min-base: 25.5px;
+      --subtitle-size-min-base: 2.125rem;
       --subtitle-size-fluid-base: 4.35vmin;
-      --subtitle-size-max-base: 51px;
+      --subtitle-size-max-base: 4.25rem;
       --subtitle-size-scale: 1;
       --subtitle-font-size: clamp(
         calc(var(--subtitle-size-min-base) * var(--subtitle-size-scale)),
@@ -130,7 +130,7 @@
       --subtitle-text-shadow: none;
 
       font-family: system-ui, 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
-      font-size: 12px;
+      font-size: 0.75rem;
       background-color: var(--color-page);
       color: var(--color-text);
     }
@@ -332,7 +332,7 @@
       top: 0;
       left: 0;
       margin: 1rem 0 0 1.5rem;
-      font-size: 1.5em;
+      font-size: 1.5rem;
       font-weight: 500;
       color: rgba(255,255,255,0);
       text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0);
@@ -354,7 +354,7 @@
       width: 100%;
       max-height: 75vh;
       margin: auto;
-      background-image: var(--player-poster-image, url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnIHN0YW5kYWxvbmU9J25vJz8+DQo8c3ZnIHdpZHRoPSczNy4xMDEyNjgnIGhlaWdodD0nMzguMjkyMzQ2JyB2aWV3Qm94PSc1LjkwODIyOCA0Ljg1NDE2MiAzNy4xMDEyNjggMzguMjkyMzQ2JyB2ZXJzaW9uPScxLjEnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyc+CiAgPHBhdGggc3R5bGU9J2ZpbGw6IGhzbCggIDMyMywgMTAwJSwgNTAlKScgZD0nTSAxMy43NTAxMzQsOC40MTIxMjAzIDM4LjE2NzE4OSwyMS4xMTY5MjkgYyAxLjU5MjI3NiwwLjgyODUwMiAyLjIxMTQzOCwyLjc5MDkyOSAxLjM4MjkzNiw0LjM4MzIwNSAtMC4zMDgwNTEsMC41OTIwMzcgLTAuNzkwODk5LDEuMDc0ODg1IC0xLjM4MjkzNiwxLjM4MjkzNyBMIDEzLjc1MDEzNCwzOS41ODc4OCBDIDEyLjE1Nzg1OCw0MC40MTYzODEgMTAuMTk1NDMxLDM5Ljc5NzIxOSA5LjM2NjkyOTMsMzguMjA0OTQzIDkuMTI1ODYzLDM3Ljc0MTY0NCA5LDM3LjIyNzA3MiA5LDM2LjcwNDgwOSBWIDExLjI5NTE5MSBjIDAsLTEuNzk0OTI1NCAxLjQ1NTA3NSwtMy4yNSAzLjI1LC0zLjI1IDAuNDQ3NjU0LDAgMC44ODk2NTgsMC4wOTI0NzEgMS4yOTg1NjYsMC4yNzA2OTk1IHogbSAtMS4xNTM5NDksMi4yMTc3NDY3IC0wLjExMDQ4NywtMC4wNDY2OCBjIC0wLjA3NTc5LC0wLjAyNTA5IC0wLjE1NTM1LC0wLjAzOCAtMC4yMzU2OTgsLTAuMDM4IC0wLjQxNDIxNCwwIC0wLjc1LDAuMzM1Nzg2IC0wLjc1LDAuNzUgdiAyNS40MDk2MTggYyAwLDAuMTIwNTIyIDAuMDI5MDQsMC4yMzkyNyAwLjA4NDY4LDAuMzQ2MTg1IDAuMTkxMTkzLDAuMzY3NDQ4IDAuNjQ0MDYxLDAuNTEwMzMyIDEuMDExNTA5LDAuMzE5MTM5IEwgMzcuMDEzMjQsMjQuNjY1MzI0IGMgMC4xMzY2MjQsLTAuMDcxMDkgMC4yNDgwNSwtMC4xODI1MTUgMC4zMTkxMzksLTAuMzE5MTM5IDAuMTkxMTkyLC0wLjM2NzQ0OSAwLjA0ODMxLC0wLjgyMDMxNiAtMC4zMTkxMzksLTEuMDExNTA5IHonLz4KPC9zdmc+Cg=='));
+      background-image: var(--player-poster-image, url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0nMS4wJyBlbmNvZGluZz0nVVRGLTgnIHN0YW5kYWxvbmU9J25vJz8+Cjxzdmcgd2lkdGg9JzM3LjEwMTI2OCcgaGVpZ2h0PSczOC4yOTIzNDYnIHZpZXdCb3g9JzUuOTA4MjI4IDQuODU0MTYyIDM3LjEwMTI2OCAzOC4yOTIzNDYnIHZlcnNpb249JzEuMScgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz4KICA8cGF0aCBzdHlsZT0nZmlsbDogaHNsKCAgMzIzLCAxMDAlLCA1MCUpJyBkPSdNIDEzLjc1MDEzNCw4LjQxMjEyMDMgMzguMTY3MTg5LDIxLjExNjkyOSBjIDEuNTkyMjc2LDAuODI4NTAyIDIuMjExNDM4LDIuNzkwOTI5IDEuMzgyOTM2LDQuMzgzMjA1IC0wLjMwODA1MSwwLjU5MjAzNyAtMC43OTA4OTksMS4wNzQ4ODUgLTEuMzgyOTM2LDEuMzgyOTM3IEwgMTMuNzUwMTM0LDM5LjU4Nzg4IEMgMTIuMTU3ODU4LDQwLjQxNjM4MSAxMC4xOTU0MzEsMzkuNzk3MjE5IDkuMzY2OTI5MywzOC4yMDQ5NDMgOS4xMjU4NjMsMzcuNzQxNjQ0IDksMzcuMjI3MDcyIDksMzYuNzA0ODA5IFYgMTEuMjk1MTkxIGMgMCwtMS43OTQ5MjU0IDEuNDU1MDc1LC0zLjI1IDMuMjUsLTMuMjUgMC40NDc2NTQsMCAwLjg4OTY1OCwwLjA5MjQ3MSAxLjI5ODU2NiwwLjI3MDY5OTUgeiBtIC0xLjE1Mzk0OSwyLjIxNzc0NjcgLTAuMTEwNDg3LC0wLjA0NjY4IGMgLTAuMDc1NzksLTAuMDI1MDkgLTAuMTU1MzUsLTAuMDM4IC0wLjIzNTY5OCwtMC4wMzggLTAuNDE0MjE0LDAgLTAuNzUsMC4zMzU3ODYgLTAuNzUsMC43NSB2IDI1LjQwOTYxOCBjIDAsMC4xMjA1MjIgMC4wMjkwNCwwLjIzOTI3IDAuMDg0NjgsMC4zNDYxODUgMC4xOTExOTMsMC4zNjc0NDggMC42NDQwNjEsMC41MTAzMzIgMS4wMTE1MDksMC4zMTkxMzkgTCAzNy4wMTMyNCwyNC42NjUzMjQgYyAwLjEzNjYyNCwtMC4wNzEwOSAwLjI0ODA1LC0wLjE4MjUxNSAwLjMxOTEzOSwtMC4zMTkxMzkgMC4xOTExOTIsLTAuMzY3NDQ5IDAuMDQ4MzEsLTAuODIwMzE2IC0wLjMxOTEzOSwtMS4wMTE1MDkgeicvPgo8L3N2Zz4K'));
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
@@ -1532,42 +1532,49 @@
       grid-area: links;
 
       display: grid;
-      gap: 2rem;
+      gap: 1rem;
 
       min-width: 0;
       max-width: 100vw;
-      margin-top: 2rem;
+      margin-top: 1rem;
       padding-inline: 1rem;
-      padding-bottom: 2rem;
     }
 
     .links-search {
       display: grid;
       gap: 0.5rem;
-      width: min(30rem, calc(100vw - 2rem));
-      margin: 0 auto;
+      width: 100%;
+      margin: 0;
     }
 
     .links-search-controls {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 0.75rem;
-      align-items: center;
+      align-items: stretch;
     }
 
-    .links-search-input {
-      width: 100%;
+    .links-search-input,
+    .library-field select,
+    .links-search-clear {
       min-width: 0;
-      height: 2.75rem;
+      min-height: 0;
+      padding: 0.5rem 1rem;
       border-radius: var(--radius-card);
       corner-shape: var(--corner-ui);
+      font: inherit;
+      font-size: 1.333333rem;
+      line-height: normal;
+    }
+
+    .links-search-input,
+    .library-field select {
+      width: 100%;
       border: 1px solid var(--color-border-subtle);
       background-color: var(--color-field-bg);
       color: var(--color-field-text);
-      padding: 0 1rem;
-      font-size: 16px;
-      cursor: text;
     }
+
+    .links-search-input { cursor: text; }
 
     .links-search-input::placeholder {
       color: var(--color-field-placeholder);
@@ -1581,13 +1588,10 @@
     .links-search-clear {
       width: auto;
       min-width: 5.5rem;
-      height: 2.75rem;
-      padding: 0 1rem;
-      border-radius: 999px;
+      margin-left: 0.75rem;
       border: 0 none;
-      font-size: 16px;
-      color: var(--text-on-accent);
-      background-color: var(--accent);
+      color: var(--button-primary-text);
+      background-color: var(--button-primary-bg);
       transition:
         background-color var(--transition-base),
         color var(--transition-base),
@@ -1596,11 +1600,11 @@
 
     .links-search-clear:hover,
     .links-search-clear:focus-visible {
-      background-color: var(--accent-hover);
+      background-color: var(--button-primary-bg-hover);
     }
 
     .links-search-clear:active {
-      background-color: var(--accent-active);
+      background-color: var(--button-primary-bg-active);
       transform: translateY(1px);
     }
 
@@ -1612,7 +1616,103 @@
       line-height: 1.3;
     }
 
+    .library-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .library-tabs, .library-views {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      min-width: 0;
+      border: 1px solid var(--color-border-subtle);
+      border-radius: 6px;
+    }
+
+    .library-views { margin-left: auto; }
+
+    .library-toolbar button {
+      min-width: 0;
+      min-height: 3.5rem;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      corner-shape: round;
+      box-shadow: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      color: var(--color-text-muted);
+      overflow: visible;
+      transform: none;
+    }
+
+    .library-toolbar button:first-child { border-radius: 5px 0 0 5px; }
+    .library-toolbar button:last-child { border-radius: 0 5px 5px 0; }
+    .library-toolbar button + button { border-left: 1px solid var(--color-border-subtle); }
+    .library-tabs:has(> .library-tab-continue[hidden]) .library-tab-library { border-radius: 5px; }
+
+    .library-toolbar button:hover, .library-toolbar button:focus-visible {
+      background: var(--color-surface-quiet-hover);
+      box-shadow: none;
+      color: var(--color-text);
+    }
+
+    .library-tab[aria-selected='true'], .library-views button[aria-pressed='true'] {
+      background: var(--color-surface-quiet-active);
+      color: var(--color-text);
+    }
+
+    .library-tab {
+      padding: 0.5rem 1rem;
+      font-size: 1.2rem;
+      white-space: nowrap;
+    }
+
+    .library-continue-count { font-variant-numeric: tabular-nums; }
+
+    .library-views button {
+      width: 3.5rem;
+      height: 3.5rem;
+      min-width: 3.5rem;
+      padding: 0.4rem;
+    }
+
+    .library-views button:hover, .library-views button:focus-visible { color: var(--accent); }
+    .library-views svg { width: 2rem; height: 2rem; fill: currentColor; }
+
+    .library-toolbar button:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+    .library-controls {
+      display: grid;
+      grid-template-columns: minmax(12rem, 1fr) repeat(3, minmax(8.5rem, auto));
+      gap: 1rem;
+      align-items: end;
+      margin-bottom: 0.25rem;
+    }
+
+    .library-field { display: grid; gap: 0.4rem; min-width: 0; }
+    .library-field > span {
+      color: var(--color-text-muted);
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 0.25rem;
+    }
+    .library-field select { padding-right: 0; }
+    .library-field select:disabled { opacity: 0.6; }
+    .library-empty { margin: 1rem 0; color: var(--color-text-muted); line-height: 1.5; }
+
+    .file-label { position: relative; z-index: 1; display: flex; flex-direction: column; flex: 1; min-width: 0; }
+    .file-resume { display: none; }
+    .continue-view .file-resume:not(:empty) { display: block; font-size: 1rem; line-height: 1.5; }
+
     .links {
+      --library-list-columns: minmax(0, 1fr) 4rem;
+      --library-list-gap: 0.75rem;
       --tile-min-width: 23rem;
       --tile-width-ratio: 16;
       --tile-height-ratio: 9;
@@ -1748,6 +1848,8 @@
       display: block;
     }
 
+    .watched-icon svg { display: block; width: 100%; height: 100%; }
+
     .folder .title {
       justify-content: space-between;
     }
@@ -1822,7 +1924,7 @@
     }
 
     .file.audio-file {
-      --image-fallback: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4NCjxwYXRoIGQ9Ik0xNS45ODY3IDMuMDE1NzZDMTUuODkwOCAyLjQzMDE4IDE1LjI5MTkgMi4wNDE0OCAxNC43MDE3IDIuMjI1OUw3LjcwMTczIDQuNDEzNEM3LjI4NDI1IDQuNTQzODcgNyA0LjkzMDUgNyA1LjM2Nzg4VjEzLjUwMDFDNi41ODIxNyAxMy4xODYzIDYuMDYyOCAxMy4wMDAzIDUuNSAxMy4wMDAzQzQuMTE5MjkgMTMuMDAwMyAzIDE0LjExOTYgMyAxNS41MDAzQzMgMTYuODgxIDQuMTE5MjkgMTguMDAwMyA1LjUgMTguMDAwM0M2Ljg4MDcxIDE4LjAwMDMgOCAxNi44ODEgOCAxNS41MDAzVjguMzY3OTNMMTUgNi4xODA0M1Y5LjAyMjczQzE1LjM0MzQgOS4wNTM2NyAxNS42Nzc3IDkuMTE2MTggMTYgOS4yMDczNFYzLjE4MDQzQzE2IDMuMTI0MTEgMTUuOTk1NCAzLjA2OTA5IDE1Ljk4NjcgMy4wMTU3NlpNMTkgMTQuNTAwMkMxOSAxNi45ODU1IDE2Ljk4NTMgMTkuMDAwMiAxNC41IDE5LjAwMDJDMTIuMDE0NyAxOS4wMDAyIDEwIDE2Ljk4NTUgMTAgMTQuNTAwMkMxMCAxMi4wMTUgMTIuMDE0NyAxMC4wMDAyIDE0LjUgMTAuMDAwMkMxNi45ODUzIDEwLjAwMDIgMTkgMTIuMDE1IDE5IDE0LjUwMDJaTTE2LjczNjcgMTQuMDY0NUwxMy43NDI2IDEyLjQxNDRDMTMuNDA5NCAxMi4yMzA4IDEzLjAwMTMgMTIuNDcxOCAxMy4wMDEzIDEyLjg1MjNMMTMuMDAxMyAxNi4xNTI0QzEzLjAwMTMgMTYuNTMyOSAxMy40MDkzIDE2Ljc3MzkgMTMuNzQyNiAxNi41OTAzTDE2LjczNjYgMTQuOTQwNEMxNy4wODE1IDE0Ljc1MDMgMTcuMDgxNiAxNC4yNTQ2IDE2LjczNjcgMTQuMDY0NVoiIGZpbGw9IiM0NDQ0NDQiLz4NCjwvc3ZnPg0K');
+      --image-fallback: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE1Ljk4NjcgMy4wMTU3NkMxNS44OTA4IDIuNDMwMTggMTUuMjkxOSAyLjA0MTQ4IDE0LjcwMTcgMi4yMjU5TDcuNzAxNzMgNC40MTM0QzcuMjg0MjUgNC41NDM4NyA3IDQuOTMwNSA3IDUuMzY3ODhWMTMuNTAwMUM2LjU4MjE3IDEzLjE4NjMgNi4wNjI4IDEzLjAwMDMgNS41IDEzLjAwMDNDNC4xMTkyOSAxMy4wMDAzIDMgMTQuMTE5NiAzIDE1LjUwMDNDMyAxNi44ODEgNC4xMTkyOSAxOC4wMDAzIDUuNSAxOC4wMDAzQzYuODgwNzEgMTguMDAwMyA4IDE2Ljg4MSA4IDE1LjUwMDNWOC4zNjc5M0wxNSA2LjE4MDQzVjkuMDIyNzNDMTUuMzQzNCA5LjA1MzY3IDE1LjY3NzcgOS4xMTYxOCAxNiA5LjIwNzM0VjMuMTgwNDNDMTYgMy4xMjQxMSAxNS45OTU0IDMuMDY5MDkgMTUuOTg2NyAzLjAxNTc2Wk0xOSAxNC41MDAyQzE5IDE2Ljk4NTUgMTYuOTg1MyAxOS4wMDAyIDE0LjUgMTkuMDAwMkMxMi4wMTQ3IDE5LjAwMDIgMTAgMTYuOTg1NSAxMCAxNC41MDAyQzEwIDEyLjAxNSAxMi4wMTQ3IDEwLjAwMDIgMTQuNSAxMC4wMDAyQzE2Ljk4NTMgMTAuMDAwMiAxOSAxMi4wMTUgMTkgMTQuNTAwMlpNMTYuNzM2NyAxNC4wNjQ1TDEzLjc0MjYgMTIuNDE0NEMxMy40MDk0IDEyLjIzMDggMTMuMDAxMyAxMi40NzE4IDEzLjAwMTMgMTIuODUyM0wxMy4wMDEzIDE2LjE1MjRDMTMuMDAxMyAxNi41MzI5IDEzLjQwOTMgMTYuNzczOSAxMy43NDI2IDE2LjU5MDNMMTYuNzM2NiAxNC45NDA0QzE3LjA4MTUgMTQuNzUwMyAxNy4wODE2IDE0LjI1NDYgMTYuNzM2NyAxNC4wNjQ1WiIgZmlsbD0iIzQ0NDQ0NCIvPgo8L3N2Zz4K');
       background-size: contain;
     }
 
@@ -1846,17 +1948,9 @@
     }
 
     @media (max-width: 700px) {
-      .links-search {
-        width: min(30rem, calc(100vw - 2rem));
-      }
-
-      .links-search-controls {
-        grid-template-columns: 1fr;
-      }
-
-      .links-search-clear {
-        width: 100%;
-      }
+      .library-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .links-search { grid-column: 1 / -1; }
+      .library-tab { font-size: 1.1rem; }
     }
 
     .file .arrow svg, .folder .arrow svg {
@@ -1894,9 +1988,83 @@
     }
 
     .folder .arrow .closed,
-    .folder:first-of-type .arrow .open { display: block; }
+    .folder.parent .arrow .open { display: block; }
     .folder .arrow .open,
-    .folder:first-of-type .arrow .closed { display: none; }
+    .folder.parent .arrow .closed { display: none; }
+
+    .links.list-view { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .library-list-heading { display: none; }
+    .links.list-view .library-list-heading {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: var(--library-list-columns);
+      gap: var(--library-list-gap);
+      align-items: center;
+      padding: 0.7rem;
+      border-bottom: 1px solid var(--color-border-subtle);
+      color: var(--color-text-muted);
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .library-heading-add { text-align: center; }
+    .links.list-view a {
+      aspect-ratio: auto;
+      min-height: 4.5rem;
+      border: 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+      border-radius: 0;
+      background: transparent;
+      background-image: none;
+      box-shadow: none;
+      color: var(--color-text);
+      backdrop-filter: none;
+    }
+
+    .links.list-view a:not(.prerendered):hover { animation: none; }
+    .links.list-view a::after, .links.list-view .arrow { display: none; }
+    .links.list-view a:hover { background: var(--color-surface-quiet-hover); }
+    .links.list-view a:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+    .links.list-view a .title {
+      position: relative;
+      inset: auto;
+      display: grid;
+      grid-template-columns: var(--library-list-columns);
+      gap: var(--library-list-gap);
+      padding: 0.7rem;
+      background: none;
+      border: 0;
+      border-radius: 0;
+      text-shadow: none;
+      font-size: 1.15rem;
+      backdrop-filter: none;
+    }
+
+    .links.list-view .file-label { grid-column: 1; }
+    .links.list-view .label { line-height: 1.6; overflow-wrap: anywhere; }
+    .links.list-view .title .watched-icon { display: none; }
+    .links.list-view .btn-add-to-playlist { grid-column: 2; justify-self: center; justify-content: center; }
+    .links.list-view .file svg, .links.list-view .btn-add-to-playlist svg { fill: currentColor; }
+    .links.list-view .btn-add-to-playlist:hover svg,
+    .links.list-view .btn-add-to-playlist:focus-visible svg { fill: var(--accent); }
+    .links.list-view .file-resume:not(:empty) { display: block; color: var(--color-text-muted); font-size: 1rem; line-height: 1.5; }
+    .links.list-view .folder-label { grid-column: 1; }
+    .links.list-view .folder-label .icon { display: block; }
+
+    @media (max-width: 480px) {
+      .links { --library-list-gap: 0.5rem; }
+      .library-tab { font-size: 1.05rem; }
+      .library-controls {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr);
+        column-gap: 0.375rem;
+      }
+    }
+
+    @media (pointer: coarse) {
+      .library-tab, .library-views button { min-height: 44px; }
+      .library-views button { min-width: 44px; width: 44px; }
+    }
 
     footer {
       grid-area: footer;
@@ -2076,11 +2244,23 @@
     <div class="modal-background-overlay"></div>
   </div>
   <section class='links-panel'>
+    <div class='library-toolbar'>
+      <div class='library-tabs' role='tablist' aria-label='Library content'>
+        <button id='library-tab-library' class='library-tab library-tab-library' type='button' role='tab' aria-controls='library-files' aria-selected='true'>Library</button>
+        <button id='library-tab-continue' class='library-tab library-tab-continue' type='button' role='tab' aria-controls='library-files' aria-selected='false' tabindex='-1'>Continue playing <span class='library-continue-count'>0</span></button>
+      </div>
+      <div class='library-views' role='group' aria-label='Library view'>
+        <button class='library-view-tiles' type='button' title='Tile view' aria-label='Tile view' aria-pressed='true'><svg aria-hidden='true'><use xlink:href='#svg-grid'/></svg></button>
+        <button class='library-view-list' type='button' title='List view' aria-label='List view' aria-pressed='false'><svg aria-hidden='true'><use xlink:href='#svg-list'/></svg></button>
+      </div>
+    </div>
+    <div class='library-controls'>
     <form class='links-search' role='search' autocomplete='off' hidden>
       <div class='links-search-controls'>
         <input
           id='links-search-input'
           class='links-search-input'
+          aria-label='Search media files'
           type='text'
           placeholder='Indexing media library...'
           autocomplete='off'
@@ -2090,9 +2270,31 @@
           disabled>
         <button class='links-search-clear' type='button' hidden>Clear</button>
       </div>
-      <p class='links-search-results-count' aria-live='polite' hidden></p>
     </form>
-    <section class='links'></section>
+      <label class='library-field'><span>Sort</span><select class='library-sort' aria-label='Sort files'>
+        <option value='name-asc'>Name A-Z</option>
+        <option value='name-desc'>Name Z-A</option>
+        <option value='date-desc'>Newest</option>
+        <option value='date-asc'>Oldest</option>
+        <option value='size-desc'>Largest</option>
+        <option value='size-asc'>Smallest</option>
+        <option value='recent-desc'>Recent</option>
+      </select></label>
+      <label class='library-field'><span>Media</span><select class='library-type' aria-label='Filter media type'>
+        <option value='all'>All media</option><option value='video'>Video</option><option value='audio'>Audio</option>
+      </select></label>
+      <label class='library-field'><span>Progress</span><select class='library-status' aria-label='Filter playback progress'>
+        <option value='all'>All states</option><option value='watched'>Played</option><option value='unplayed'>Unplayed</option><option value='in-progress'>In progress</option>
+      </select></label>
+    </div>
+    <p class='links-search-results-count' aria-live='polite' hidden></p>
+    <p class='library-empty' role='status' hidden></p>
+    <section id='library-files' class='links' role='tabpanel' aria-labelledby='library-tab-library'>
+      <div class='library-list-heading'>
+        <span class='library-heading-name' title='File or folder name'>Name</span>
+        <span class='library-heading-add' title='Add to playlist'>Add</span>
+      </div>
+    </section>
   </section>
   <footer><a href='https://github.com/pseudosavant/player.html' target='_blank'>player.html <span class='version'></span> &copy; Paul Ellis</a></footer>
   <section class='xlinks' style='display: none'>
@@ -2137,6 +2339,8 @@
       <path style='fill:#089156' d='M8.998060248538135,7.835050681542867 L7.7478835437197695,10.001455087618574 L6.112017465007343,2.85274083196329 z'/>
       <path style='fill:#296ad9' d='m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z'/>
     </svg>
+<!-- ic_fluent_grid_24_regular.svg -->
+<svg id='svg-grid' viewBox='0 0 24 24'><path d='M8.75 13C9.99264 13 11 14.0074 11 15.25V18.75C11 19.9926 9.99264 21 8.75 21H5.25C4.00736 21 3 19.9926 3 18.75V15.25C3 14.0074 4.00736 13 5.25 13H8.75ZM18.75 13C19.9926 13 21 14.0074 21 15.25V18.75C21 19.9926 19.9926 21 18.75 21H15.25C14.0074 21 13 19.9926 13 18.75V15.25C13 14.0074 14.0074 13 15.25 13H18.75ZM8.75 14.5H5.25C4.83579 14.5 4.5 14.8358 4.5 15.25V18.75C4.5 19.1642 4.83579 19.5 5.25 19.5H8.75C9.16421 19.5 9.5 19.1642 9.5 18.75V15.25C9.5 14.8358 9.16421 14.5 8.75 14.5ZM18.75 14.5H15.25C14.8358 14.5 14.5 14.8358 14.5 15.25V18.75C14.5 19.1642 14.8358 19.5 15.25 19.5H18.75C19.1642 19.5 19.5 19.1642 19.5 18.75V15.25C19.5 14.8358 19.1642 14.5 18.75 14.5ZM8.75 3C9.99264 3 11 4.00736 11 5.25V8.75C11 9.99264 9.99264 11 8.75 11H5.25C4.00736 11 3 9.99264 3 8.75V5.25C3 4.00736 4.00736 3 5.25 3H8.75ZM18.75 3C19.9926 3 21 4.00736 21 5.25V8.75C21 9.99264 19.9926 11 18.75 11H15.25C14.0074 11 13 9.99264 13 8.75V5.25C13 4.00736 14.0074 3 15.25 3H18.75ZM8.75 4.5H5.25C4.83579 4.5 4.5 4.83579 4.5 5.25V8.75C4.5 9.16421 4.83579 9.5 5.25 9.5H8.75C9.16421 9.5 9.5 9.16421 9.5 8.75V5.25C9.5 4.83579 9.16421 4.5 8.75 4.5ZM18.75 4.5H15.25C14.8358 4.5 14.5 4.83579 14.5 5.25V8.75C14.5 9.16421 14.8358 9.5 15.25 9.5H18.75C19.1642 9.5 19.5 9.16421 19.5 8.75V5.25C19.5 4.83579 19.1642 4.5 18.75 4.5Z'/></svg>
 <!-- ic_fluent_image_add_24_filled.svg -->
 <svg id='svg-image-add' viewBox="0 0 24 24"><path d="M12 6.5C12 3.46243 9.53757 1 6.5 1C3.46243 1 1 3.46243 1 6.5C1 9.53757 3.46243 12 6.5 12C9.53757 12 12 9.53757 12 6.5ZM7.00065 7.00001L7.00111 9.50352C7.00111 9.77966 6.77725 10.0035 6.50111 10.0035C6.22497 10.0035 6.00111 9.77966 6.00111 9.50352L6.00065 7.00001H3.4956C3.21973 7.00001 2.99609 6.77615 2.99609 6.50001C2.99609 6.22387 3.21973 6.00001 3.4956 6.00001H6.00046L6 3.49927C6 3.22313 6.22386 2.99927 6.5 2.99927C6.77614 2.99927 7 3.22313 7 3.49927L7.00046 6.00001H9.49659C9.77246 6.00001 9.99609 6.22387 9.99609 6.50001C9.99609 6.77615 9.77246 7.00001 9.49659 7.00001H7.00065ZM6.5 13C10.0899 13 13 10.0899 13 6.5C13 5.21136 12.625 4.0103 11.9782 3H17.75C19.5449 3 21 4.45507 21 6.25V17.75C21 18.3771 20.8224 18.9626 20.5148 19.4592L13.5762 12.6475L13.4477 12.5306C12.615 11.8293 11.3941 11.8273 10.5592 12.5248L10.4238 12.6475L3.4852 19.4592C3.17758 18.9626 3 18.3771 3 17.75V11.9782C4.0103 12.625 5.21136 13 6.5 13ZM15.25 10.75C16.3546 10.75 17.25 9.85457 17.25 8.75C17.25 7.64543 16.3546 6.75 15.25 6.75C14.1454 6.75 13.25 7.64543 13.25 8.75C13.25 9.85457 14.1454 10.75 15.25 10.75ZM11.5582 13.6469L11.4746 13.7179L4.54692 20.5186C5.04216 20.8239 5.62551 21 6.25 21H17.75C18.3745 21 18.9578 20.8239 19.4531 20.5186L12.5254 13.7179L12.432 13.6399C12.1705 13.4552 11.8174 13.4576 11.5582 13.6469Z"/></svg>
 <!-- ic_fluent_image_arrow_counterclockwise_24_filled.svg -->
@@ -2145,6 +2349,8 @@
 <svg id='svg-import' viewBox="0 0 24 24"><path d="M21.25 4.5C21.6297 4.5 21.9435 4.78215 21.9932 5.14823L22 5.25V18.75C22 19.1642 21.6642 19.5 21.25 19.5C20.8703 19.5 20.5565 19.2178 20.5069 18.8518L20.5 18.75V5.25C20.5 4.83579 20.8358 4.5 21.25 4.5ZM12.2098 6.38702L12.293 6.29282C12.6535 5.93237 13.2207 5.9047 13.613 6.20977L13.7072 6.29297L18.7038 11.2906C19.064 11.6509 19.0919 12.2178 18.7873 12.6101L18.7042 12.7043L13.7076 17.7077C13.3173 18.0985 12.6842 18.0989 12.2934 17.7087C11.9327 17.3484 11.9045 16.7812 12.2093 16.3887L12.2924 16.2945L15.581 13H3C2.48716 13 2.06449 12.614 2.00673 12.1166L2 12C2 11.4872 2.38604 11.0645 2.88338 11.0067L3 11H15.584L12.2928 7.70703C11.9324 7.34651 11.9047 6.77928 12.2098 6.38702L12.293 6.29282L12.2098 6.38702Z"/></svg>
 <!-- ic_fluent_info_24_filled.svg -->
 <svg id='svg-info' viewBox="0 0 24 24"><path d="M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M11.996193,10.2495494 C11.4833573,10.2498854 11.0609387,10.6362021 11.0034989,11.1335785 L10.9968474,11.250204 L11.000448,16.751798 L11.0072521,16.8684147 C11.0653426,17.3657155 11.4882665,17.751479 12.0011022,17.7511438 C12.5139379,17.7508078 12.9363565,17.3644911 12.9937963,16.8671147 L13.0004478,16.7504892 L12.9968474,11.2488952 L12.9900433,11.1322785 C12.9319526,10.6349777 12.5090287,10.2492142 11.996193,10.2495494 Z M12.0004478,6.5 C11.3092523,6.5 10.7489277,7.06032464 10.7489277,7.75152012 C10.7489277,8.44271559 11.3092523,9.00304023 12.0004478,9.00304023 C12.6916433,9.00304023 13.2519679,8.44271559 13.2519679,7.75152012 C13.2519679,7.06032464 12.6916433,6.5 12.0004478,6.5 Z"></path></svg>
+<!-- ic_fluent_apps_list_24_regular.svg -->
+<svg id='svg-list' viewBox='0 0 24 24'><path d='M6.24788 16.0021C7.21437 16.0021 7.99788 16.7856 7.99788 17.7521V20.25C7.99788 21.2165 7.21437 22 6.24788 22H3.75C2.7835 22 2 21.2165 2 20.25V17.7521C2 16.7856 2.7835 16.0021 3.75 16.0021H6.24788ZM6.24788 17.5021H3.75C3.61193 17.5021 3.5 17.6141 3.5 17.7521V20.25C3.5 20.3881 3.61193 20.5 3.75 20.5H6.24788C6.38595 20.5 6.49788 20.3881 6.49788 20.25V17.7521C6.49788 17.6141 6.38595 17.5021 6.24788 17.5021ZM9.74809 18H21.2529C21.6671 18 22.0029 18.3358 22.0029 18.75C22.0029 19.1297 21.7207 19.4435 21.3547 19.4932L21.2529 19.5H9.74809C9.33388 19.5 8.99809 19.1642 8.99809 18.75C8.99809 18.3703 9.28025 18.0565 9.64632 18.0068L9.74809 18H21.2529H9.74809ZM6.24788 9.00106C7.21437 9.00106 7.99788 9.78456 7.99788 10.7511V13.2489C7.99788 14.2154 7.21437 14.9989 6.24788 14.9989H3.75C2.7835 14.9989 2 14.2154 2 13.2489V10.7511C2 9.78456 2.7835 9.00106 3.75 9.00106H6.24788ZM6.24788 10.5011H3.75C3.61193 10.5011 3.5 10.613 3.5 10.7511V13.2489C3.5 13.387 3.61193 13.4989 3.75 13.4989H6.24788C6.38595 13.4989 6.49788 13.387 6.49788 13.2489V10.7511C6.49788 10.613 6.38595 10.5011 6.24788 10.5011ZM9.74809 11H21.2529C21.6671 11 22.0029 11.3358 22.0029 11.75C22.0029 12.1297 21.7207 12.4435 21.3547 12.4932L21.2529 12.5H9.74809C9.33388 12.5 8.99809 12.1642 8.99809 11.75C8.99809 11.3703 9.28025 11.0565 9.64632 11.0068L9.74809 11H21.2529H9.74809ZM6.24788 2C7.21437 2 7.99788 2.7835 7.99788 3.75V6.24788C7.99788 7.21437 7.21437 7.99788 6.24788 7.99788H3.75C2.7835 7.99788 2 7.21437 2 6.24788V3.75C2 2.7835 2.7835 2 3.75 2H6.24788ZM6.24788 3.5H3.75C3.61193 3.5 3.5 3.61193 3.5 3.75V6.24788C3.5 6.38595 3.61193 6.49788 3.75 6.49788H6.24788C6.38595 6.49788 6.49788 6.38595 6.49788 6.24788V3.75C6.49788 3.61193 6.38595 3.5 6.24788 3.5ZM9.74809 4H21.2529C21.6671 4 22.0029 4.33579 22.0029 4.75C22.0029 5.1297 21.7207 5.44349 21.3547 5.49315L21.2529 5.5H9.74809C9.33388 5.5 8.99809 5.16421 8.99809 4.75C8.99809 4.3703 9.28025 4.05651 9.64632 4.00685L9.74809 4H21.2529H9.74809Z'/></svg>
 <!-- ic_fluent_arrow_repeat_all_off_24_filled.svg -->
 <svg id='svg-loop-off' viewBox="0 0 24 24"><path d="M3.6129 2.20943L3.70711 2.29262L21.7071 20.2926C22.0976 20.6831 22.0976 21.3163 21.7071 21.7068C21.3466 22.0673 20.7794 22.095 20.3871 21.79L20.2929 21.7068L17.2249 18.639C16.626 18.8395 15.991 18.9613 15.3321 18.992L15.0008 18.9997L9.405 18.9991L10.7087 20.303L10.7864 20.3902C11.0972 20.7828 11.0713 21.3546 10.7087 21.7172C10.3482 22.0777 9.78097 22.1055 9.38867 21.8004L9.29447 21.7172L6.28926 18.712L6.21156 18.6248C5.92663 18.265 5.92465 17.7545 6.20562 17.3926L6.28926 17.2978L9.29447 14.2926L9.38169 14.2149C9.7415 13.93 10.252 13.928 10.6139 14.209L10.7087 14.2926L10.7864 14.3798C11.0713 14.7396 11.0733 15.2501 10.7923 15.612L10.7087 15.7068L9.415 16.9991L15.0008 16.9997C15.1879 16.9997 15.3726 16.9894 15.5544 16.9694L6.34801 7.76142C4.93774 8.64529 4 10.2134 4 12.0005C4 12.9191 4.24775 13.7798 4.68008 14.5195L4.81525 14.7377C4.93132 14.9003 5 15.1006 5 15.3169C5 15.8692 4.55228 16.3169 4 16.3169C3.666 16.3169 3.37024 16.1531 3.18863 15.9015C2.43833 14.7896 2 13.4462 2 12.0005C2 9.66244 3.14641 7.59213 4.90779 6.32103L2.29289 3.70683C1.90237 3.31631 1.90237 2.68314 2.29289 2.29262C2.65338 1.93213 3.22061 1.9044 3.6129 2.20943ZM20 7.6821C20.3191 7.6821 20.6034 7.8316 20.7865 8.06438L20.84 8.13937L20.8569 8.1663C21.5797 9.2672 22 10.5848 22 12.0005C22 13.9776 21.1803 15.7632 19.8621 17.036L18.447 15.6221C19.4037 14.7114 20 13.4256 20 12.0005C20 11.0746 19.7483 10.2075 19.3095 9.46383L19.1724 9.24451C19.064 9.0847 19 8.89087 19 8.6821C19 8.12982 19.4477 7.6821 20 7.6821ZM14.6251 2.21128L14.7123 2.28899L17.7175 5.29419C18.0801 5.65682 18.106 6.22867 17.7952 6.62118L17.7175 6.7084L14.7123 9.71361C14.3218 10.1041 13.6886 10.1041 13.2981 9.71361C12.9355 9.35098 12.9096 8.77913 13.2204 8.38662L13.2981 8.2994L14.595 7.00109H9.826L7.91134 5.08534C8.1887 5.04205 8.47145 5.01506 8.75859 5.00536L8.99921 5.0013L14.597 5.00109L13.2981 3.7032C12.9355 3.34057 12.9096 2.76873 13.2204 2.37621L13.2981 2.28899C13.6607 1.92636 14.2326 1.90046 14.6251 2.21128Z"/></svg>
 <!-- ic_fluent_arrow_repeat_all_24_filled.svg -->
@@ -2293,7 +2499,7 @@
           'subtitle-shadow': false,
           'poster-image': '', // Optional custom poster image URL or data URI for the player background.
           'wake-lock': true, // Prevent screen sleep while media is playing, when supported.
-          'watch-history': true, // Remember playback position and watched state in IndexedDB.
+          'watch-history': true, // Remember playback position and completion status in IndexedDB.
           thumbnailing: true,
           animate: true,
           'playlist-depth': 2,
@@ -5043,66 +5249,679 @@ const fetchBytes = async (url, opts) => {
     filePickerMain();
 </script>
 
-  <!-- folder.api v2 -->
+  <!-- folder.api v2.1.0 -->
   <script type="module">
-/*! folder-api browser bundle (single-file, no dependencies)
- *  Features: fetch/iframe/auto, recursion, size/date parsing, MIME (HEAD), hidden detection.
- *  Exposes global folderApiRequest and ESM export.
- *  License: MIT
- */
- 'use strict';
+/*! folder-api v2.1.0 browser bundle. Generated from TypeScript. MIT License. */
 
-  // -------- Utilities --------
-  const ensureHttp = (url)=>{ const u=new URL(url); if(!/^https?:$/.test(u.protocol)) throw new Error('unsupported scheme'); u.pathname=u.pathname.replace(/\/+/g,'/'); if(!u.pathname.endsWith('/')) u.pathname+='/'; return u; };
-  const keyForVisited = (u)=> `${u.protocol}//${u.host.toLowerCase()}${u.pathname}`;
-  const parentDirectory = (u)=>{ const parts=u.pathname.split('/').filter(Boolean); if(!parts.length) return null; parts.pop(); return `${u.protocol}//${u.host}/${parts.join('/')}${parts.length?'/':''}`; };
-  const rootDirectory = (u)=> `${u.protocol}//${u.host}/`;
-  const hidden = (name)=> name.startsWith('.') && name!=='.' && name!=='..';
-  const safeDecode = (seg, errors)=>{ try{return decodeURIComponent(seg);}catch{ errors.push(`decode: failed to decode segment '${seg}'`); return seg; } };
-  const classify = (href, meta)=>{ if(href.endsWith('/')) return 'folder'; const last=href.split('/').filter(Boolean).pop()||''; if(/^[^.].*\.[^.]+$/.test(last)) return 'file'; if(/\b(dir|folder|directory)\b/i.test(meta)) return 'folder'; return 'file'; };
-  const monthIdx = m=>['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].indexOf(m.toLowerCase());
-  function parseDate(text, errors){ let m=/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(text); if(m){return new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0))).toISOString();} m=/(\d{2})-(\w{3})-(\d{4})\s(\d{2}):(\d{2})/.exec(text); if(m){ const mi=monthIdx(m[2]); if(mi>-1) return new Date(Date.UTC(+m[3],mi,+m[1],+m[4],+m[5],0)).toISOString(); } m=/(\d{1,2})\/(\d{1,2})\/(\d{4})\s(\d{1,2}):(\d{2})(?:\s?(AM|PM))/i.exec(text); if(m){ let H=+m[4]; const ap=m[6]; if(ap){ if(/am/i.test(ap)){ if(H===12)H=0;} else if(/pm/i.test(ap)){ if(H!==12)H+=12; }} return new Date(Date.UTC(+m[3],+m[1]-1,+m[2],H,+m[5],0)).toISOString(); } if(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(text)) errors.push('date: ambiguous numeric date pattern'); return null; }
-  function parseSize(text){ const re=/(\d+(?:\.\d+)?)([KMGTP]?B?)/gi; const pow={ '':0,'B':0,'K':1,'KB':1,'M':2,'MB':2,'G':3,'GB':3,'T':4,'TB':4,'P':5,'PB':5 }; const tokens=[]; let m; while((m=re.exec(text))){ const raw=m[0]; const val=+m[1]; const unit=(m[2]||'').toUpperCase(); if(isNaN(val)||pow[unit]==null) continue; if(/^\d{4}$/.test(raw)){ const idx=m.index; const around=text.slice(Math.max(0,idx-5),Math.min(text.length,idx+6)); if(/[\d]{4}[-/]/.test(around)) continue; } const bytes = Math.floor(val*Math.pow(1024,pow[unit])); tokens.push({bytes,unit,raw,index:m.index}); } if(!tokens.length) return null; let withUnit=tokens.filter(t=>/[KMGTP]/.test(t.unit)); let cand=withUnit.length?withUnit:tokens.filter(t=>{ const before=text[t.index-1]||''; const after=text[t.index+t.raw.length]||''; if(': -'.includes(before)||': -'.includes(after)) return false; if(t.bytes<=60){ const slice=text.slice(Math.max(0,t.index-5),Math.min(text.length,t.index+8)); if(/\d{1,2}:\d{2}/.test(slice)) return false; } return true; }); if(!cand.length) cand=tokens; return cand.sort((a,b)=>b.bytes-a.bytes)[0].bytes; }
-  const pushError=(errs,prefix,msg)=>errs.push(`${prefix}: ${msg}`);
+// src/options.ts
+var integerOption = (value, fallback, minimum, maximum = Number.MAX_SAFE_INTEGER) => typeof value === "number" && Number.isFinite(value) ? Math.min(maximum, Math.max(minimum, Math.trunc(value))) : fallback;
+function normalizeOptions(opts) {
+  const cache = opts?.cache ?? "default";
+  return {
+    maxDepth: integerOption(opts?.maxDepth, 0, 0),
+    maxEntries: integerOption(opts?.maxEntries, 5e4, 1, 5e4),
+    continueOnError: opts?.continueOnError === true,
+    mode: opts?.mode === "fetch" || opts?.mode === "iframe" ? opts.mode : "auto",
+    cache: ["default", "no-store", "no-cache", "reload", "force-cache", "only-if-cached"].includes(cache) ? cache : "default",
+    includeMime: opts?.includeMime ?? false,
+    headConcurrency: integerOption(opts?.headConcurrency, 4, 1),
+    timeoutMs: integerOption(opts?.timeoutMs, 15e3, 100, 2147483647),
+    sameOriginOnly: opts?.sameOriginOnly ?? true,
+    signal: opts?.signal
+  };
+}
 
-  // -------- Fetch / Iframe loaders --------
-  async function fetchHtml(url, opts, stats){ const controller=new AbortController(); const t=setTimeout(()=>controller.abort(),opts.timeoutMs); if(opts.signal){ if(opts.signal.aborted) controller.abort(); const on=()=>controller.abort(); opts.signal.addEventListener('abort',on,{once:true}); }
-    try{ const res=await fetch(url,{redirect:'follow',signal:controller.signal}); stats.fetches++; if(res.status!==200) throw new Error('http '+res.status); const ct=res.headers.get('content-type')||''; if(!/text\/html/i.test(ct)) throw new Error('not html'); return await res.text(); } finally { clearTimeout(t);} }
-  async function iframeHtml(url, opts, stats){ if(typeof document==='undefined') throw new Error('no DOM'); const iframe=document.createElement('iframe'); iframe.setAttribute('sandbox','allow-same-origin'); Object.assign(iframe.style,{position:'absolute',width:'0',height:'0',border:'0',visibility:'hidden'}); document.body.appendChild(iframe); stats.iframes++; return await new Promise((resolve,reject)=>{ const to=setTimeout(()=>{ cleanup(); reject(new Error('timeout')); },opts.timeoutMs); function cleanup(){ clearTimeout(to); iframe.remove(); } iframe.onload=()=>{ try{ const html=iframe.contentDocument?.documentElement?.outerHTML||''; cleanup(); resolve(html);}catch(e){ cleanup(); reject(e);} }; iframe.onerror=()=>{ cleanup(); reject(new Error('iframe error')); }; iframe.src=url; }); }
-
-  // -------- Parsing directory listing --------
-  function parseDirectory(baseUrl, html, opts){ const errors=[]; const doc=new DOMParser().parseFromString(html,'text/html'); const anchors=[]; for(const sel of ['pre a[href]','table a[href]','ul a[href]','ol a[href]']) anchors.push(...doc.querySelectorAll(sel)); if(!anchors.length) anchors.push(...doc.querySelectorAll('a[href]'));
-    const seen=new Set(); const folders=[]; const files=[]; for(const a of anchors){ const hrefRaw=a.getAttribute('href'); if(!hrefRaw) continue; if(seen.has(hrefRaw)) continue; seen.add(hrefRaw); if(/^javascript:/i.test(hrefRaw)||/^mailto:/i.test(hrefRaw)||/#/.test(hrefRaw)) continue; const abs=new URL(hrefRaw,baseUrl); if(opts.sameOriginOnly && abs.origin!==new URL(baseUrl).origin) continue; const meta=deriveLineText(a); const kind=classify(abs.toString(),meta); const parts=abs.pathname.split('/').filter(Boolean); const segRaw=parts[parts.length-(abs.toString().endsWith('/')?1:1)]||''; const decoded=safeDecode(segRaw,errors); const isHidden=hidden(decoded); const date=parseDate(meta,errors); const size=parseSize(meta); if(kind==='folder'){ folders.push({ kind:'folder', url:abs.toString().endsWith('/')?abs.toString():abs.toString()+'/', rawName:segRaw, name:decoded, hidden:isHidden, size:null, date }); } else { files.push({ kind:'file', url:abs.toString(), rawName:segRaw, name:decoded, hidden:isHidden, size:size??null, date }); }
+// src/utils/abort.ts
+function throwIfAborted(signal) {
+  if (signal?.aborted) throw signal.reason ?? new DOMException("The operation was aborted", "AbortError");
+}
+function createRequestController(signal, timeoutMs) {
+  throwIfAborted(signal);
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(signal?.reason);
+  signal?.addEventListener("abort", onAbort, { once: true });
+  const timer = setTimeout(() => controller.abort(new DOMException("Request timed out", "TimeoutError")), timeoutMs);
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
     }
-    return { folders, files, errors }; }
-  function deriveLineText(a){ const tr=a.closest('tr'); if(tr) return tr.textContent||''; const li=a.closest('li'); if(li) return li.textContent||''; const pre=a.closest('pre'); if(pre){ const lines=pre.textContent.split(/\n/); const t=a.textContent?.trim(); const line=lines.find(l=>t&&l.includes(t)); return line||a.textContent||''; } return a.parentElement?.textContent||a.textContent||''; }
+  };
+}
 
-  // -------- MIME enrichment --------
-  async function enrichMime(files, opts, stats, errors){ if(!opts.includeMime||!files.length) return; const limit=Math.max(1,opts.headConcurrency); let active=0; const queue=[]; const run=async(fn)=>{ if(active>=limit) return await new Promise(r=>queue.push(()=>r(run(fn)))); active++; try{ await fn(); } finally { active--; const n=queue.shift(); if(n) n(); } };
-    await Promise.all(files.map(f=>run(async()=>{ try{ const c=new AbortController(); const to=setTimeout(()=>c.abort(),opts.timeoutMs); const res=await fetch(f.url,{method:'HEAD',signal:c.signal}); stats.heads++; clearTimeout(to); if(res.ok){ if(!f.mime) f.mime=res.headers.get('content-type'); const len=res.headers.get('content-length'); if(len&&!f.size){ const n=+len; if(!isNaN(n)) f.size=n; } } else if(res.status===405||res.status===501){ pushError(errors,'mime','HEAD not supported'); } } catch{ pushError(errors,'mime',`failed HEAD for ${f.url}`); } })) ); }
-
-  // -------- Traversal --------
-  async function traverse(startUrl, opts, state){ const normalized=ensureHttp(startUrl).toString(); const u=new URL(normalized); const key=keyForVisited(u); if(state.visited.has(key)){ pushError(state.errors,'loop',`already visited ${normalized}`); return makeNode(normalized,u,0,'self'); } state.visited.add(key); const node=makeNode(normalized,u,0,'self'); state.allFolders.push(node); await loadDir(node,0); async function loadDir(cur,depth){ if(state.safety>50000){ pushError(state.errors,'limit','entry limit exceeded'); return; } let html=null; try{ if(opts.mode==='fetch'||opts.mode==='auto') html=await fetchHtml(cur.url,opts,state.stats); } catch(e){ if(opts.mode==='auto'){ html=await iframeHtml(cur.url,opts,state.stats); } else if(opts.mode==='iframe'){ html=await iframeHtml(cur.url,opts,state.stats); } else { throw e; } }
-      if(html==null) throw new Error('failed to load directory'); const parsed=parseDirectory(cur.url,html,opts); parsed.errors.forEach(e=>state.errors.push(e)); const curUrl=new URL(cur.url); const root=rootDirectory(curUrl); const parent=parentDirectory(curUrl);
-  for(const f of parsed.folders){ const fu=new URL(f.url); const depthFolder=folderDepth(curUrl,fu); const role= roleFor(f.url, normalized, root, parent); const fe={ kind:'folder', url:f.url, rawName:f.rawName, name:f.name, hidden:f.hidden, size:null, date:f.date, role, depth:depthFolder, children:[], files:[] }; if(role==='child') cur.children.push(fe); if(!state.allFolders.find(x=>x.url===fe.url && x.role===fe.role)) state.allFolders.push(fe); state.safety++; }
-      for(const fi of parsed.files){ const file={ kind:'file', url:fi.url, rawName:fi.rawName, name:fi.name, hidden:fi.hidden, size:fi.size, date:fi.date }; cur.files.push(file); state.allFiles.push(file); state.safety++; }
-      if(depth<opts.maxDepth){ for(const ch of cur.children){ const k=keyForVisited(new URL(ch.url)); if(state.visited.has(k)) continue; state.visited.add(k); await loadDir(ch,depth+1); } }
-      state.maxDepth=Math.max(state.maxDepth,depth); }
-    return node; }
-  function makeNode(url,u,depth,role){ const seg=u.pathname.split('/').filter(Boolean).pop()||''; return { kind:'folder', url, rawName:seg, name:seg, hidden:hidden(seg), size:null, date:null, role, depth, children:[], files:[] }; }
-  const folderDepth=(base,cand)=>{ const b=base.pathname.split('/').filter(Boolean); const c=cand.pathname.split('/').filter(Boolean); if(c.length<b.length) return 0; return c.length - b.length; };
-  const roleFor=(url,start,root,parent)=>{ if(url===start) return 'self'; if(url===root) return 'root'; if(parent && url===parent) return 'parent'; return 'child'; };
-
-  // -------- Option normalization --------
-  const norm=(o={})=>({ maxDepth: Math.max(0,o.maxDepth||0), mode: o.mode||'auto', includeMime: !!o.includeMime, headConcurrency: Math.max(1,o.headConcurrency||6), timeoutMs: Math.max(100,o.timeoutMs||15000), sameOriginOnly: o.sameOriginOnly!==false, signal: o.signal });
-
-  // -------- Public API --------
-  export async function folderApiRequest(url, options){ const opts=norm(options||{}); const start= (typeof performance!=='undefined'&&performance.now)? performance.now(): Date.now(); const state={ visited:new Set(), allFolders:[], allFiles:[], errors:[], stats:{fetches:0,iframes:0,heads:0}, safety:0, maxDepth:0 }; const root=await traverse(url, opts, state); if(opts.includeMime) await enrichMime(state.allFiles, opts, state.stats, state.errors); const duration=((typeof performance!=='undefined'&&performance.now)? performance.now(): Date.now())-start; const entries=[...state.allFolders, ...state.allFiles]; return { url: root.url, root, folders: state.allFolders, files: state.allFiles, entries, generatedAt: new Date().toISOString(), errors: state.errors, stats:{ fetches: state.stats.fetches, iframes: state.stats.iframes, heads: state.stats.heads, durationMs: duration, maxDepth: state.maxDepth } }; }
-
-  // Attach global for convenience in browsers when loaded via <script type="module">
-  if (typeof globalThis !== 'undefined' && !globalThis.folderApiRequest) {
-    globalThis.folderApiRequest = folderApiRequest;
+// src/core/fetchDirectory.ts
+async function fetchDirectoryHtml(url, opts, stats) {
+  const request = createRequestController(opts.signal, opts.timeoutMs);
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      cache: opts.cache,
+      mode: opts.cache === "only-if-cached" ? "same-origin" : void 0,
+      signal: request.signal,
+      headers: {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+      }
+    });
+    stats.fetches++;
+    if (res.status !== 200) throw new Error(`http ${res.status}${res.statusText ? " " + res.statusText : ""}`);
+    const ctype = res.headers.get("content-type") || "";
+    if (!/text\/html/i.test(ctype)) throw new Error(`not html content-type: ${ctype}`);
+    const html = await res.text();
+    throwIfAborted(opts.signal);
+    return { html, url: res.url || url };
+  } finally {
+    request.dispose();
   }
+}
+
+// src/core/iframeDirectory.ts
+async function iframeDirectoryHtml(url, opts, stats) {
+  throwIfAborted(opts.signal);
+  if (typeof document === "undefined") throw new Error("iframe mode not supported in this environment");
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("sandbox", "allow-same-origin");
+  Object.assign(iframe.style, { position: "absolute", width: "0", height: "0", border: "0", visibility: "hidden" });
+  return await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => fail(new Error("iframe timeout")), opts.timeoutMs);
+    function cleanup() {
+      clearTimeout(timer);
+      iframe.removeEventListener("load", onLoad);
+      iframe.removeEventListener("error", onError);
+      opts.signal?.removeEventListener("abort", onAbort);
+      iframe.remove();
+    }
+    function fail(error) {
+      cleanup();
+      reject(error);
+    }
+    function onAbort() {
+      fail(opts.signal?.reason ?? new DOMException("The operation was aborted", "AbortError"));
+    }
+    function onLoad() {
+      try {
+        throwIfAborted(opts.signal);
+        const doc = iframe.contentDocument;
+        if (!doc) throw new Error("Unable to read iframe document. Same-origin access is required.");
+        if (doc.URL === "about:blank") return;
+        const result = { html: doc.documentElement?.outerHTML || "", url: doc.URL || url };
+        cleanup();
+        resolve(result);
+      } catch (error) {
+        fail(error);
+      }
+    }
+    function onError() {
+      fail(new Error("iframe error"));
+    }
+    iframe.addEventListener("load", onLoad);
+    iframe.addEventListener("error", onError);
+    opts.signal?.addEventListener("abort", onAbort, { once: true });
+    try {
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      stats.iframes++;
+    } catch (error) {
+      fail(error);
+    }
+  });
+}
+
+// src/utils/url.ts
+function ensureHttp(url) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch (e) {
+    throw new Error(`invalid url: ${url}`);
+  }
+  if (u.protocol !== "http:" && u.protocol !== "https:") {
+    throw new Error(`unsupported scheme: ${u.protocol}`);
+  }
+  u.pathname = u.pathname.replace(/\/+/g, "/");
+  if (!u.pathname.endsWith("/")) u.pathname += "/";
+  u.hash = "";
+  return u;
+}
+function normalizeDirectoryUrl(url) {
+  return ensureHttp(url).toString();
+}
+function keyForVisited(u) {
+  return `${u.origin}${canonicalPath(u.pathname)}`;
+}
+function keyForFile(u) {
+  return keyForVisited(u) + u.search;
+}
+function canonicalPath(pathname) {
+  return pathname.replace(/%[\da-f]{2}/gi, (encoded) => {
+    const decoded = String.fromCharCode(parseInt(encoded.slice(1), 16));
+    return /^[\w.~-]$/.test(decoded) ? decoded : encoded.toUpperCase();
+  });
+}
+function parentDirectory(u) {
+  const parts = u.pathname.split("/").filter((p) => p.length > 0);
+  if (parts.length === 0) return null;
+  parts.pop();
+  return `${u.protocol}//${u.host}/${parts.join("/")}${parts.length ? "/" : ""}`;
+}
+function rootDirectory(u) {
+  return `${u.protocol}//${u.host}/`;
+}
+function isHiddenName(name) {
+  return name.startsWith(".") && name !== "." && name !== "..";
+}
+
+// src/utils/classify.ts
+function classifyEntry(href, metadataText) {
+  const pathname = typeof href === "string" ? new URL(href).pathname : href.pathname;
+  if (pathname.endsWith("/")) return "folder";
+  const last = pathname.split("/").filter(Boolean).pop() || "";
+  if (/^[^.].*\.[^.]+$/.test(last)) return "file";
+  if (/\b(dir|folder|directory)\b/i.test(metadataText)) return "folder";
+  return "file";
+}
+function detectHidden(decodedName) {
+  return isHiddenName(decodedName);
+}
+
+// src/utils/date.ts
+var isoPattern = /\b(\d{4})-(\d{2})-(\d{2})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:?\d{2})?)?\b/i;
+var apachePattern = /\b(\d{1,2})-([a-z]{3})-(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\b/i;
+var usPattern = /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\b/i;
+var isoGlobalPattern = new RegExp(isoPattern.source, "gi");
+var apacheGlobalPattern = new RegExp(apachePattern.source, "gi");
+function parseDateMeta(text, errors) {
+  const iso = isoPattern.exec(text);
+  if (iso) {
+    const remainder = text.slice(iso.index + iso[0].length);
+    if (/^(?:[:.]|[+-]\d|Z\b)/i.test(remainder) || !iso[4] && /^(?:T|\s+\d+:)/i.test(remainder) || iso[4] && /^\s+[+-]\d/.test(remainder)) return invalidDate(errors);
+    return validatedDate(
+      +iso[1],
+      +iso[2],
+      +iso[3],
+      +(iso[4] || 0),
+      +(iso[5] || 0),
+      +(iso[6] || 0),
+      +(iso[7] || "").padEnd(3, "0").slice(0, 3),
+      iso[8] || "",
+      errors
+    );
+  }
+  const apache = apachePattern.exec(text);
+  if (apache) {
+    if (/^[:.]/.test(text.slice(apache.index + apache[0].length))) return invalidDate(errors);
+    const month = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(apache[2].toLowerCase()) + 1;
+    return validatedDate(+apache[3], month, +apache[1], +apache[4], +apache[5], +(apache[6] || 0), 0, "", errors);
+  }
+  const us = usPattern.exec(text);
+  if (us) {
+    const hour = +us[4];
+    if (hour < 1 || hour > 12) return invalidDate(errors);
+    return validatedDate(+us[3], +us[1], +us[2], hour % 12 + (/pm/i.test(us[7]) ? 12 : 0), +us[5], +(us[6] || 0), 0, "", errors);
+  }
+  if (/\b\d{4}-\d{2}-\d{2}T/i.test(text)) return invalidDate(errors);
+  if (/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(text)) errors.push("date: ambiguous numeric date pattern");
+  return null;
+}
+function validatedDate(year, month, day, hour, minute, second, millisecond, zone, errors) {
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return invalidDate(errors);
+  const date = /* @__PURE__ */ new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, millisecond);
+  if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return invalidDate(errors);
+  if (zone && zone.toUpperCase() !== "Z") {
+    const digits = zone.slice(1).replace(":", "");
+    const hours = +digits.slice(0, 2);
+    const minutes = +digits.slice(2);
+    if (hours > 23 || minutes > 59) return invalidDate(errors);
+    const offset = (hours * 60 + minutes) * (zone[0] === "+" ? 1 : -1);
+    date.setTime(date.getTime() - offset * 6e4);
+  }
+  return date.toISOString();
+}
+function invalidDate(errors) {
+  errors.push("date: invalid date or time");
+  return null;
+}
+function stripDateTime(text) {
+  return text.replace(isoGlobalPattern, "").replace(apacheGlobalPattern, "").replace(/\b\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?\b/gi, "");
+}
+
+// src/utils/size.ts
+function parseSizeMeta(text) {
+  const metadata = stripDateTime(text).trim();
+  const match = /^(\d+(?:,\d{3})*(?:\.\d+)?)\s*([KMGTP](?:i?B)?|B|bytes?)?$/i.exec(metadata);
+  if (!match) return null;
+  const unit = (match[2] || "").toUpperCase();
+  const power = unit && !unit.startsWith("B") ? "KMGTP".indexOf(unit[0]) + 1 : 0;
+  const bytes = Number(match[1].replace(/,/g, "")) * Math.pow(1024, power);
+  return Number.isFinite(bytes) ? Math.floor(bytes) : null;
+}
+
+// src/utils/decode.ts
+function safeDecodeURIComponent(segment, errors) {
+  try {
+    return decodeURIComponent(segment);
+  } catch (e) {
+    errors.push(`decode: failed to decode segment '${segment}'`);
+    return segment;
+  }
+}
+
+// src/utils/errors.ts
+function pushError(errors, prefix, message) {
+  errors.push(`${prefix}: ${message}`);
+}
+
+// src/core/parseDirectory.ts
+function parseDirectoryHtml(baseUrl, html, opts, admitEntry) {
+  throwIfAborted(opts.signal);
+  const errors = [];
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  let anchors = doc.querySelectorAll("pre a[href], table a[href], ul a[href], ol a[href]");
+  if (anchors.length === 0) anchors = doc.querySelectorAll("a[href]");
+  const base = new URL(baseUrl);
+  let linkBase = base;
+  const baseHref = doc.querySelector("base[href]")?.getAttribute("href");
+  if (baseHref !== void 0 && baseHref !== null) {
+    try {
+      const candidate = new URL(baseHref, base);
+      if (!/^https?:$/.test(candidate.protocol)) throw new Error("unsupported base protocol");
+      linkBase = candidate;
+    } catch {
+      pushError(errors, "url", `invalid base '${baseHref}'`);
+    }
+  }
+  const seen = /* @__PURE__ */ new Set();
+  const rows = /* @__PURE__ */ new WeakMap();
+  const columns = /* @__PURE__ */ new WeakMap();
+  const folders = [];
+  const files = [];
+  for (const anchor of anchors) {
+    throwIfAborted(opts.signal);
+    const href = anchor.getAttribute("href")?.trim();
+    const container = anchor.closest("th,tr,li");
+    if (!href || href.includes("#") || container?.tagName === "TH") continue;
+    let url;
+    try {
+      url = new URL(href, linkBase);
+    } catch {
+      pushError(errors, "url", `invalid link '${href}'`);
+      continue;
+    }
+    if (!/^https?:$/.test(url.protocol) || opts.sameOriginOnly && url.origin !== base.origin) continue;
+    if (url.origin === base.origin && url.pathname === base.pathname && url.search && url.search !== base.search) continue;
+    const metadata = deriveMetadataFields(anchor, container, rows, columns);
+    const kind = classifyEntry(url, metadata.fields.join(" "));
+    if (kind === "unknown") continue;
+    if (kind === "folder") url = new URL(normalizeDirectoryUrl(url.href));
+    const key = kind + ":" + (kind === "folder" ? keyForVisited(url) : keyForFile(url));
+    if (seen.has(key)) continue;
+    const admission = admitEntry ? admitEntry(kind, url) : folders.length + files.length >= opts.maxEntries ? "limit" : "accept";
+    if (admission === "skip") continue;
+    if (admission === "limit") {
+      pushError(errors, "limit", "entry limit exceeded");
+      break;
+    }
+    seen.add(key);
+    const rawName = url.pathname.split("/").filter(Boolean).pop() || "";
+    const name = safeDecodeURIComponent(rawName, errors);
+    const dateFields = metadata.dateIndex === void 0 ? metadata.fields : [metadata.fields[metadata.dateIndex] || ""];
+    let date = null;
+    for (const field of dateFields) {
+      if (!field.trim() || field.trim() === "-") continue;
+      date = parseDateMeta(field, errors);
+      if (date !== null) break;
+    }
+    const sizeFields = metadata.sizeIndex === void 0 ? metadata.fields : [metadata.fields[metadata.sizeIndex] || ""];
+    let size = null;
+    for (const field of sizeFields) {
+      if (!field.trim() || field.trim() === "-") continue;
+      const candidate = parseSizeMeta(field);
+      if (candidate === null) continue;
+      if (size !== null && size !== candidate) {
+        size = null;
+        break;
+      }
+      size = candidate;
+    }
+    const entry = { url: url.href, rawName, name, hidden: detectHidden(name), date };
+    if (kind === "folder") folders.push({ ...entry, kind: "folder", size: null });
+    else files.push({ ...entry, kind: "file", size });
+  }
+  return { folders, files, errors };
+}
+function deriveMetadataFields(anchor, container, rows, columns) {
+  const row = container?.tagName === "TR" ? container : null;
+  if (row) {
+    const cached = rows.get(row);
+    if (cached) return cached;
+    const table = row.closest("table");
+    let schema = table ? columns.get(table) : void 0;
+    if (table && !schema) {
+      const header = Array.from(table.rows).find((candidate) => Array.from(candidate.cells).some((cell) => cell.tagName === "TH"));
+      const labels = header ? Array.from(header.cells).flatMap((cell) => Array(cell.colSpan).fill(cell.textContent?.trim().toLowerCase() || "")) : [];
+      const sizeIndex = labels.findIndex((label) => /^(?:file\s+)?size$|^length$/.test(label));
+      const dateIndex = labels.findIndex((label) => /modified|date|timestamp|last\s+write/.test(label));
+      schema = { sizeIndex: sizeIndex < 0 ? void 0 : sizeIndex, dateIndex: dateIndex < 0 ? void 0 : dateIndex };
+      columns.set(table, schema);
+    }
+    const cellIndex = (column) => {
+      if (column === void 0) return void 0;
+      let offset = 0;
+      return Array.from(row.cells).findIndex((cell) => {
+        offset += cell.colSpan;
+        return column < offset;
+      });
+    };
+    const metadata = {
+      fields: Array.from(row.cells, readMetadataText),
+      sizeIndex: cellIndex(schema?.sizeIndex),
+      dateIndex: cellIndex(schema?.dateIndex)
+    };
+    rows.set(row, metadata);
+    return metadata;
+  }
+  const item = container?.tagName === "LI" ? container : null;
+  if (item) return { fields: [readMetadataText(item)] };
+  const adjacentText = (before) => {
+    const parts = [];
+    for (let node = before ? anchor.previousSibling : anchor.nextSibling; node; node = before ? node.previousSibling : node.nextSibling) {
+      if (node.nodeType === 1) {
+        const element = node;
+        if (element.matches("a,br") || element.querySelector("a,br")) break;
+      }
+      const lines = (node.textContent || "").split(/\r?\n/);
+      if (before) parts.unshift(lines[lines.length - 1]);
+      else parts.push(lines[0]);
+      if (lines.length > 1) break;
+    }
+    return parts.join("");
+  };
+  return { fields: [(adjacentText(true) + " " + adjacentText(false)).trim()] };
+}
+function readMetadataText(element) {
+  const parts = [];
+  const visit = (node) => {
+    if (node.nodeType === 3) parts.push(node.textContent || "");
+    else if (node.nodeType === 1 && !node.matches("a,ul,ol,table")) {
+      for (const child of node.childNodes) visit(child);
+    }
+  };
+  for (const child of element.childNodes) visit(child);
+  return parts.join(" ").trim();
+}
+
+// src/core/recursion.ts
+async function traverse(startUrl, opts, state) {
+  const root = createNode(normalizeDirectoryUrl(startUrl), "self", 0, state.errors);
+  const folders = /* @__PURE__ */ new Map([[keyForVisited(new URL(root.url)), root]]);
+  const parents = /* @__PURE__ */ new WeakMap();
+  const files = /* @__PURE__ */ new Map();
+  let limitReported = false;
+  const entryCount = () => folders.size + files.size;
+  const reportLimit = () => {
+    if (!limitReported) pushError(state.errors, "limit", "entry limit exceeded");
+    limitReported = true;
+  };
+  const canAdd = () => {
+    if (entryCount() < opts.maxEntries) return true;
+    reportLimit();
+    return false;
+  };
+  const loadDocument = async (url) => {
+    throwIfAborted(opts.signal);
+    if (opts.mode === "iframe") return await iframeDirectoryHtml(url, opts, state.stats);
+    if (opts.mode === "fetch") return await fetchDirectoryHtml(url, opts, state.stats);
+    try {
+      return await fetchDirectoryHtml(url, opts, state.stats);
+    } catch {
+      throwIfAborted(opts.signal);
+      return await iframeDirectoryHtml(url, opts, state.stats);
+    }
+  };
+  const loadDirectory = async (node, parent) => {
+    const requestedKey = keyForVisited(new URL(node.url));
+    const loaded = await loadDocument(node.url);
+    throwIfAborted(opts.signal);
+    const url = normalizeDirectoryUrl(loaded.url);
+    const final = new URL(url);
+    if (node !== root && opts.sameOriginOnly && final.origin !== new URL(root.url).origin) {
+      throw new Error("Child directory redirected to another origin");
+    }
+    const finalKey = keyForVisited(final);
+    if (node !== root && opts.sameOriginOnly && !isChild(new URL(root.url), final) && !folders.has(finalKey)) {
+      throw new Error("Child directory redirected outside the starting directory");
+    }
+    if (finalKey !== requestedKey) {
+      const existing = folders.get(finalKey);
+      folders.delete(requestedKey);
+      if (existing && existing !== node) {
+        if (parent) parent.children = parent.children.filter((child) => child !== node);
+        if (existing.role !== "child" || state.visited.has(finalKey)) return null;
+        node = existing;
+      } else {
+        const updated = createNode(url, node.role, node.depth, state.errors);
+        Object.assign(node, updated);
+        folders.set(finalKey, node);
+      }
+    }
+    node.url = url;
+    if (node !== root && isChild(new URL(root.url), final)) node.depth = relativeDepth(new URL(root.url), final);
+    state.visited.add(finalKey);
+    if (node.depth > opts.maxDepth) return null;
+    state.maxDepthEncountered = Math.max(state.maxDepthEncountered, node.depth);
+    const start = new URL(root.url);
+    const startKey = keyForVisited(start);
+    const rootKey = keyForVisited(new URL(rootDirectory(start)));
+    const parentUrl = parentDirectory(start);
+    const parentKey = parentUrl ? keyForVisited(new URL(parentUrl)) : null;
+    const folderRole = (candidate) => {
+      const key = keyForVisited(candidate);
+      if (key === startKey) return "self";
+      if (key === rootKey) return "root";
+      if (key === parentKey) return "parent";
+      if (isChild(final, candidate) || !opts.sameOriginOnly && candidate.origin !== final.origin) return "child";
+      return void 0;
+    };
+    let pendingEntries = 0;
+    const parsed = parseDirectoryHtml(url, loaded.html, opts, (kind, candidate) => {
+      if (kind === "folder") {
+        if (!folderRole(candidate)) return "skip";
+        if (folders.has(keyForVisited(candidate))) return "accept";
+      } else if (files.has(keyForFile(candidate))) return "skip";
+      if (entryCount() + pendingEntries >= opts.maxEntries) return "limit";
+      pendingEntries++;
+      return "accept";
+    });
+    for (const error of parsed.errors) {
+      if (error.startsWith("limit:")) reportLimit();
+      else state.errors.push(error);
+    }
+    for (const folder of parsed.folders) {
+      throwIfAborted(opts.signal);
+      const candidate = new URL(folder.url);
+      const key = keyForVisited(candidate);
+      const role = folderRole(candidate);
+      if (!role) continue;
+      let child = folders.get(key);
+      if (!child) {
+        if (!canAdd()) break;
+        const depth = role === "child" ? node.depth + relativeDepth(final, candidate) : 0;
+        child = { ...createNode(folder.url, role, depth, state.errors), date: folder.date ?? null };
+        folders.set(key, child);
+      }
+      if (role === "child" && !parents.has(child) && !state.visited.has(key)) {
+        parents.set(child, node);
+        node.children.push(child);
+      }
+    }
+    for (const file of parsed.files) {
+      throwIfAborted(opts.signal);
+      const key = keyForFile(new URL(file.url));
+      if (files.has(key)) continue;
+      if (!canAdd()) break;
+      const entry = {
+        kind: "file",
+        url: file.url,
+        name: file.name || "",
+        rawName: file.rawName || "",
+        hidden: file.hidden || false,
+        size: file.size ?? null,
+        date: file.date ?? null
+      };
+      files.set(key, entry);
+      node.files.push(entry);
+    }
+    return node;
+  };
+  state.visited.add(keyForVisited(new URL(root.url)));
+  await loadDirectory(root);
+  for (const [url, role] of [[rootDirectory(new URL(root.url)), "root"], [parentDirectory(new URL(root.url)), "parent"]]) {
+    if (!url || folders.has(keyForVisited(new URL(url)))) continue;
+    if (!canAdd()) break;
+    folders.set(keyForVisited(new URL(url)), createNode(url, role, 0, state.errors));
+  }
+  const pending = [];
+  const enqueue = (parent) => {
+    for (let index = parent.children.length - 1; index >= 0; index--) {
+      const node = parent.children[index];
+      if (node.depth <= opts.maxDepth) pending.push({ node, parent });
+    }
+  };
+  enqueue(root);
+  while (pending.length > 0) {
+    throwIfAborted(opts.signal);
+    if (entryCount() >= opts.maxEntries) {
+      reportLimit();
+      break;
+    }
+    const next = pending.pop();
+    const key = keyForVisited(new URL(next.node.url));
+    if (state.visited.has(key)) continue;
+    state.visited.add(key);
+    try {
+      const loaded = await loadDirectory(next.node, next.parent);
+      if (loaded) enqueue(loaded);
+    } catch (error) {
+      throwIfAborted(opts.signal);
+      if (!opts.continueOnError) throw error;
+      pushError(state.errors, "traversal", `failed to load ${next.node.url}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  for (const folder of folders.values()) state.allFolders.push(folder);
+  for (const file of files.values()) state.allFiles.push(file);
+  state.safetyCount = entryCount();
+  return root;
+}
+function createNode(url, role, depth, errors) {
+  const rawName = new URL(url).pathname.split("/").filter(Boolean).pop() || "";
+  const name = safeDecodeURIComponent(rawName, errors);
+  return {
+    kind: "folder",
+    url,
+    rawName,
+    name,
+    hidden: name.startsWith(".") && name !== "." && name !== "..",
+    size: null,
+    date: null,
+    role,
+    depth,
+    children: [],
+    files: []
+  };
+}
+function isChild(base, candidate) {
+  const parent = keyForVisited(base);
+  const child = keyForVisited(candidate);
+  return candidate.origin === base.origin && child.startsWith(parent) && child !== parent;
+}
+function relativeDepth(base, candidate) {
+  return isChild(base, candidate) ? candidate.pathname.split("/").filter(Boolean).length - base.pathname.split("/").filter(Boolean).length : 1;
+}
+
+// src/core/mime.ts
+async function enrichMime(files, opts, stats, errors) {
+  throwIfAborted(opts.signal);
+  if (!opts.includeMime || files.length === 0) return;
+  let next = 0;
+  const worker = async () => {
+    while (next < files.length) {
+      throwIfAborted(opts.signal);
+      const file = files[next++];
+      if (file.mime != null && file.size != null) continue;
+      const request = createRequestController(opts.signal, opts.timeoutMs);
+      try {
+        const res = await fetch(file.url, { method: "HEAD", signal: request.signal });
+        throwIfAborted(opts.signal);
+        stats.heads++;
+        if (res.ok) {
+          if (file.mime == null) file.mime = res.headers.get("content-type");
+          const length = res.headers.get("content-length");
+          if (file.size == null && length && /^\d+$/.test(length)) {
+            const size = Number(length);
+            if (Number.isSafeInteger(size) && size >= 0) file.size = size;
+          }
+        } else if (res.status === 405 || res.status === 501) {
+          pushError(errors, "mime", `HEAD not supported for ${file.url}`);
+        } else {
+          pushError(errors, "mime", `HEAD ${res.status} for ${file.url}`);
+        }
+      } catch {
+        throwIfAborted(opts.signal);
+        pushError(errors, "mime", `failed HEAD for ${file.url}`);
+      } finally {
+        request.dispose();
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(opts.headConcurrency, files.length) }, worker));
+}
+
+// src/folderApiRequest.ts
+async function folderApiRequest(url, options) {
+  const opts = normalizeOptions(options);
+  throwIfAborted(opts.signal);
+  const started = performance.now?.() ?? Date.now();
+  const state = {
+    visited: /* @__PURE__ */ new Set(),
+    allFolders: [],
+    allFiles: [],
+    errors: [],
+    stats: { fetches: 0, iframes: 0, heads: 0 },
+    safetyCount: 0,
+    maxDepthEncountered: 0
+  };
+  const rootNode = await traverse(url, opts, state);
+  if (opts.includeMime) {
+    await enrichMime(state.allFiles, opts, state.stats, state.errors);
+  }
+  const durationMs = (performance.now?.() ?? Date.now()) - started;
+  const entries = [...state.allFolders, ...state.allFiles];
+  return {
+    url: rootNode.url,
+    root: rootNode,
+    folders: state.allFolders,
+    files: state.allFiles,
+    entries,
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    errors: state.errors,
+    stats: {
+      fetches: state.stats.fetches,
+      iframes: state.stats.iframes,
+      heads: state.stats.heads,
+      durationMs,
+      maxDepth: state.maxDepthEncountered
+    }
+  };
+}
+
+// src/browser.ts
+var global = globalThis;
+if (!global.folderApiRequest) global.folderApiRequest = folderApiRequest;
+export {
+  folderApiRequest
+};
 </script>
 
   <!-- App code -->
@@ -5121,10 +5940,31 @@ const fetchBytes = async (url, opts) => {
     const $openUrl = $('.open-url');
     const $currentTimestamp = $('.current-timestamp');
     const $links = $('.links');
+    const $libraryListHeading = $('.library-list-heading');
     const $linksSearch = $('.links-search');
     const $linksSearchInput = $('.links-search-input');
     const $linksSearchClear = $('.links-search-clear');
     const $linksSearchResultsCount = $('.links-search-results-count');
+    const $libraryToolbar = $('.library-toolbar');
+    const $libraryEmpty = $('.library-empty');
+    const libraryState = {
+      mode: 'library',
+      view: 'tiles',
+      sort: 'name-asc',
+      continueSort: 'recent-desc',
+      type: 'all',
+      status: 'all',
+      location: '',
+      continueCount: 0,
+      nodes: new Map()
+    };
+    const libraryCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+    let libraryRenderRequestId = 0;
+    let folderRequestId = 0;
+    let playbackRequestId = 0;
+    let failedPlaylistItems = new WeakSet();
+    let playlistProgressStart = null;
+    let playbackEventController = null;
     let lastModalTrigger = null;
 
     const isDebug = () => !!(app && app.options && app.options.debug);
@@ -5233,6 +6073,7 @@ const fetchBytes = async (url, opts) => {
       indexed: false,
       indexing: false,
       entries: [],
+      folderEntries: [],
       stats: null,
       errors: []
     };
@@ -5355,7 +6196,7 @@ const fetchBytes = async (url, opts) => {
       const labelA = urlToLabel(a.url);
       const labelB = urlToLabel(b.url);
 
-      return labelA < labelB ? -1 : 1;
+      return libraryCollator.compare(labelA, labelB) || libraryCollator.compare(a.url, b.url);
     }
 
     const isMedia = (haystack, fileExtensions) => {
@@ -5398,7 +6239,7 @@ const fetchBytes = async (url, opts) => {
     }
     const localSessionUrl = (sessionId, pathParts = [], isFolderUrl = false) => {
       const path = pathParts.map((part) => encodeURIComponent(part)).join('/');
-      return `local://${sessionId}/${path}${isFolderUrl ? '/' : ''}`;
+      return `local://${sessionId}/${path}${isFolderUrl && path ? '/' : ''}`;
     }
     const parseLocalUrl = (url) => {
       const parsed = new URL(url);
@@ -5437,12 +6278,24 @@ const fetchBytes = async (url, opts) => {
       if (pathParts.length === 0) return '';
       return localSessionUrl(sessionId, pathParts.slice(0, -1), true);
     }
-    const createLocalLinks = async (folderUrl) => {
+    const getLocalFolderHandle = async (folderUrl) => {
+      const { pathParts, key } = parseLocalUrl(folderUrl);
+      const session = getLocalSession(folderUrl);
+      if (!session) throw new Error('Local folder handle is no longer available');
+      if (session.folders.has(key)) return session.folders.get(key);
+      let handle = session.rootHandle;
+      for (let i = 0; i < pathParts.length; i++) {
+        const path = pathParts.slice(0, i + 1).join('/');
+        handle = session.folders.get(path) || await handle.getDirectoryHandle(pathParts[i]);
+        session.folders.set(path, handle);
+      }
+      return handle;
+    }
+    const createLocalLinks = async (folderUrl, opts = {}) => {
       const { sessionId, pathParts, key } = parseLocalUrl(folderUrl);
       const session = localSourceSessions.get(sessionId);
       if (!session) throw new Error('Local folder handle is no longer available');
-      const handle = session.folders.get(key);
-      if (!handle) throw new Error('Local folder not found');
+      const handle = await getLocalFolderHandle(folderUrl);
 
       const folders = [];
       const files = [];
@@ -5487,6 +6340,15 @@ const fetchBytes = async (url, opts) => {
         }
       }
 
+      const maxDepth = Math.max(0, Number.isFinite(opts.maxDepth) ? opts.maxDepth : 0);
+      if (maxDepth > 0) {
+        for (const folder of [...folders].filter((entry) => entry.role === 'child')) {
+          const children = await createLocalLinks(folder.url, { maxDepth: maxDepth - 1 });
+          folders.push(...children.folders.filter((entry) => entry.role === 'child'));
+          files.push(...children.files);
+        }
+      }
+
       folders.sort((a, b) => (a.role === 'parent' ? -1 : b.role === 'parent' ? 1 : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })));
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
@@ -5509,6 +6371,36 @@ const fetchBytes = async (url, opts) => {
       return session ? session.files.get(parsed.key) || null : null;
     }
 
+    const rememberLocalFileMetadata = (url, file) => {
+      const session = getLocalSession(url);
+      const metadata = {
+        historyId: getLocalFileHistoryId(file),
+        label: removeFileExtension(file.name || urlToFilename(url)),
+        source: 'local-file',
+        sourceUrl: file.name || url,
+        relativePath: parseLocalUrl(url).key,
+        localRootName: session ? session.name : '',
+        size: file.size,
+        date: Number.isFinite(file.lastModified) ? new Date(file.lastModified).toISOString() : null
+      };
+      localObjectUrlMetadata.set(url, metadata);
+      return metadata;
+    }
+
+    const prepareLocalFileMetadata = async (files) => {
+      const pending = files.filter((file) => isLocalUrl(file.url) && !localObjectUrlMetadata.has(file.url));
+      for (let i = 0; i < pending.length; i += 8) {
+        await Promise.all(pending.slice(i, i + 8).map(async (entry) => {
+          try {
+            const handle = getLocalFileHandle(entry.url);
+            if (handle) rememberLocalFileMetadata(entry.url, await handle.getFile());
+          } catch (e) {
+            if (isDebug()) console.warn('Unable to read local file details', entry.url, e);
+          }
+        }));
+      }
+    }
+
     const getPlayableUrlForMedia = async (url) => {
       if (!isLocalUrl(url)) return url;
       if (localObjectUrls.has(url)) return localObjectUrls.get(url);
@@ -5517,54 +6409,67 @@ const fetchBytes = async (url, opts) => {
       const file = await handle.getFile();
       const objectUrl = URL.createObjectURL(file);
       localObjectUrls.set(url, objectUrl);
-      localObjectUrlMetadata.set(url, {
-        historyId: getLocalFileHistoryId(file),
-        label: removeFileExtension(file.name || urlToFilename(url)),
-        source: 'local-file',
-        sourceUrl: file.name || url
-      });
+      rememberLocalFileMetadata(url, file);
       return objectUrl;
     }
 
-    const createLinks = async (url) => {
+    const requestFolderLinks = async (url, opts = {}) => {
+      if (isLocalUrl(url)) return createLocalLinks(url, opts);
+      const mode = isSameOriginUrl(url) ? 'auto' : 'fetch';
+      // A cached directory can belong to a different server at the same origin.
+      return folderApiRequest(url, { mode, cache: 'no-store', ...opts });
+    }
+
+    const createLinks = async (url, opts = {}) => {
+      const requestId = ++folderRequestId;
       const targetUrl = url || window.location.href;
       const folder = urlToFolder(targetUrl) || urlToFolder(window.location.href);
       if (!folder) throw new Error('Invalid folder URL');
-      const links = isLocalUrl(folder)
-        ? await createLocalLinks(folder)
-        : await (async () => {
-            const mode = (isSameOriginUrl(folder) ? 'auto' : 'fetch');
-            return folderApiRequest(folder, { mode });
-          })();
-
-      if (Array.isArray(links.folders)) {
-        links.folders = links.folders.filter((item) => !(item && item.role === 'self'));
+      let links;
+      try {
+        links = await requestFolderLinks(folder);
+      } catch (e) {
+        if (requestId !== folderRequestId) return false;
+        throw e;
       }
+      if (requestId !== folderRequestId) return false;
 
       const parentUrl = getParentFolder(folder);
+      if (Array.isArray(links.folders)) {
+        // folder.api includes origin-root navigation even below the library root.
+        links.folders = links.folders.filter((item) => !(item && (
+          item.role === 'self' || (item.role === 'root' && item.url !== parentUrl)
+        )));
+      }
+
       if (parentUrl && Array.isArray(links.folders)) {
-        const hasParent = links.folders.some((item) => (
+        const parent = links.folders.find((item) => (
           item &&
           (item.role === 'parent' || item.type === 'parent' || item.url === parentUrl || item.url === '../')
         ));
-        if (!hasParent) {
+        if (parent) {
+          parent.role = 'parent';
+        } else {
           links.folders.unshift({ url: parentUrl, role: 'parent', name: 'Parent' });
         }
       }
 
       const oldLinksHash = linksHash(app.links);
       const newLinksHash = linksHash(links);
+      const clearedSearch = opts.clearSearch && (!!searchState.query.trim() || !!searchInputDebounceId);
+      if (opts.clearSearch) clearSearch({ render: false, updateHash: false });
 
+      if (opts.rootUrl) setHashRootLocation(opts.rootUrl);
       hashState.location = folder;
       app.links = links;
 
       // Only show the links if they have changed
-      if (oldLinksHash !== newLinksHash) showLinks(links);
+      if (clearedSearch || oldLinksHash !== newLinksHash || libraryState.location !== folder) await showLinks(links);
+      return requestId === folderRequestId;
     }
     const createLinksSafe = async (url) => {
       try {
-        await createLinks(url);
-        return true;
+        return await createLinks(url);
       } catch (e) {
         console.warn('Unable to load folder links', e);
         return false;
@@ -5600,10 +6505,12 @@ const fetchBytes = async (url, opts) => {
     }
 
     const resetSearchIndexState = () => {
+      searchIndexRequestId++;
       searchState.cacheKey = '';
       searchState.indexed = false;
       searchState.indexing = false;
       searchState.entries = [];
+      searchState.folderEntries = [];
       searchState.stats = null;
       searchState.errors = [];
     }
@@ -5639,7 +6546,7 @@ const fetchBytes = async (url, opts) => {
       try {
         const target = new URL(absoluteUrl);
         const root = new URL(absoluteRoot);
-        return target.origin === root.origin && target.pathname.startsWith(root.pathname);
+        return target.protocol === root.protocol && target.host === root.host && target.pathname.startsWith(root.pathname);
       } catch (e) {
         return false;
       }
@@ -5653,20 +6560,38 @@ const fetchBytes = async (url, opts) => {
     }
 
     const updateSearchControls = () => {
-      const enabled = isSearchEnabled();
+      const continuing = libraryState.mode === 'continue';
+      const enabled = isSearchEnabled() || continuing;
       if ($linksSearch) {
         $linksSearch.hidden = !enabled;
         $linksSearch.attr('aria-busy', (enabled && searchState.indexing) ? 'true' : 'false');
       }
       if ($linksSearchInput) {
-        const disabled = (!enabled || !searchState.indexed || searchState.indexing);
+        const disabled = !continuing && (!enabled || !searchState.indexed || searchState.indexing);
         $linksSearchInput.disabled = disabled;
-        $linksSearchInput.placeholder = (searchState.indexing ? 'Indexing media library...' : 'Search media files');
+        $linksSearchInput.placeholder = (!continuing && searchState.indexing ? 'Indexing media library...' : 'Search media files');
         $linksSearchInput.attr('aria-disabled', disabled ? 'true' : 'false');
       }
       if ($linksSearchClear) {
         $linksSearchClear.hidden = (!enabled || String(searchState.query || '').trim().length === 0);
       }
+    }
+
+    const getSearchDirectorySignatures = (links) => {
+      const root = links.url;
+      const directories = new Map([[root, new Map()]]);
+      for (const entry of [...(links.folders || []), ...(links.files || [])]) {
+        const folder = isFolder(entry.url);
+        if (folder && isUrlWithinRoot(entry.url, root) && !directories.has(entry.url)) directories.set(entry.url, new Map());
+        const parent = folder ? getParentFolder(entry.url) : urlToContainingFolder(entry.url);
+        if (!parent || !isUrlWithinRoot(parent, root)) continue;
+        if (!directories.has(parent)) directories.set(parent, new Map());
+        directories.get(parent).set(entry.url, [entry.url, entry.size ?? null, entry.date ?? null]);
+      }
+      return Object.fromEntries([...directories].map(([url, entries]) => [
+        url,
+        JSON.stringify([...entries.values()].sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+      ]));
     }
 
     const readSearchIndexCache = () => {
@@ -5678,7 +6603,9 @@ const fetchBytes = async (url, opts) => {
         const cached = storage.getItem(key);
         if (!cached) return null;
         const parsed = JSON.parse(cached);
-        if (!parsed || !Array.isArray(parsed.entries)) return null;
+        if (!parsed || !Array.isArray(parsed.entries) || !Array.isArray(parsed.folderEntries)) return null;
+        const folder = app.links?.url;
+        if (!folder || parsed.directories?.[folder] !== getSearchDirectorySignatures(app.links)[folder]) return null;
         return parsed;
       } catch (e) {
         return null;
@@ -5697,17 +6624,6 @@ const fetchBytes = async (url, opts) => {
         console.warn('Unable to cache search index in sessionStorage', e);
         return false;
       }
-    }
-
-    const renderLinksHtml = (html = '') => {
-      clearThumbnailQueue();
-      revokeThumbnailObjectUrls();
-      $links.innerHTML = html;
-
-      const $renderedLinks = [...document.querySelectorAll('.file, .folder')];
-      $renderedLinks.forEach((link) => $(link).on('click', clickLink));
-
-      populateThumbnails();
     }
 
     const getSearchRelativeLabel = (url, rootUrl = getSearchRootUrl()) => {
@@ -5734,12 +6650,15 @@ const fetchBytes = async (url, opts) => {
       }
     }
 
-    const buildSearchIndexEntries = (links, rootUrl = getSearchRootUrl()) => {
-      if (!links || !Array.isArray(links.files)) return [];
+    const buildSearchIndexEntries = (links, rootUrl = getSearchRootUrl(), folders = false) => {
+      const items = links?.[folders ? 'folders' : 'files'];
+      if (!Array.isArray(items)) return [];
 
       const dedupe = new Set();
-      return links.files
-        .filter((file) => file && file.url && isMedia(file.url))
+      return items
+        .filter((file) => file?.url && (folders
+          ? file.url !== rootUrl && (file.role || file.type) !== 'parent' && isUrlWithinRoot(file.url, rootUrl)
+          : isMedia(file.url)))
         .map((file) => {
           const url = resolveUrl(file.url);
           let fallbackName = urlToFilename(url);
@@ -5752,10 +6671,13 @@ const fetchBytes = async (url, opts) => {
           const extension = ((/\.[^./]+$/.exec(filename) || [])[0] || '').toLowerCase();
           return {
             url,
+            name: file.name || fallbackName,
             label,
             relativeLabel,
             filename,
             extension,
+            size: file.size,
+            date: file.date,
             searchLabel: String(label || '').toLowerCase(),
             searchFilename: String(filename || '').toLowerCase(),
             searchPath: String(relativeLabel || label || '').toLowerCase()
@@ -5805,12 +6727,12 @@ const fetchBytes = async (url, opts) => {
         .filter((token) => token.length > 0)
     );
 
-    const getSearchMatches = (query) => {
+    const getSearchMatches = (query, entries = searchState.entries) => {
       const normalized = String(query || '').trim().toLowerCase();
       const tokens = tokenizeSearchQuery(normalized);
       if (!normalized || tokens.length === 0) return [];
 
-      return searchState.entries
+      return entries
         .map((entry) => {
           const tokenScores = tokens.map((token) => scoreSearchEntry(entry, token));
           if (tokenScores.some((score) => score < 0)) return null;
@@ -5843,7 +6765,7 @@ const fetchBytes = async (url, opts) => {
         updateSearchResultsCount('');
         showLinks(app.links);
         updateHash();
-        return [];
+        return;
       }
 
       if (!searchState.active) {
@@ -5852,25 +6774,9 @@ const fetchBytes = async (url, opts) => {
       }
       searchState.active = true;
 
-      const matches = getSearchMatches(normalized);
-      const limitedMatches = matches.slice(0, searchResultLimit);
-      const html = limitedMatches.map((entry) => {
-        const cssClasses = ['search-result'];
-        if (entry.url === $player.src) cssClasses.push('current');
-        return createFileTemplate(entry.url, entry.relativeLabel || entry.label, cssClasses.join(' '));
-      }).join('');
-
-      renderLinksHtml(html);
-
-      if (matches.length > searchResultLimit) {
-        updateSearchResultsCount(`Showing ${addCommas(searchResultLimit)} of ${addCommas(matches.length)} results`);
-      } else {
-        updateSearchResultsCount(`${addCommas(matches.length)} result${matches.length === 1 ? '' : 's'}`);
-      }
+      renderLibraryView();
 
       updateHash();
-
-      return matches;
     }
 
     const clearSearch = (opts = {}) => {
@@ -5927,6 +6833,7 @@ const fetchBytes = async (url, opts) => {
 
       if (cached) {
         searchState.entries = cached.entries;
+        searchState.folderEntries = cached.folderEntries;
         searchState.stats = cached.stats || null;
         searchState.errors = cached.errors || [];
         searchState.indexed = true;
@@ -5934,6 +6841,7 @@ const fetchBytes = async (url, opts) => {
         updateSearchResultsCount('');
         updateSearchControls();
         if (searchState.query) renderSearchResults(searchState.query);
+        else renderLibraryView();
         return true;
       }
 
@@ -5944,15 +6852,11 @@ const fetchBytes = async (url, opts) => {
 
       try {
         const depth = Math.max(0, getSearchDepth() - 1);
-        const links = isLocalUrl(rootUrl)
-          ? app.links
-          : await (async () => {
-              const mode = (isSameOriginUrl(rootUrl) ? 'auto' : 'fetch');
-              return folderApiRequest(rootUrl, { mode, maxDepth: depth });
-            })();
+        const links = await requestFolderLinks(rootUrl, { maxDepth: depth });
         if (requestId !== searchIndexRequestId) return false;
 
         searchState.entries = buildSearchIndexEntries(links, rootUrl);
+        searchState.folderEntries = buildSearchIndexEntries(links, rootUrl, true);
         searchState.stats = links.stats || null;
         searchState.errors = links.errors || [];
         searchState.indexed = true;
@@ -5961,7 +6865,9 @@ const fetchBytes = async (url, opts) => {
         writeSearchIndexCache({
           rootUrl,
           depth: getSearchDepth(),
+          directories: getSearchDirectorySignatures(links),
           entries: searchState.entries,
+          folderEntries: searchState.folderEntries,
           stats: searchState.stats,
           errors: searchState.errors,
           generatedAt: new Date().toISOString()
@@ -5974,6 +6880,7 @@ const fetchBytes = async (url, opts) => {
         updateSearchResultsCount('');
         updateSearchControls();
         if (searchState.query) renderSearchResults(searchState.query);
+        else renderLibraryView();
         return true;
       } catch (e) {
         if (requestId !== searchIndexRequestId) return false;
@@ -6040,15 +6947,19 @@ const fetchBytes = async (url, opts) => {
       const rootChanged = (!!nextRoot && nextRoot !== previousRoot);
       let openedLinks = false;
 
+      clearThumbnailQueue();
+      const linksRequest = createLinks(folderUrl, { clearSearch: true, rootUrl: nextRoot || folderUrl });
+      const requestId = folderRequestId;
       try {
-        clearThumbnailQueue();
-        setHashRootLocation(nextRoot || folderUrl);
-        await createLinks(folderUrl);
+        if (!await linksRequest) return false;
         openedLinks = true;
       } catch (e) {
+        if (requestId !== folderRequestId) return false;
         const reason = classifyLocationOpenError(e);
         console.warn(`Unable to open URL (${reason})`, e);
         if (!mediaUrl) return false;
+        setHashRootLocation(nextRoot || folderUrl);
+        clearSearch({ updateHash: false });
         hashState.location = folderUrl;
       }
 
@@ -6082,74 +6993,232 @@ const fetchBytes = async (url, opts) => {
     const getOpenUrlInput = () => $('.open-url-input');
 
     const showLinks = async (links) => {
-      var html = '';
-      const folders = links.folders;
-      const files = links.files;
-      const base = getBaseLocation(window.location);
-
-      folders.forEach((folder) => {
-        const rawUrl = folder.url;
-        const url = decodeURI(rawUrl).replace(base, '');
-        const label = url;
-        const optClasses = ((folder.role || folder.type) === 'parent' ? 'parent' : '');
-
-        html += createFolderTemplate(rawUrl, label, optClasses);
-      });
-
-      const removeUrlExtension = (url) => {
-        const re = /^(.*)(?:\.\w+)$/i;
-        const results = re.exec(url);
-
-        if (!results || results.length === 0) return undefined;
-
-        return results[1];
+      const location = hashState.location || links.url || '';
+      if (libraryState.location !== location) {
+        libraryRenderRequestId += 1;
+        clearThumbnailQueue();
+        revokeThumbnailObjectUrls();
+        libraryState.nodes.clear();
+        $links.replaceChildren($libraryListHeading);
+        libraryState.location = location;
+        libraryState.mode = 'library';
       }
-
-      const findThumbnail = (mediaUrl, files) => {
-        if (!Array.isArray(files)) return undefined;
-
-        const mediaPrefix = removeUrlExtension(mediaUrl);
-
-        const thumbnails = files.filter((file) => isImage(file.url));
-        const thumb = thumbnails.find((file) => {
-          const filePrefix = removeUrlExtension(file.url);
-          return mediaPrefix === filePrefix;
-        });
-        return thumb;
-      }
-
-      const subtitles = files.filter((file) => isSubtitle(file.url));
+      const subtitles = (links.files || []).filter((file) => isSubtitle(file.url));
       populateSubtitles(subtitles);
+      await renderLibraryView();
+    }
 
-      const medias = files.filter((file) => isMedia(file.url));
-      medias.sort(sortFiles);
-      const watchRecords = await getWatchHistoryRecords(medias.map((file) => file.url));
+    const getLibraryFileDetails = (file) => {
+      const metadata = localObjectUrlMetadata.get(file.url);
+      return metadata ? { ...file, size: metadata.size, date: metadata.date } : file;
+    }
 
-      for (const file of medias) {
-        const rawUrl = file.url;
-        const url = decodeURI(rawUrl).replace(base, '');
-        const label = urlToLabel(url);
-        const cssClasses = [];
-        const watchRecord = watchRecords.get(rawUrl);
-        const watchProgress = watchRecord && Number.isFinite(watchRecord.progress)
-          ? minmax(0, watchRecord.progress, 1)
-          : 0;
+    const getLibraryDate = (file) => {
+      const date = file.date == null ? NaN : new Date(file.date).getTime();
+      return Number.isFinite(date) ? date : null;
+    }
 
-        const preRenderedThumbnail = findThumbnail(file.url, links.files);
-        const preRenderedThumbnailAvailable = preRenderedThumbnail && preRenderedThumbnail.url;
-        const thumbnailUrl = preRenderedThumbnailAvailable
-          ? (isLocalUrl(preRenderedThumbnail.url) ? await getPlayableUrlForMedia(preRenderedThumbnail.url) : preRenderedThumbnail.url)
-          : '';
-
-        if (preRenderedThumbnailAvailable) cssClasses.push('prerendered');
-        if (rawUrl === getMediaUrl()) cssClasses.push('current');
-        if (watchRecord && watchRecord.completed) cssClasses.push('watched');
-        else if (watchProgress > 0) cssClasses.push('in-progress');
-
-        html += createFileTemplate(rawUrl, label, cssClasses.join(' '), thumbnailUrl, watchProgress);
+    const compareLibraryFiles = (a, b) => {
+      const sort = libraryState.mode === 'continue' ? libraryState.continueSort : libraryState.sort;
+      const descending = sort.endsWith('-desc');
+      let comparison = 0;
+      if (sort.startsWith('size-') || sort.startsWith('date-')) {
+        const value = (file) => sort.startsWith('size-')
+          ? (Number.isFinite(file.size) && file.size >= 0 ? file.size : null)
+          : getLibraryDate(file);
+        const left = value(a);
+        const right = value(b);
+        if (left === null || right === null) {
+          if (left !== right) return left === null ? 1 : -1;
+        } else {
+          comparison = left - right;
+        }
+      } else if (sort === 'recent-desc') {
+        comparison = (a.watchRecord?.updatedAt || 0) - (b.watchRecord?.updatedAt || 0);
+      } else {
+        comparison = sortFiles(a, b);
       }
+      return (descending ? -comparison : comparison) || sortFiles(a, b);
+    }
 
-      renderLinksHtml(html);
+    const matchesLibraryFilters = (file) => {
+      if (libraryState.type === 'audio' && !isAudio(file.url)) return false;
+      if (libraryState.type === 'video' && isAudio(file.url)) return false;
+      const record = file.watchRecord;
+      switch (libraryState.status) {
+        case 'unplayed': return !record || (!record.completed && !(record.position > 0));
+        case 'in-progress': return !!record && !record.completed && record.position > 0;
+        case 'watched': return !!record && record.completed;
+        default: return true;
+      }
+    }
+
+    const getLibraryResumeLabel = (record) => {
+      if (!record) return '';
+      if (record.completed) return 'Played';
+      if (!(record.position > 0)) return '';
+      const remaining = Math.max(0, record.duration - record.position);
+      return `Resume ${secondsToString(record.position)} (${secondsToString(remaining)} left)`;
+    }
+
+    const getLibraryHistory = async () => {
+      if (!shouldRememberWatchHistory()) return [];
+      try {
+        const records = await runWatchHistoryStore('readonly', (store) => idbRequest(store.getAll()));
+        return Array.isArray(records) ? records : [];
+      } catch (e) {
+        console.warn('Unable to read library playback history', e);
+        return [];
+      }
+    }
+
+    const resolveLocalHistoryUrl = async (record, root) => {
+      for (const [url, metadata] of localObjectUrlMetadata) {
+        if (metadata.historyId === record.id && isLocalUrl(url) && isUrlWithinRoot(url, root)) return url;
+      }
+      const session = getLocalSession(root);
+      if (!session || record.localRootName !== session.name || !record.relativePath) return '';
+      try {
+        const parts = record.relativePath.split('/');
+        const url = localSessionUrl(session.id, parts);
+        if (!isUrlWithinRoot(url, root)) return '';
+        const folder = await getLocalFolderHandle(localSessionUrl(session.id, parts.slice(0, -1), true));
+        const handle = await folder.getFileHandle(parts[parts.length - 1]);
+        const file = await handle.getFile();
+        if (getLocalFileHistoryId(file) !== record.id) return '';
+        session.files.set(parts.join('/'), handle);
+        rememberLocalFileMetadata(url, file);
+        return url;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    const updateLibraryControls = (continueCount = libraryState.continueCount) => {
+      if (!$libraryToolbar) return;
+      libraryState.continueCount = continueCount;
+      const remember = shouldRememberWatchHistory();
+      if (!remember) {
+        libraryState.mode = 'library';
+        libraryState.status = 'all';
+      }
+      const $continue = $('.library-tab-continue');
+      $continue.hidden = !remember;
+      $('.library-continue-count').textContent = addCommas(continueCount);
+      for (const mode of ['library', 'continue']) {
+        const $tab = $(`.library-tab-${mode}`);
+        const selected = libraryState.mode === mode;
+        $tab.setAttribute('aria-selected', String(selected));
+        $tab.tabIndex = selected ? 0 : -1;
+      }
+      for (const view of ['tiles', 'list']) setAriaPressed(`.library-view-${view}`, libraryState.view === view);
+      $links.classList.toggle('list-view', libraryState.view === 'list');
+      $links.classList.toggle('continue-view', libraryState.mode === 'continue');
+      $links.setAttribute('aria-labelledby', `library-tab-${libraryState.mode}`);
+      $('.library-sort').value = libraryState.mode === 'continue' ? libraryState.continueSort : libraryState.sort;
+      $('.library-type').value = libraryState.type;
+      $('.library-status').value = libraryState.status;
+      $('.library-status').disabled = libraryState.mode === 'continue' || !remember;
+      updateSearchControls();
+    }
+
+    const renderLibraryView = async () => {
+      const requestId = ++libraryRenderRequestId;
+      const links = app.links || {};
+      const sourceFiles = Array.isArray(links.files) ? links.files : [];
+      const root = getHashRootLocation() || urlToFolder(hashState.location || window.location.href);
+      const searching = !!searchState.query.trim();
+      let files = searching && searchState.indexed ? getSearchMatches(searchState.query) : sourceFiles.filter((file) => isMedia(file.url));
+      await prepareLocalFileMetadata(files);
+      const history = await getLibraryHistory();
+      const records = new Map(history.map((record) => [record.id, record]));
+      const knownFiles = new Map([...sourceFiles, ...searchState.entries].map((file) => [file.url, file]));
+      const continueFiles = [];
+      for (const record of history) {
+        if (record.completed || !(record.position > 0) || !Number.isFinite(record.duration) || record.duration <= 0) continue;
+        if (!isLocalUrl(root) && (record.source === 'local-file' || !/^https?:\/\//i.test(record.url || ''))) continue;
+        const url = isLocalUrl(root) ? await resolveLocalHistoryUrl(record, root) : record.url;
+        if (!url || !isMedia(url) || !isUrlWithinRoot(url, root)) continue;
+        continueFiles.push(getLibraryFileDetails({ ...(knownFiles.get(url) || {}), url, watchRecord: record }));
+      }
+      if (requestId !== libraryRenderRequestId) return;
+      updateLibraryControls(continueFiles.length);
+      if (libraryState.mode === 'continue') {
+        const tokens = tokenizeSearchQuery(searchState.query);
+        files = continueFiles.filter((file) => (
+          (libraryState.type === 'all' || (isAudio(file.url) ? 'audio' : 'video') === libraryState.type) &&
+          tokens.every((token) => getSearchRelativeLabel(file.url, root).toLowerCase().includes(token))
+        )).sort(compareLibraryFiles);
+      } else {
+        files = files.map((file) => getLibraryFileDetails({ ...file, watchRecord: records.get(getWatchHistoryId(file.url)) }))
+          .filter(matchesLibraryFilters).sort(compareLibraryFiles);
+      }
+      const totalFiles = files.length;
+      const showFolders = libraryState.mode === 'library';
+      const folderSource = searching ? getSearchMatches(searchState.query, searchState.folderEntries) : (links.folders || []);
+      let folders = showFolders ? [...folderSource].sort((a, b) => {
+        const aParent = (a.role || a.type) === 'parent';
+        const bParent = (b.role || b.type) === 'parent';
+        return aParent !== bParent ? (aParent ? -1 : 1) : sortFiles(a, b);
+      }) : [];
+      const total = totalFiles + folders.length;
+      if (searching && libraryState.mode === 'library') {
+        files = files.slice(0, searchResultLimit);
+        folders = folders.slice(0, Math.max(0, searchResultLimit - files.length));
+      }
+      const imageFiles = new Map(sourceFiles.filter((file) => isImage(file.url)).map((file) => [stripUrlExtension(file.url), file.url]));
+      const images = await Promise.all(files.map(async (file) => {
+        const url = imageFiles.get(stripUrlExtension(file.url));
+        return url && isLocalUrl(url) ? getPlayableUrlForMedia(url).catch(() => '') : (url || '');
+      }));
+      if (requestId !== libraryRenderRequestId) return;
+      const entries = [...folders.map((file) => ({ file, folder: true })), ...files.map((file, index) => ({ file, image: images[index] }))];
+      const visibleUrls = new Set(entries.map((entry) => entry.file.url));
+      const focused = $links.contains(document.activeElement) ? document.activeElement : null;
+      for (const [url, node] of libraryState.nodes) node.hidden = !visibleUrls.has(url);
+      for (const entry of entries) {
+        const file = entry.file;
+        const parent = entry.folder && !searching && (file.role || file.type) === 'parent';
+        let node = libraryState.nodes.get(file.url);
+        if (node && entry.folder && node.classList.contains('parent') !== parent) {
+          node.remove();
+          node = null;
+        }
+        if (!node) {
+          const label = searching || libraryState.mode === 'continue' ? getSearchRelativeLabel(file.url, root) : urlToLabel(file.url);
+          node = $(entry.folder
+            ? createFolderTemplate(file.url, file.name || label, parent ? 'parent' : '')
+            : createFileTemplate(file.url, label));
+          node.on('click', clickLink);
+          libraryState.nodes.set(file.url, node);
+        }
+        node.hidden = false;
+        if (entry.folder) {
+          node.querySelector('.label').textContent = parent ? 'Parent Folder' : (searching ? getSearchRelativeLabel(file.url, root) : (file.name || urlToLabel(file.url)));
+        } else {
+          const record = file.watchRecord;
+          node.classList.toggle('current', file.url === getMediaUrl());
+          node.classList.toggle('watched', !!record?.completed);
+          node.classList.toggle('in-progress', !!record && !record.completed && record.progress > 0);
+          if (record?.progress > 0) node.style.setProperty('--watch-progress', `${limitPrecision(minmax(0, record.progress, 1) * 100, 2)}%`);
+          else node.style.removeProperty('--watch-progress');
+          if (entry.image) {
+            node.style.setProperty('--image-url-0', `url('${escapeCssUrl(entry.image)}')`);
+            node.classList.add('prerendered');
+          }
+          node.querySelector('.label').textContent = searching || libraryState.mode === 'continue' ? getSearchRelativeLabel(file.url, root) : urlToLabel(file.url);
+          node.querySelector('.file-resume').textContent = getLibraryResumeLabel(record);
+        }
+        $links.appendChild(node);
+      }
+      $libraryEmpty.hidden = entries.length > 0;
+      $libraryEmpty.textContent = libraryState.mode === 'continue' ? 'No unfinished media in this library.' : 'No matching media.';
+      if (focused?.isConnected && !focused.closest('[hidden]')) focused.focus({ preventScroll: true });
+      const shown = files.length + folders.length;
+      updateSearchResultsCount(!searching ? '' : (total > shown
+        ? `Showing ${addCommas(shown)} of ${addCommas(total)} results`
+        : `${addCommas(total)} result${total === 1 ? '' : 's'}`));
+      populateThumbnails();
     }
 
     const clickLink = async (e) => {
@@ -6210,8 +7279,8 @@ const fetchBytes = async (url, opts) => {
 
       return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='${safeTitle}' style='${safeStyle}' draggable='false'>
                 <div class='title' draggable='false'>
-                  <span class='label'>${safeLabel}</span>
-                  <svg class='watched-icon' aria-hidden='true' focusable='false'><use xlink:href='#svg-checkmark-circle'/></svg>
+                  <span class='file-label'><span class='label'>${safeLabel}</span><span class='file-resume'></span></span>
+                  <span class='watched-icon' role='img' aria-label='Played' title='This media has been played'><svg aria-hidden='true' focusable='false'><use xlink:href='#svg-checkmark-circle'/></svg></span>
                   <button class='btn-add-to-playlist' type='button' title='Add to playlist' aria-label='Add to playlist'>
                     <svg><use xlink:href='#svg-playlist-add'/></svg>
                   </button>
@@ -6236,7 +7305,7 @@ const fetchBytes = async (url, opts) => {
       return `<a href='${escapedUrl}' class='folder ${optionalClasses}' draggable='false' title='${safeTitle}'>
                 <div class='title' draggable='false'>
                   <span class='folder-label'>
-                    <svg class='icon'><use xlink:href='#svg-folder-arrow'/></svg>
+                    <svg class='icon'><use xlink:href='#svg-folder-${isParent ? 'arrow' : 'closed'}'/></svg>
                     <span class="label">${safeLabel}</span>
                   </span>
                   ${addButton}
@@ -6400,6 +7469,7 @@ const fetchBytes = async (url, opts) => {
 
     const getWatchHistoryRecord = async (url) => {
       if (!shouldRememberWatchHistory()) return null;
+      await prepareLocalFileMetadata([{ url }]);
       const id = getWatchHistoryId(url);
       if (!id) return null;
       try {
@@ -6412,6 +7482,7 @@ const fetchBytes = async (url, opts) => {
 
     const getWatchHistoryRecords = async (urls) => {
       if (!shouldRememberWatchHistory() || !Array.isArray(urls) || urls.length === 0) return new Map();
+      await prepareLocalFileMetadata(urls.map((url) => ({ url })));
       const ids = urls.map((url) => [url, getWatchHistoryId(url)]).filter((pair) => pair[1]);
       if (ids.length === 0) return new Map();
       try {
@@ -6458,7 +7529,7 @@ const fetchBytes = async (url, opts) => {
 
     const updateWatchHistoryTile = (url, record) => {
       if (!url || !record) return;
-      const $tile = $(`.file[href='${url}']`);
+      const $tile = libraryState.nodes.get(url);
       if (!$tile) return;
       $tile.classList.toggle('watched', !!record.completed);
       $tile.classList.toggle('in-progress', !record.completed && record.progress > 0);
@@ -6467,6 +7538,7 @@ const fetchBytes = async (url, opts) => {
       } else {
         $tile.style.removeProperty('--watch-progress');
       }
+      $tile.querySelector('.file-resume').textContent = getLibraryResumeLabel(record);
     }
 
     const writeWatchHistory = async (reason = 'update') => {
@@ -6489,12 +7561,15 @@ const fetchBytes = async (url, opts) => {
         progress: duration ? minmax(0, position / duration, 1) : 0,
         completed,
         subtitle: hashState.subtitle || '',
+        relativePath: metadata.relativePath || '',
+        localRootName: metadata.localRootName || '',
         updatedAt: Date.now()
       };
 
       try {
         await runWatchHistoryStore('readwrite', (store) => store.put(record));
         updateWatchHistoryTile(url, record);
+        renderLibraryView();
         pruneWatchHistory();
       } catch (e) {
         console.warn('Unable to write watch history', e);
@@ -6505,6 +7580,7 @@ const fetchBytes = async (url, opts) => {
 
     const applyWatchHistoryResume = async (url) => {
       const record = await getWatchHistoryRecord(url);
+      if (getMediaUrl() !== url) return;
       if (!record || record.completed) return;
       const duration = getMediaDuration();
       if (!duration || !Number.isFinite(record.position) || record.position <= 0) return;
@@ -6776,12 +7852,16 @@ const fetchBytes = async (url, opts) => {
     const pruneThumbnailCache = async () => {
       try {
         await runThumbnailCacheStore('readwrite', async (store) => {
-          const all = await idbRequest(store.getAll());
-          if (!Array.isArray(all) || all.length <= thumbnailCacheMaxItems) return;
-          all
-            .sort((a, b) => (b.lastAccessedAt || 0) - (a.lastAccessedAt || 0))
-            .slice(thumbnailCacheMaxItems)
-            .forEach((record) => store.delete(record.key));
+          let remaining = await idbRequest(store.count()) - thumbnailCacheMaxItems;
+          if (remaining <= 0) return;
+          const request = store.index('lastAccessedAt').openKeyCursor();
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor || remaining <= 0) return;
+            store.delete(cursor.primaryKey);
+            remaining -= 1;
+            if (remaining > 0) cursor.continue();
+          };
         });
       } catch (e) {
         console.warn('Unable to prune thumbnail cache', e);
@@ -7150,7 +8230,7 @@ const fetchBytes = async (url, opts) => {
       const maxDepth = Math.max(0, normalizePlaylistFolderDepth(depth) - 1);
 
       try {
-        const links = await folderApiRequest(urlToFolder(url), { maxDepth });
+        const links = await requestFolderLinks(urlToFolder(url), { maxDepth });
         const urls = getMediaUrlsFromLinks(links);
         addPlaylistItems(urls, shouldPlay);
       } catch (e) {
@@ -7188,11 +8268,11 @@ const fetchBytes = async (url, opts) => {
       renderPlaylist();
     }
 
-    const playPlaylistIndex = (index) => {
+    const playPlaylistIndex = (index, opts = {}) => {
       if (!Array.isArray(app.playlist) || app.playlist.length === 0) return;
       if (index < 0 || index >= app.playlist.length) return;
       app.playlistIndex = index;
-      actionPlay(app.playlist[index].url);
+      actionPlay(app.playlist[index].url, opts);
       renderPlaylist();
     }
 
@@ -7202,26 +8282,16 @@ const fetchBytes = async (url, opts) => {
       const currentIndex = getPlaylistCurrentIndex();
       if (currentIndex < 0) return;
 
-      var nextIndex = currentIndex + 1;
-
-      if (nextIndex >= app.playlist.length) {
-        if (!app.playlistLoop) {
-          if (reason === 'error') actionStop();
-          return;
-        }
-        nextIndex = 0;
-      }
-
-      if (nextIndex === currentIndex) {
-        if (reason === 'ended' && app.playlistLoop) {
-          playPlaylistIndex(nextIndex);
-        } else if (reason === 'error') {
-          actionStop();
-        }
+      if (reason === 'error') failedPlaylistItems.add(app.playlist[currentIndex]);
+      for (let offset = 1; offset <= app.playlist.length; offset++) {
+        const next = currentIndex + offset;
+        if (next >= app.playlist.length && !app.playlistLoop) break;
+        const nextIndex = next % app.playlist.length;
+        if (failedPlaylistItems.has(app.playlist[nextIndex])) continue;
+        playPlaylistIndex(nextIndex, { automatic: true });
         return;
       }
-
-      playPlaylistIndex(nextIndex);
+      if (reason === 'error') actionStop();
     }
 
     const playNextTrack = () => {
@@ -7561,8 +8631,8 @@ const fetchBytes = async (url, opts) => {
     var videoThumbnailProcessing = false;
     var thumbnailObserver;
     const populateThumbnails = async () => {
-      if (retrieveSetting('thumbnailing') === false) return;
-      const $files = [...document.querySelectorAll('.file')];
+      if (!settings.thumbnailing.get() || libraryState.view === 'list') return;
+      const $files = [...document.querySelectorAll('.file:not([hidden])')];
       setupThumbnailObserver($files);
     }
 
@@ -7649,6 +8719,9 @@ const fetchBytes = async (url, opts) => {
     }
 
     const clearThumbnailQueue = () => {
+      for (const work of [...audioThumbnailQueue, ...videoThumbnailQueue]) {
+        delete work.$file.dataset.thumbnailQueued;
+      }
       audioThumbnailQueue = [];
       videoThumbnailQueue = [];
       if (thumbnailObserver) thumbnailObserver.disconnect();
@@ -7797,12 +8870,13 @@ const fetchBytes = async (url, opts) => {
     }
 
     const hashValueIsLocalUrl = (value) => isString(value) && isLocalUrl(value);
+    const isUnavailableLocalUrl = (value) => hashValueIsLocalUrl(value) && !getLocalSession(value);
     const hashContainsUnrestorableLocalLocation = (hash) => (
       !!hash && (
-        hashValueIsLocalUrl(hash.url) ||
-        hashValueIsLocalUrl(hash.root) ||
-        hashValueIsLocalUrl(hash.location) ||
-        hashValueIsLocalUrl(hash.media)
+        isUnavailableLocalUrl(hash.url) ||
+        isUnavailableLocalUrl(hash.root) ||
+        isUnavailableLocalUrl(hash.location) ||
+        isUnavailableLocalUrl(hash.media)
       )
     );
     const sanitizeRestoredHash = (hash) => {
@@ -7812,13 +8886,17 @@ const fetchBytes = async (url, opts) => {
         return {};
       }
       const restored = { ...hash };
-      if (hashValueIsLocalUrl(restored.subtitle)) delete restored.subtitle;
+      if (isUnavailableLocalUrl(restored.subtitle)) delete restored.subtitle;
       if (restored.playlist && Array.isArray(restored.playlist.urls)) {
-        const urls = restored.playlist.urls.filter((url) => !hashValueIsLocalUrl(url));
+        const originalUrls = restored.playlist.urls;
+        const urls = originalUrls.filter((url) => !isUnavailableLocalUrl(url));
         if (urls.length > 0) {
           restored.playlist = { ...restored.playlist, urls };
-          if (!Number.isFinite(restored.playlist.index) || restored.playlist.index >= urls.length) {
+          const index = restored.playlist.index;
+          if (!Number.isInteger(index) || index < 0 || index >= originalUrls.length || isUnavailableLocalUrl(originalUrls[index])) {
             restored.playlist.index = -1;
+          } else {
+            restored.playlist.index = originalUrls.slice(0, index).filter((url) => !isUnavailableLocalUrl(url)).length;
           }
         } else {
           delete restored.playlist;
@@ -8143,6 +9221,13 @@ const fetchBytes = async (url, opts) => {
       // Don't restart playback if it is the currently playing media
       if (url === getMediaUrl() && $player.src.length > 0) return;
 
+      const requestId = ++playbackRequestId;
+      if (playbackEventController) playbackEventController.abort();
+      playbackEventController = new AbortController();
+      const once = (event, handler) => $player.addEventListener(event, handler, { once: true, signal: playbackEventController.signal });
+      if (url && !opts.automatic) failedPlaylistItems = new WeakSet();
+      playlistProgressStart = null;
+
       if (getMediaUrl()) writeWatchHistory('mediachange');
       resetPlayer();
 
@@ -8169,47 +9254,53 @@ const fetchBytes = async (url, opts) => {
         const loadMedia = async (disableCrossOrigin = false) => {
           applyCrossOriginMode(disableCrossOrigin);
           const playbackUrl = await getPlayableUrlForMedia(url);
+          if (requestId !== playbackRequestId) return false;
           currentMediaUrl = hashState.media = url;
           $player.src = playbackUrl;
           $trick.src = playbackUrl;
           $player.load();
+          return true;
+        }
+
+        const onLoadFailure = (error) => {
+          if (requestId !== playbackRequestId) return;
+          console.warn(`Unable to load media: ${url}`, error);
+          advancePlaylist('error');
         }
 
         const onPlaybackError = () => {
+          if (requestId !== playbackRequestId) return;
           if (crossOriginTarget && !retriedWithoutCors) {
             retriedWithoutCors = true;
             console.warn(`Unable to begin playback with CORS mode; retrying without CORS mode: ${url}`);
-            $player.once('error', onPlaybackError);
-            loadMedia(true);
+            once('error', onPlaybackError);
+            loadMedia(true).catch(onLoadFailure);
             return;
           }
           console.warn(`Unable to begin playback: ${url}`);
           advancePlaylist('error');
         }
 
-        $player.once('error', onPlaybackError);
-        $player.once('play', () => logInfo(`Playback started: ${url}`));
-        $player.once('loadedmetadata', () => updateDuration($player.duration));
-        $player.once('loadedmetadata', updateMediaSessionPositionState);
+        once('error', onPlaybackError);
+        once('play', () => logInfo(`Playback started: ${url}`));
+        once('loadedmetadata', () => updateDuration($player.duration));
+        once('loadedmetadata', updateMediaSessionPositionState);
         if (opts.resumeHistory !== false) {
-          $player.once('loadedmetadata', () => applyWatchHistoryResume(url));
+          once('loadedmetadata', () => applyWatchHistoryResume(url));
         }
         $body.addClass('is-loaded');
         loadMedia(false)
-          .then(() => {
-            if (shouldAutoplay) {
+          .then((loaded) => {
+            if (loaded && requestId === playbackRequestId && shouldAutoplay) {
               const playPromise = $player.play();
               if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.catch((e) => console.warn('Unable to autoplay media', e));
               }
             }
           })
-          .catch((e) => {
-            console.warn(`Unable to load media: ${url}`, e);
-            advancePlaylist('error');
-          });
+          .catch(onLoadFailure);
 
-        $player.once('loadedmetadata', () => {
+        once('loadedmetadata', () => {
           if ($player.videoWidth === 0 && $player.videoHeight === 0) {
             $body.addClass('is-audio');
             if (!$player.paused) schedulePlayerArtworkBackground(url);
@@ -9604,8 +10695,7 @@ const fetchBytes = async (url, opts) => {
         const handle = await window.showDirectoryPicker({ mode: 'read' });
         if (!handle) return;
         const session = registerLocalFolder(handle);
-        setHashRootLocation(session.rootUrl);
-        await createLinks(session.rootUrl);
+        if (!await createLinks(session.rootUrl, { clearSearch: true, rootUrl: session.rootUrl })) return;
         setSearchRootUrl(session.rootUrl);
         refreshSearchIndex({ force: true, rootUrl: session.rootUrl });
         updateHash();
@@ -9641,7 +10731,6 @@ const fetchBytes = async (url, opts) => {
       setOpenUrlError('');
       const opened = await openLocation(input, { playMedia: true, pushHash: true });
       if (opened) {
-        clearSearch({ render: false, updateHash: false });
         hideModals();
       } else {
         setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
@@ -9664,6 +10753,11 @@ const fetchBytes = async (url, opts) => {
             clearSearch();
             return;
           }
+          if (libraryState.mode === 'continue') {
+            searchState.query = query;
+            renderLibraryView();
+            return;
+          }
           if (!searchState.indexed || searchState.indexing) return;
           scheduleSearchResults(query);
         });
@@ -9682,6 +10776,52 @@ const fetchBytes = async (url, opts) => {
           if ($linksSearchInput && typeof $linksSearchInput.focus === 'function') $linksSearchInput.focus();
         });
       }
+    }
+
+    const setupLibraryControls = () => {
+      if (!$libraryToolbar) return;
+      libraryState.view = storageRetrieve('library-view') === 'list' ? 'list' : 'tiles';
+      const sorts = Array.from($('.library-sort').options).map((option) => option.value);
+      const savedSort = storageRetrieve('library-sort');
+      libraryState.sort = sorts.includes(savedSort) ? savedSort : 'name-asc';
+      const setMode = (mode) => {
+        if (libraryState.mode === mode) return;
+        libraryState.mode = mode;
+        if (mode === 'library' && !isSearchEnabled()) clearSearch({ render: false });
+        updateLibraryControls();
+        renderLibraryView();
+      };
+      for (const mode of ['library', 'continue']) {
+        const $tab = $(`.library-tab-${mode}`);
+        $tab.on('click', () => setMode(mode));
+        $tab.on('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || !shouldRememberWatchHistory()) return;
+          event.preventDefault();
+          const next = event.key === 'Home' ? 'library' : event.key === 'End' ? 'continue' : (mode === 'library' ? 'continue' : 'library');
+          $(`.library-tab-${next}`).focus();
+          setMode(next);
+        });
+      }
+      for (const view of ['tiles', 'list']) {
+        $(`.library-view-${view}`).on('click', () => {
+          libraryState.view = view;
+          storageStore('library-view', view);
+          updateLibraryControls();
+          if (view === 'list') clearThumbnailQueue();
+          else populateThumbnails();
+        });
+      }
+      $('.library-sort').on('change', (event) => {
+        if (libraryState.mode === 'continue') libraryState.continueSort = event.target.value;
+        else {
+          libraryState.sort = event.target.value;
+          storageStore('library-sort', libraryState.sort);
+        }
+        renderLibraryView();
+      });
+      $('.library-type').on('change', (event) => { libraryState.type = event.target.value; renderLibraryView(); });
+      $('.library-status').on('change', (event) => { libraryState.status = event.target.value; renderLibraryView(); });
+      updateLibraryControls();
     }
 
     const actionDropLocalFile = (e) => {
@@ -9710,6 +10850,7 @@ const fetchBytes = async (url, opts) => {
       setupModals();
       setupDragAndDrop();
       setupSearchControls();
+      setupLibraryControls();
       $body.on('paste', actionPasteAndPlay);
       updatePlaylistLoop();
       renderPlaylist();
@@ -9795,6 +10936,10 @@ const fetchBytes = async (url, opts) => {
       $player.on('loadeddata', syncTrickSrc);
       $player.on('timeupdate', throttle(() => {
         updateProgress();
+        if (!$player.paused) {
+          if (playlistProgressStart === null) playlistProgressStart = $player.currentTime;
+          else if ($player.currentTime - playlistProgressStart >= 1) failedPlaylistItems = new WeakSet();
+        }
         writeWatchHistoryThrottled();
       }, app.options.updateRate.timeupdate));
       $player.on('pause', () => {
@@ -9865,7 +11010,7 @@ const fetchBytes = async (url, opts) => {
 
     const keyboardBroker = (e) => {
       // Don't handle keyboard combinations
-      if (e.ctrlKey || e.altKey) return;
+      if (e.defaultPrevented || e.ctrlKey || e.altKey) return;
       const $openModal = document.querySelector('.modal.show');
       if ($openModal) {
         if (e.key === 'Tab' && trapModalFocus(e, $openModal)) return;
@@ -9876,6 +11021,7 @@ const fetchBytes = async (url, opts) => {
         return;
       }
       const target = e.target;
+      if (target?.closest?.('.library-toolbar, .library-controls')) return;
       if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
       if (target && target.classList && target.classList.contains('progress-bar')) return;
 
@@ -9896,7 +11042,7 @@ const fetchBytes = async (url, opts) => {
           break;
         case 'Backspace':
           e.preventDefault();
-          const $firstLink = $('.links a');
+          const $firstLink = $('.links .folder.parent:not([hidden])');
           if ($firstLink) $firstLink.click();
           break;
         case 'PageUp':
@@ -9965,6 +11111,7 @@ const fetchBytes = async (url, opts) => {
       } else {
         showModal($el);
       }
+      if ($el === $settings && $settings.hasClass('show')) settings.cache.update();
     }
 
     const setModalAccessibilityState = ($el, shown) => {
@@ -10102,7 +11249,7 @@ const fetchBytes = async (url, opts) => {
       return keys.reduce((acc, key) => {
         const setting = settings[key];
         const type = setting.type || 'checkbox';
-        const value = (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
+        const value = type === 'button' ? undefined : (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
         const isCheckbox = (type === 'checkbox');
         const isSelect = (type === 'select');
         const checked = (isCheckbox && value === true ? 'checked' : '');
@@ -10516,7 +11663,7 @@ const fetchBytes = async (url, opts) => {
       },
       'watch-history': {
         label: 'Remember playback history',
-        desc: 'Remember playback positions and watched state for recently played media.',
+        desc: 'Remember playback positions and completion status for recent media.',
         event: 'change',
         default: getWatchHistoryDefault(),
         get: () => typeof retrieveSetting('watch-history') !== 'undefined' ? retrieveSetting('watch-history') : settings['watch-history'].default,
@@ -10532,7 +11679,7 @@ const fetchBytes = async (url, opts) => {
         label: 'Clear playback history',
         buttonLabel: 'Clear',
         icon: 'svg-broom',
-        desc: 'Clear remembered playback positions and watched state.',
+        desc: 'Clear remembered playback positions and completion status.',
         event: 'click',
         type: 'button',
         get: () => {},
@@ -10646,12 +11793,13 @@ const fetchBytes = async (url, opts) => {
           await clearThumbnailCache();
           await settings.cache.update();
         },
-        update: async () => {
+        update: throttle(async () => {
+          if (!$settings.hasClass('show')) return;
           const size = await settings.cache.get();
           const formattedSize = addCommas(size);
           const $metadata = $('.setting-cache + .metadata');
           if ($metadata) $metadata.html(formattedSize);
-        }
+        }, 1000)
       },
       'export-config': {
         label: 'Export settings file',
@@ -10685,6 +11833,11 @@ const fetchBytes = async (url, opts) => {
         get: () => {},
         set: () => {
           resetSettings();
+          storageRemove('library-view');
+          storageRemove('library-sort');
+          libraryState.view = 'tiles';
+          libraryState.sort = 'name-asc';
+          renderLibraryView();
           renderSettingsControls(true);
           renderSubtitleSettingsControls(true);
         },
@@ -11548,26 +12701,23 @@ const fetchBytes = async (url, opts) => {
 
           setHashRootLocation(targetRoot);
 
-          if (targetLocation) {
-            await createLinksSafe(targetLocation);
-          } else if (configuredStartLocation) {
-            await createLinksSafe(configuredStartLocation);
-          } else {
-            await createLinksSafe();
-          }
+          const linksRequest = createLinksSafe(targetLocation || configuredStartLocation);
+          const requestId = folderRequestId;
+          await linksRequest;
+          if (requestId === folderRequestId) {
+            setSearchRootUrl(targetRoot || targetLocation || window.location.href);
+            refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
 
-          setSearchRootUrl(targetRoot || targetLocation || window.location.href);
-          refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
-
-          if (hasHashSubtitle) {
-            try {
-              await loadSubtitle(hash.subtitle);
-            } catch (e) {
-              console.warn('Unable to load subtitle from hash state', e);
+            if (hasHashSubtitle) {
+              try {
+                await loadSubtitle(hash.subtitle);
+              } catch (e) {
+                console.warn('Unable to load subtitle from hash state', e);
+                clearSubtitles();
+              }
+            } else {
               clearSubtitles();
             }
-          } else {
-            clearSubtitles();
           }
         }
       }
@@ -11602,13 +12752,10 @@ const fetchBytes = async (url, opts) => {
         }
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
         setHashRootLocation(targetRoot);
-        if (targetLocation) {
-          await createLinksSafe(targetLocation);
-        } else if (configuredStartLocation) {
-          await createLinksSafe(configuredStartLocation);
-        } else {
-          await createLinksSafe();
-        }
+        const linksRequest = createLinksSafe(targetLocation || configuredStartLocation);
+        const requestId = folderRequestId;
+        await linksRequest;
+        if (requestId !== folderRequestId) return;
 
         clearSearch({ render: false, updateHash: false });
         setSearchRootUrl(targetRoot || targetLocation || window.location.href);

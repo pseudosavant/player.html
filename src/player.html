@@ -108,11 +108,23 @@
     <div class="modal-background-overlay"></div>
   </div>
   <section class='links-panel'>
+    <div class='library-toolbar'>
+      <div class='library-tabs' role='tablist' aria-label='Library content'>
+        <button id='library-tab-library' class='library-tab library-tab-library' type='button' role='tab' aria-controls='library-files' aria-selected='true'>Library</button>
+        <button id='library-tab-continue' class='library-tab library-tab-continue' type='button' role='tab' aria-controls='library-files' aria-selected='false' tabindex='-1'>Continue playing <span class='library-continue-count'>0</span></button>
+      </div>
+      <div class='library-views' role='group' aria-label='Library view'>
+        <button class='library-view-tiles' type='button' title='Tile view' aria-label='Tile view' aria-pressed='true'><svg aria-hidden='true'><use xlink:href='#svg-grid'/></svg></button>
+        <button class='library-view-list' type='button' title='List view' aria-label='List view' aria-pressed='false'><svg aria-hidden='true'><use xlink:href='#svg-list'/></svg></button>
+      </div>
+    </div>
+    <div class='library-controls'>
     <form class='links-search' role='search' autocomplete='off' hidden>
       <div class='links-search-controls'>
         <input
           id='links-search-input'
           class='links-search-input'
+          aria-label='Search media files'
           type='text'
           placeholder='Indexing media library...'
           autocomplete='off'
@@ -122,9 +134,31 @@
           disabled>
         <button class='links-search-clear' type='button' hidden>Clear</button>
       </div>
-      <p class='links-search-results-count' aria-live='polite' hidden></p>
     </form>
-    <section class='links'></section>
+      <label class='library-field'><span>Sort</span><select class='library-sort' aria-label='Sort files'>
+        <option value='name-asc'>Name A-Z</option>
+        <option value='name-desc'>Name Z-A</option>
+        <option value='date-desc'>Newest</option>
+        <option value='date-asc'>Oldest</option>
+        <option value='size-desc'>Largest</option>
+        <option value='size-asc'>Smallest</option>
+        <option value='recent-desc'>Recent</option>
+      </select></label>
+      <label class='library-field'><span>Media</span><select class='library-type' aria-label='Filter media type'>
+        <option value='all'>All media</option><option value='video'>Video</option><option value='audio'>Audio</option>
+      </select></label>
+      <label class='library-field'><span>Progress</span><select class='library-status' aria-label='Filter playback progress'>
+        <option value='all'>All states</option><option value='watched'>Played</option><option value='unplayed'>Unplayed</option><option value='in-progress'>In progress</option>
+      </select></label>
+    </div>
+    <p class='links-search-results-count' aria-live='polite' hidden></p>
+    <p class='library-empty' role='status' hidden></p>
+    <section id='library-files' class='links' role='tabpanel' aria-labelledby='library-tab-library'>
+      <div class='library-list-heading'>
+        <span class='library-heading-name' title='File or folder name'>Name</span>
+        <span class='library-heading-add' title='Add to playlist'>Add</span>
+      </div>
+    </section>
   </section>
   <footer><a href='https://github.com/pseudosavant/player.html' target='_blank'>player.html <span class='version'></span> &copy; Paul Ellis</a></footer>
   <section class='xlinks' style='display: none' data-inline='svg'></section>
@@ -150,7 +184,7 @@
   <!-- File Pickers -->
   <script type="module" src="./js/file-pickers.js" data-inline></script>
 
-  <!-- folder.api v2 -->
+  <!-- folder.api v2.1.0 -->
   <script type="module" src="./js/folder-api.js" data-inline></script>
 
   <!-- App code -->

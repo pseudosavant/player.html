@@ -12,10 +12,31 @@
     const $openUrl = $('.open-url');
     const $currentTimestamp = $('.current-timestamp');
     const $links = $('.links');
+    const $libraryListHeading = $('.library-list-heading');
     const $linksSearch = $('.links-search');
     const $linksSearchInput = $('.links-search-input');
     const $linksSearchClear = $('.links-search-clear');
     const $linksSearchResultsCount = $('.links-search-results-count');
+    const $libraryToolbar = $('.library-toolbar');
+    const $libraryEmpty = $('.library-empty');
+    const libraryState = {
+      mode: 'library',
+      view: 'tiles',
+      sort: 'name-asc',
+      continueSort: 'recent-desc',
+      type: 'all',
+      status: 'all',
+      location: '',
+      continueCount: 0,
+      nodes: new Map()
+    };
+    const libraryCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+    let libraryRenderRequestId = 0;
+    let folderRequestId = 0;
+    let playbackRequestId = 0;
+    let failedPlaylistItems = new WeakSet();
+    let playlistProgressStart = null;
+    let playbackEventController = null;
     let lastModalTrigger = null;
 
     const isDebug = () => !!(app && app.options && app.options.debug);
@@ -124,6 +145,7 @@
       indexed: false,
       indexing: false,
       entries: [],
+      folderEntries: [],
       stats: null,
       errors: []
     };
@@ -246,7 +268,7 @@
       const labelA = urlToLabel(a.url);
       const labelB = urlToLabel(b.url);
 
-      return labelA < labelB ? -1 : 1;
+      return libraryCollator.compare(labelA, labelB) || libraryCollator.compare(a.url, b.url);
     }
 
     const isMedia = (haystack, fileExtensions) => {
@@ -289,7 +311,7 @@
     }
     const localSessionUrl = (sessionId, pathParts = [], isFolderUrl = false) => {
       const path = pathParts.map((part) => encodeURIComponent(part)).join('/');
-      return `local://${sessionId}/${path}${isFolderUrl ? '/' : ''}`;
+      return `local://${sessionId}/${path}${isFolderUrl && path ? '/' : ''}`;
     }
     const parseLocalUrl = (url) => {
       const parsed = new URL(url);
@@ -328,12 +350,24 @@
       if (pathParts.length === 0) return '';
       return localSessionUrl(sessionId, pathParts.slice(0, -1), true);
     }
-    const createLocalLinks = async (folderUrl) => {
+    const getLocalFolderHandle = async (folderUrl) => {
+      const { pathParts, key } = parseLocalUrl(folderUrl);
+      const session = getLocalSession(folderUrl);
+      if (!session) throw new Error('Local folder handle is no longer available');
+      if (session.folders.has(key)) return session.folders.get(key);
+      let handle = session.rootHandle;
+      for (let i = 0; i < pathParts.length; i++) {
+        const path = pathParts.slice(0, i + 1).join('/');
+        handle = session.folders.get(path) || await handle.getDirectoryHandle(pathParts[i]);
+        session.folders.set(path, handle);
+      }
+      return handle;
+    }
+    const createLocalLinks = async (folderUrl, opts = {}) => {
       const { sessionId, pathParts, key } = parseLocalUrl(folderUrl);
       const session = localSourceSessions.get(sessionId);
       if (!session) throw new Error('Local folder handle is no longer available');
-      const handle = session.folders.get(key);
-      if (!handle) throw new Error('Local folder not found');
+      const handle = await getLocalFolderHandle(folderUrl);
 
       const folders = [];
       const files = [];
@@ -378,6 +412,15 @@
         }
       }
 
+      const maxDepth = Math.max(0, Number.isFinite(opts.maxDepth) ? opts.maxDepth : 0);
+      if (maxDepth > 0) {
+        for (const folder of [...folders].filter((entry) => entry.role === 'child')) {
+          const children = await createLocalLinks(folder.url, { maxDepth: maxDepth - 1 });
+          folders.push(...children.folders.filter((entry) => entry.role === 'child'));
+          files.push(...children.files);
+        }
+      }
+
       folders.sort((a, b) => (a.role === 'parent' ? -1 : b.role === 'parent' ? 1 : a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })));
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
@@ -400,6 +443,36 @@
       return session ? session.files.get(parsed.key) || null : null;
     }
 
+    const rememberLocalFileMetadata = (url, file) => {
+      const session = getLocalSession(url);
+      const metadata = {
+        historyId: getLocalFileHistoryId(file),
+        label: removeFileExtension(file.name || urlToFilename(url)),
+        source: 'local-file',
+        sourceUrl: file.name || url,
+        relativePath: parseLocalUrl(url).key,
+        localRootName: session ? session.name : '',
+        size: file.size,
+        date: Number.isFinite(file.lastModified) ? new Date(file.lastModified).toISOString() : null
+      };
+      localObjectUrlMetadata.set(url, metadata);
+      return metadata;
+    }
+
+    const prepareLocalFileMetadata = async (files) => {
+      const pending = files.filter((file) => isLocalUrl(file.url) && !localObjectUrlMetadata.has(file.url));
+      for (let i = 0; i < pending.length; i += 8) {
+        await Promise.all(pending.slice(i, i + 8).map(async (entry) => {
+          try {
+            const handle = getLocalFileHandle(entry.url);
+            if (handle) rememberLocalFileMetadata(entry.url, await handle.getFile());
+          } catch (e) {
+            if (isDebug()) console.warn('Unable to read local file details', entry.url, e);
+          }
+        }));
+      }
+    }
+
     const getPlayableUrlForMedia = async (url) => {
       if (!isLocalUrl(url)) return url;
       if (localObjectUrls.has(url)) return localObjectUrls.get(url);
@@ -408,54 +481,67 @@
       const file = await handle.getFile();
       const objectUrl = URL.createObjectURL(file);
       localObjectUrls.set(url, objectUrl);
-      localObjectUrlMetadata.set(url, {
-        historyId: getLocalFileHistoryId(file),
-        label: removeFileExtension(file.name || urlToFilename(url)),
-        source: 'local-file',
-        sourceUrl: file.name || url
-      });
+      rememberLocalFileMetadata(url, file);
       return objectUrl;
     }
 
-    const createLinks = async (url) => {
+    const requestFolderLinks = async (url, opts = {}) => {
+      if (isLocalUrl(url)) return createLocalLinks(url, opts);
+      const mode = isSameOriginUrl(url) ? 'auto' : 'fetch';
+      // A cached directory can belong to a different server at the same origin.
+      return folderApiRequest(url, { mode, cache: 'no-store', ...opts });
+    }
+
+    const createLinks = async (url, opts = {}) => {
+      const requestId = ++folderRequestId;
       const targetUrl = url || window.location.href;
       const folder = urlToFolder(targetUrl) || urlToFolder(window.location.href);
       if (!folder) throw new Error('Invalid folder URL');
-      const links = isLocalUrl(folder)
-        ? await createLocalLinks(folder)
-        : await (async () => {
-            const mode = (isSameOriginUrl(folder) ? 'auto' : 'fetch');
-            return folderApiRequest(folder, { mode });
-          })();
-
-      if (Array.isArray(links.folders)) {
-        links.folders = links.folders.filter((item) => !(item && item.role === 'self'));
+      let links;
+      try {
+        links = await requestFolderLinks(folder);
+      } catch (e) {
+        if (requestId !== folderRequestId) return false;
+        throw e;
       }
+      if (requestId !== folderRequestId) return false;
 
       const parentUrl = getParentFolder(folder);
+      if (Array.isArray(links.folders)) {
+        // folder.api includes origin-root navigation even below the library root.
+        links.folders = links.folders.filter((item) => !(item && (
+          item.role === 'self' || (item.role === 'root' && item.url !== parentUrl)
+        )));
+      }
+
       if (parentUrl && Array.isArray(links.folders)) {
-        const hasParent = links.folders.some((item) => (
+        const parent = links.folders.find((item) => (
           item &&
           (item.role === 'parent' || item.type === 'parent' || item.url === parentUrl || item.url === '../')
         ));
-        if (!hasParent) {
+        if (parent) {
+          parent.role = 'parent';
+        } else {
           links.folders.unshift({ url: parentUrl, role: 'parent', name: 'Parent' });
         }
       }
 
       const oldLinksHash = linksHash(app.links);
       const newLinksHash = linksHash(links);
+      const clearedSearch = opts.clearSearch && (!!searchState.query.trim() || !!searchInputDebounceId);
+      if (opts.clearSearch) clearSearch({ render: false, updateHash: false });
 
+      if (opts.rootUrl) setHashRootLocation(opts.rootUrl);
       hashState.location = folder;
       app.links = links;
 
       // Only show the links if they have changed
-      if (oldLinksHash !== newLinksHash) showLinks(links);
+      if (clearedSearch || oldLinksHash !== newLinksHash || libraryState.location !== folder) await showLinks(links);
+      return requestId === folderRequestId;
     }
     const createLinksSafe = async (url) => {
       try {
-        await createLinks(url);
-        return true;
+        return await createLinks(url);
       } catch (e) {
         console.warn('Unable to load folder links', e);
         return false;
@@ -491,10 +577,12 @@
     }
 
     const resetSearchIndexState = () => {
+      searchIndexRequestId++;
       searchState.cacheKey = '';
       searchState.indexed = false;
       searchState.indexing = false;
       searchState.entries = [];
+      searchState.folderEntries = [];
       searchState.stats = null;
       searchState.errors = [];
     }
@@ -530,7 +618,7 @@
       try {
         const target = new URL(absoluteUrl);
         const root = new URL(absoluteRoot);
-        return target.origin === root.origin && target.pathname.startsWith(root.pathname);
+        return target.protocol === root.protocol && target.host === root.host && target.pathname.startsWith(root.pathname);
       } catch (e) {
         return false;
       }
@@ -544,20 +632,38 @@
     }
 
     const updateSearchControls = () => {
-      const enabled = isSearchEnabled();
+      const continuing = libraryState.mode === 'continue';
+      const enabled = isSearchEnabled() || continuing;
       if ($linksSearch) {
         $linksSearch.hidden = !enabled;
         $linksSearch.attr('aria-busy', (enabled && searchState.indexing) ? 'true' : 'false');
       }
       if ($linksSearchInput) {
-        const disabled = (!enabled || !searchState.indexed || searchState.indexing);
+        const disabled = !continuing && (!enabled || !searchState.indexed || searchState.indexing);
         $linksSearchInput.disabled = disabled;
-        $linksSearchInput.placeholder = (searchState.indexing ? 'Indexing media library...' : 'Search media files');
+        $linksSearchInput.placeholder = (!continuing && searchState.indexing ? 'Indexing media library...' : 'Search media files');
         $linksSearchInput.attr('aria-disabled', disabled ? 'true' : 'false');
       }
       if ($linksSearchClear) {
         $linksSearchClear.hidden = (!enabled || String(searchState.query || '').trim().length === 0);
       }
+    }
+
+    const getSearchDirectorySignatures = (links) => {
+      const root = links.url;
+      const directories = new Map([[root, new Map()]]);
+      for (const entry of [...(links.folders || []), ...(links.files || [])]) {
+        const folder = isFolder(entry.url);
+        if (folder && isUrlWithinRoot(entry.url, root) && !directories.has(entry.url)) directories.set(entry.url, new Map());
+        const parent = folder ? getParentFolder(entry.url) : urlToContainingFolder(entry.url);
+        if (!parent || !isUrlWithinRoot(parent, root)) continue;
+        if (!directories.has(parent)) directories.set(parent, new Map());
+        directories.get(parent).set(entry.url, [entry.url, entry.size ?? null, entry.date ?? null]);
+      }
+      return Object.fromEntries([...directories].map(([url, entries]) => [
+        url,
+        JSON.stringify([...entries.values()].sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+      ]));
     }
 
     const readSearchIndexCache = () => {
@@ -569,7 +675,9 @@
         const cached = storage.getItem(key);
         if (!cached) return null;
         const parsed = JSON.parse(cached);
-        if (!parsed || !Array.isArray(parsed.entries)) return null;
+        if (!parsed || !Array.isArray(parsed.entries) || !Array.isArray(parsed.folderEntries)) return null;
+        const folder = app.links?.url;
+        if (!folder || parsed.directories?.[folder] !== getSearchDirectorySignatures(app.links)[folder]) return null;
         return parsed;
       } catch (e) {
         return null;
@@ -588,17 +696,6 @@
         console.warn('Unable to cache search index in sessionStorage', e);
         return false;
       }
-    }
-
-    const renderLinksHtml = (html = '') => {
-      clearThumbnailQueue();
-      revokeThumbnailObjectUrls();
-      $links.innerHTML = html;
-
-      const $renderedLinks = [...document.querySelectorAll('.file, .folder')];
-      $renderedLinks.forEach((link) => $(link).on('click', clickLink));
-
-      populateThumbnails();
     }
 
     const getSearchRelativeLabel = (url, rootUrl = getSearchRootUrl()) => {
@@ -625,12 +722,15 @@
       }
     }
 
-    const buildSearchIndexEntries = (links, rootUrl = getSearchRootUrl()) => {
-      if (!links || !Array.isArray(links.files)) return [];
+    const buildSearchIndexEntries = (links, rootUrl = getSearchRootUrl(), folders = false) => {
+      const items = links?.[folders ? 'folders' : 'files'];
+      if (!Array.isArray(items)) return [];
 
       const dedupe = new Set();
-      return links.files
-        .filter((file) => file && file.url && isMedia(file.url))
+      return items
+        .filter((file) => file?.url && (folders
+          ? file.url !== rootUrl && (file.role || file.type) !== 'parent' && isUrlWithinRoot(file.url, rootUrl)
+          : isMedia(file.url)))
         .map((file) => {
           const url = resolveUrl(file.url);
           let fallbackName = urlToFilename(url);
@@ -643,10 +743,13 @@
           const extension = ((/\.[^./]+$/.exec(filename) || [])[0] || '').toLowerCase();
           return {
             url,
+            name: file.name || fallbackName,
             label,
             relativeLabel,
             filename,
             extension,
+            size: file.size,
+            date: file.date,
             searchLabel: String(label || '').toLowerCase(),
             searchFilename: String(filename || '').toLowerCase(),
             searchPath: String(relativeLabel || label || '').toLowerCase()
@@ -696,12 +799,12 @@
         .filter((token) => token.length > 0)
     );
 
-    const getSearchMatches = (query) => {
+    const getSearchMatches = (query, entries = searchState.entries) => {
       const normalized = String(query || '').trim().toLowerCase();
       const tokens = tokenizeSearchQuery(normalized);
       if (!normalized || tokens.length === 0) return [];
 
-      return searchState.entries
+      return entries
         .map((entry) => {
           const tokenScores = tokens.map((token) => scoreSearchEntry(entry, token));
           if (tokenScores.some((score) => score < 0)) return null;
@@ -734,7 +837,7 @@
         updateSearchResultsCount('');
         showLinks(app.links);
         updateHash();
-        return [];
+        return;
       }
 
       if (!searchState.active) {
@@ -743,25 +846,9 @@
       }
       searchState.active = true;
 
-      const matches = getSearchMatches(normalized);
-      const limitedMatches = matches.slice(0, searchResultLimit);
-      const html = limitedMatches.map((entry) => {
-        const cssClasses = ['search-result'];
-        if (entry.url === $player.src) cssClasses.push('current');
-        return createFileTemplate(entry.url, entry.relativeLabel || entry.label, cssClasses.join(' '));
-      }).join('');
-
-      renderLinksHtml(html);
-
-      if (matches.length > searchResultLimit) {
-        updateSearchResultsCount(`Showing ${addCommas(searchResultLimit)} of ${addCommas(matches.length)} results`);
-      } else {
-        updateSearchResultsCount(`${addCommas(matches.length)} result${matches.length === 1 ? '' : 's'}`);
-      }
+      renderLibraryView();
 
       updateHash();
-
-      return matches;
     }
 
     const clearSearch = (opts = {}) => {
@@ -818,6 +905,7 @@
 
       if (cached) {
         searchState.entries = cached.entries;
+        searchState.folderEntries = cached.folderEntries;
         searchState.stats = cached.stats || null;
         searchState.errors = cached.errors || [];
         searchState.indexed = true;
@@ -825,6 +913,7 @@
         updateSearchResultsCount('');
         updateSearchControls();
         if (searchState.query) renderSearchResults(searchState.query);
+        else renderLibraryView();
         return true;
       }
 
@@ -835,15 +924,11 @@
 
       try {
         const depth = Math.max(0, getSearchDepth() - 1);
-        const links = isLocalUrl(rootUrl)
-          ? app.links
-          : await (async () => {
-              const mode = (isSameOriginUrl(rootUrl) ? 'auto' : 'fetch');
-              return folderApiRequest(rootUrl, { mode, maxDepth: depth });
-            })();
+        const links = await requestFolderLinks(rootUrl, { maxDepth: depth });
         if (requestId !== searchIndexRequestId) return false;
 
         searchState.entries = buildSearchIndexEntries(links, rootUrl);
+        searchState.folderEntries = buildSearchIndexEntries(links, rootUrl, true);
         searchState.stats = links.stats || null;
         searchState.errors = links.errors || [];
         searchState.indexed = true;
@@ -852,7 +937,9 @@
         writeSearchIndexCache({
           rootUrl,
           depth: getSearchDepth(),
+          directories: getSearchDirectorySignatures(links),
           entries: searchState.entries,
+          folderEntries: searchState.folderEntries,
           stats: searchState.stats,
           errors: searchState.errors,
           generatedAt: new Date().toISOString()
@@ -865,6 +952,7 @@
         updateSearchResultsCount('');
         updateSearchControls();
         if (searchState.query) renderSearchResults(searchState.query);
+        else renderLibraryView();
         return true;
       } catch (e) {
         if (requestId !== searchIndexRequestId) return false;
@@ -931,15 +1019,19 @@
       const rootChanged = (!!nextRoot && nextRoot !== previousRoot);
       let openedLinks = false;
 
+      clearThumbnailQueue();
+      const linksRequest = createLinks(folderUrl, { clearSearch: true, rootUrl: nextRoot || folderUrl });
+      const requestId = folderRequestId;
       try {
-        clearThumbnailQueue();
-        setHashRootLocation(nextRoot || folderUrl);
-        await createLinks(folderUrl);
+        if (!await linksRequest) return false;
         openedLinks = true;
       } catch (e) {
+        if (requestId !== folderRequestId) return false;
         const reason = classifyLocationOpenError(e);
         console.warn(`Unable to open URL (${reason})`, e);
         if (!mediaUrl) return false;
+        setHashRootLocation(nextRoot || folderUrl);
+        clearSearch({ updateHash: false });
         hashState.location = folderUrl;
       }
 
@@ -973,74 +1065,232 @@
     const getOpenUrlInput = () => $('.open-url-input');
 
     const showLinks = async (links) => {
-      var html = '';
-      const folders = links.folders;
-      const files = links.files;
-      const base = getBaseLocation(window.location);
-
-      folders.forEach((folder) => {
-        const rawUrl = folder.url;
-        const url = decodeURI(rawUrl).replace(base, '');
-        const label = url;
-        const optClasses = ((folder.role || folder.type) === 'parent' ? 'parent' : '');
-
-        html += createFolderTemplate(rawUrl, label, optClasses);
-      });
-
-      const removeUrlExtension = (url) => {
-        const re = /^(.*)(?:\.\w+)$/i;
-        const results = re.exec(url);
-
-        if (!results || results.length === 0) return undefined;
-
-        return results[1];
+      const location = hashState.location || links.url || '';
+      if (libraryState.location !== location) {
+        libraryRenderRequestId += 1;
+        clearThumbnailQueue();
+        revokeThumbnailObjectUrls();
+        libraryState.nodes.clear();
+        $links.replaceChildren($libraryListHeading);
+        libraryState.location = location;
+        libraryState.mode = 'library';
       }
-
-      const findThumbnail = (mediaUrl, files) => {
-        if (!Array.isArray(files)) return undefined;
-
-        const mediaPrefix = removeUrlExtension(mediaUrl);
-
-        const thumbnails = files.filter((file) => isImage(file.url));
-        const thumb = thumbnails.find((file) => {
-          const filePrefix = removeUrlExtension(file.url);
-          return mediaPrefix === filePrefix;
-        });
-        return thumb;
-      }
-
-      const subtitles = files.filter((file) => isSubtitle(file.url));
+      const subtitles = (links.files || []).filter((file) => isSubtitle(file.url));
       populateSubtitles(subtitles);
+      await renderLibraryView();
+    }
 
-      const medias = files.filter((file) => isMedia(file.url));
-      medias.sort(sortFiles);
-      const watchRecords = await getWatchHistoryRecords(medias.map((file) => file.url));
+    const getLibraryFileDetails = (file) => {
+      const metadata = localObjectUrlMetadata.get(file.url);
+      return metadata ? { ...file, size: metadata.size, date: metadata.date } : file;
+    }
 
-      for (const file of medias) {
-        const rawUrl = file.url;
-        const url = decodeURI(rawUrl).replace(base, '');
-        const label = urlToLabel(url);
-        const cssClasses = [];
-        const watchRecord = watchRecords.get(rawUrl);
-        const watchProgress = watchRecord && Number.isFinite(watchRecord.progress)
-          ? minmax(0, watchRecord.progress, 1)
-          : 0;
+    const getLibraryDate = (file) => {
+      const date = file.date == null ? NaN : new Date(file.date).getTime();
+      return Number.isFinite(date) ? date : null;
+    }
 
-        const preRenderedThumbnail = findThumbnail(file.url, links.files);
-        const preRenderedThumbnailAvailable = preRenderedThumbnail && preRenderedThumbnail.url;
-        const thumbnailUrl = preRenderedThumbnailAvailable
-          ? (isLocalUrl(preRenderedThumbnail.url) ? await getPlayableUrlForMedia(preRenderedThumbnail.url) : preRenderedThumbnail.url)
-          : '';
-
-        if (preRenderedThumbnailAvailable) cssClasses.push('prerendered');
-        if (rawUrl === getMediaUrl()) cssClasses.push('current');
-        if (watchRecord && watchRecord.completed) cssClasses.push('watched');
-        else if (watchProgress > 0) cssClasses.push('in-progress');
-
-        html += createFileTemplate(rawUrl, label, cssClasses.join(' '), thumbnailUrl, watchProgress);
+    const compareLibraryFiles = (a, b) => {
+      const sort = libraryState.mode === 'continue' ? libraryState.continueSort : libraryState.sort;
+      const descending = sort.endsWith('-desc');
+      let comparison = 0;
+      if (sort.startsWith('size-') || sort.startsWith('date-')) {
+        const value = (file) => sort.startsWith('size-')
+          ? (Number.isFinite(file.size) && file.size >= 0 ? file.size : null)
+          : getLibraryDate(file);
+        const left = value(a);
+        const right = value(b);
+        if (left === null || right === null) {
+          if (left !== right) return left === null ? 1 : -1;
+        } else {
+          comparison = left - right;
+        }
+      } else if (sort === 'recent-desc') {
+        comparison = (a.watchRecord?.updatedAt || 0) - (b.watchRecord?.updatedAt || 0);
+      } else {
+        comparison = sortFiles(a, b);
       }
+      return (descending ? -comparison : comparison) || sortFiles(a, b);
+    }
 
-      renderLinksHtml(html);
+    const matchesLibraryFilters = (file) => {
+      if (libraryState.type === 'audio' && !isAudio(file.url)) return false;
+      if (libraryState.type === 'video' && isAudio(file.url)) return false;
+      const record = file.watchRecord;
+      switch (libraryState.status) {
+        case 'unplayed': return !record || (!record.completed && !(record.position > 0));
+        case 'in-progress': return !!record && !record.completed && record.position > 0;
+        case 'watched': return !!record && record.completed;
+        default: return true;
+      }
+    }
+
+    const getLibraryResumeLabel = (record) => {
+      if (!record) return '';
+      if (record.completed) return 'Played';
+      if (!(record.position > 0)) return '';
+      const remaining = Math.max(0, record.duration - record.position);
+      return `Resume ${secondsToString(record.position)} (${secondsToString(remaining)} left)`;
+    }
+
+    const getLibraryHistory = async () => {
+      if (!shouldRememberWatchHistory()) return [];
+      try {
+        const records = await runWatchHistoryStore('readonly', (store) => idbRequest(store.getAll()));
+        return Array.isArray(records) ? records : [];
+      } catch (e) {
+        console.warn('Unable to read library playback history', e);
+        return [];
+      }
+    }
+
+    const resolveLocalHistoryUrl = async (record, root) => {
+      for (const [url, metadata] of localObjectUrlMetadata) {
+        if (metadata.historyId === record.id && isLocalUrl(url) && isUrlWithinRoot(url, root)) return url;
+      }
+      const session = getLocalSession(root);
+      if (!session || record.localRootName !== session.name || !record.relativePath) return '';
+      try {
+        const parts = record.relativePath.split('/');
+        const url = localSessionUrl(session.id, parts);
+        if (!isUrlWithinRoot(url, root)) return '';
+        const folder = await getLocalFolderHandle(localSessionUrl(session.id, parts.slice(0, -1), true));
+        const handle = await folder.getFileHandle(parts[parts.length - 1]);
+        const file = await handle.getFile();
+        if (getLocalFileHistoryId(file) !== record.id) return '';
+        session.files.set(parts.join('/'), handle);
+        rememberLocalFileMetadata(url, file);
+        return url;
+      } catch (e) {
+        return '';
+      }
+    }
+
+    const updateLibraryControls = (continueCount = libraryState.continueCount) => {
+      if (!$libraryToolbar) return;
+      libraryState.continueCount = continueCount;
+      const remember = shouldRememberWatchHistory();
+      if (!remember) {
+        libraryState.mode = 'library';
+        libraryState.status = 'all';
+      }
+      const $continue = $('.library-tab-continue');
+      $continue.hidden = !remember;
+      $('.library-continue-count').textContent = addCommas(continueCount);
+      for (const mode of ['library', 'continue']) {
+        const $tab = $(`.library-tab-${mode}`);
+        const selected = libraryState.mode === mode;
+        $tab.setAttribute('aria-selected', String(selected));
+        $tab.tabIndex = selected ? 0 : -1;
+      }
+      for (const view of ['tiles', 'list']) setAriaPressed(`.library-view-${view}`, libraryState.view === view);
+      $links.classList.toggle('list-view', libraryState.view === 'list');
+      $links.classList.toggle('continue-view', libraryState.mode === 'continue');
+      $links.setAttribute('aria-labelledby', `library-tab-${libraryState.mode}`);
+      $('.library-sort').value = libraryState.mode === 'continue' ? libraryState.continueSort : libraryState.sort;
+      $('.library-type').value = libraryState.type;
+      $('.library-status').value = libraryState.status;
+      $('.library-status').disabled = libraryState.mode === 'continue' || !remember;
+      updateSearchControls();
+    }
+
+    const renderLibraryView = async () => {
+      const requestId = ++libraryRenderRequestId;
+      const links = app.links || {};
+      const sourceFiles = Array.isArray(links.files) ? links.files : [];
+      const root = getHashRootLocation() || urlToFolder(hashState.location || window.location.href);
+      const searching = !!searchState.query.trim();
+      let files = searching && searchState.indexed ? getSearchMatches(searchState.query) : sourceFiles.filter((file) => isMedia(file.url));
+      await prepareLocalFileMetadata(files);
+      const history = await getLibraryHistory();
+      const records = new Map(history.map((record) => [record.id, record]));
+      const knownFiles = new Map([...sourceFiles, ...searchState.entries].map((file) => [file.url, file]));
+      const continueFiles = [];
+      for (const record of history) {
+        if (record.completed || !(record.position > 0) || !Number.isFinite(record.duration) || record.duration <= 0) continue;
+        if (!isLocalUrl(root) && (record.source === 'local-file' || !/^https?:\/\//i.test(record.url || ''))) continue;
+        const url = isLocalUrl(root) ? await resolveLocalHistoryUrl(record, root) : record.url;
+        if (!url || !isMedia(url) || !isUrlWithinRoot(url, root)) continue;
+        continueFiles.push(getLibraryFileDetails({ ...(knownFiles.get(url) || {}), url, watchRecord: record }));
+      }
+      if (requestId !== libraryRenderRequestId) return;
+      updateLibraryControls(continueFiles.length);
+      if (libraryState.mode === 'continue') {
+        const tokens = tokenizeSearchQuery(searchState.query);
+        files = continueFiles.filter((file) => (
+          (libraryState.type === 'all' || (isAudio(file.url) ? 'audio' : 'video') === libraryState.type) &&
+          tokens.every((token) => getSearchRelativeLabel(file.url, root).toLowerCase().includes(token))
+        )).sort(compareLibraryFiles);
+      } else {
+        files = files.map((file) => getLibraryFileDetails({ ...file, watchRecord: records.get(getWatchHistoryId(file.url)) }))
+          .filter(matchesLibraryFilters).sort(compareLibraryFiles);
+      }
+      const totalFiles = files.length;
+      const showFolders = libraryState.mode === 'library';
+      const folderSource = searching ? getSearchMatches(searchState.query, searchState.folderEntries) : (links.folders || []);
+      let folders = showFolders ? [...folderSource].sort((a, b) => {
+        const aParent = (a.role || a.type) === 'parent';
+        const bParent = (b.role || b.type) === 'parent';
+        return aParent !== bParent ? (aParent ? -1 : 1) : sortFiles(a, b);
+      }) : [];
+      const total = totalFiles + folders.length;
+      if (searching && libraryState.mode === 'library') {
+        files = files.slice(0, searchResultLimit);
+        folders = folders.slice(0, Math.max(0, searchResultLimit - files.length));
+      }
+      const imageFiles = new Map(sourceFiles.filter((file) => isImage(file.url)).map((file) => [stripUrlExtension(file.url), file.url]));
+      const images = await Promise.all(files.map(async (file) => {
+        const url = imageFiles.get(stripUrlExtension(file.url));
+        return url && isLocalUrl(url) ? getPlayableUrlForMedia(url).catch(() => '') : (url || '');
+      }));
+      if (requestId !== libraryRenderRequestId) return;
+      const entries = [...folders.map((file) => ({ file, folder: true })), ...files.map((file, index) => ({ file, image: images[index] }))];
+      const visibleUrls = new Set(entries.map((entry) => entry.file.url));
+      const focused = $links.contains(document.activeElement) ? document.activeElement : null;
+      for (const [url, node] of libraryState.nodes) node.hidden = !visibleUrls.has(url);
+      for (const entry of entries) {
+        const file = entry.file;
+        const parent = entry.folder && !searching && (file.role || file.type) === 'parent';
+        let node = libraryState.nodes.get(file.url);
+        if (node && entry.folder && node.classList.contains('parent') !== parent) {
+          node.remove();
+          node = null;
+        }
+        if (!node) {
+          const label = searching || libraryState.mode === 'continue' ? getSearchRelativeLabel(file.url, root) : urlToLabel(file.url);
+          node = $(entry.folder
+            ? createFolderTemplate(file.url, file.name || label, parent ? 'parent' : '')
+            : createFileTemplate(file.url, label));
+          node.on('click', clickLink);
+          libraryState.nodes.set(file.url, node);
+        }
+        node.hidden = false;
+        if (entry.folder) {
+          node.querySelector('.label').textContent = parent ? 'Parent Folder' : (searching ? getSearchRelativeLabel(file.url, root) : (file.name || urlToLabel(file.url)));
+        } else {
+          const record = file.watchRecord;
+          node.classList.toggle('current', file.url === getMediaUrl());
+          node.classList.toggle('watched', !!record?.completed);
+          node.classList.toggle('in-progress', !!record && !record.completed && record.progress > 0);
+          if (record?.progress > 0) node.style.setProperty('--watch-progress', `${limitPrecision(minmax(0, record.progress, 1) * 100, 2)}%`);
+          else node.style.removeProperty('--watch-progress');
+          if (entry.image) {
+            node.style.setProperty('--image-url-0', `url('${escapeCssUrl(entry.image)}')`);
+            node.classList.add('prerendered');
+          }
+          node.querySelector('.label').textContent = searching || libraryState.mode === 'continue' ? getSearchRelativeLabel(file.url, root) : urlToLabel(file.url);
+          node.querySelector('.file-resume').textContent = getLibraryResumeLabel(record);
+        }
+        $links.appendChild(node);
+      }
+      $libraryEmpty.hidden = entries.length > 0;
+      $libraryEmpty.textContent = libraryState.mode === 'continue' ? 'No unfinished media in this library.' : 'No matching media.';
+      if (focused?.isConnected && !focused.closest('[hidden]')) focused.focus({ preventScroll: true });
+      const shown = files.length + folders.length;
+      updateSearchResultsCount(!searching ? '' : (total > shown
+        ? `Showing ${addCommas(shown)} of ${addCommas(total)} results`
+        : `${addCommas(total)} result${total === 1 ? '' : 's'}`));
+      populateThumbnails();
     }
 
     const clickLink = async (e) => {
@@ -1101,8 +1351,8 @@
 
       return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='${safeTitle}' style='${safeStyle}' draggable='false'>
                 <div class='title' draggable='false'>
-                  <span class='label'>${safeLabel}</span>
-                  <svg class='watched-icon' aria-hidden='true' focusable='false'><use xlink:href='#svg-checkmark-circle'/></svg>
+                  <span class='file-label'><span class='label'>${safeLabel}</span><span class='file-resume'></span></span>
+                  <span class='watched-icon' role='img' aria-label='Played' title='This media has been played'><svg aria-hidden='true' focusable='false'><use xlink:href='#svg-checkmark-circle'/></svg></span>
                   <button class='btn-add-to-playlist' type='button' title='Add to playlist' aria-label='Add to playlist'>
                     <svg><use xlink:href='#svg-playlist-add'/></svg>
                   </button>
@@ -1127,7 +1377,7 @@
       return `<a href='${escapedUrl}' class='folder ${optionalClasses}' draggable='false' title='${safeTitle}'>
                 <div class='title' draggable='false'>
                   <span class='folder-label'>
-                    <svg class='icon'><use xlink:href='#svg-folder-arrow'/></svg>
+                    <svg class='icon'><use xlink:href='#svg-folder-${isParent ? 'arrow' : 'closed'}'/></svg>
                     <span class="label">${safeLabel}</span>
                   </span>
                   ${addButton}
@@ -1291,6 +1541,7 @@
 
     const getWatchHistoryRecord = async (url) => {
       if (!shouldRememberWatchHistory()) return null;
+      await prepareLocalFileMetadata([{ url }]);
       const id = getWatchHistoryId(url);
       if (!id) return null;
       try {
@@ -1303,6 +1554,7 @@
 
     const getWatchHistoryRecords = async (urls) => {
       if (!shouldRememberWatchHistory() || !Array.isArray(urls) || urls.length === 0) return new Map();
+      await prepareLocalFileMetadata(urls.map((url) => ({ url })));
       const ids = urls.map((url) => [url, getWatchHistoryId(url)]).filter((pair) => pair[1]);
       if (ids.length === 0) return new Map();
       try {
@@ -1349,7 +1601,7 @@
 
     const updateWatchHistoryTile = (url, record) => {
       if (!url || !record) return;
-      const $tile = $(`.file[href='${url}']`);
+      const $tile = libraryState.nodes.get(url);
       if (!$tile) return;
       $tile.classList.toggle('watched', !!record.completed);
       $tile.classList.toggle('in-progress', !record.completed && record.progress > 0);
@@ -1358,6 +1610,7 @@
       } else {
         $tile.style.removeProperty('--watch-progress');
       }
+      $tile.querySelector('.file-resume').textContent = getLibraryResumeLabel(record);
     }
 
     const writeWatchHistory = async (reason = 'update') => {
@@ -1380,12 +1633,15 @@
         progress: duration ? minmax(0, position / duration, 1) : 0,
         completed,
         subtitle: hashState.subtitle || '',
+        relativePath: metadata.relativePath || '',
+        localRootName: metadata.localRootName || '',
         updatedAt: Date.now()
       };
 
       try {
         await runWatchHistoryStore('readwrite', (store) => store.put(record));
         updateWatchHistoryTile(url, record);
+        renderLibraryView();
         pruneWatchHistory();
       } catch (e) {
         console.warn('Unable to write watch history', e);
@@ -1396,6 +1652,7 @@
 
     const applyWatchHistoryResume = async (url) => {
       const record = await getWatchHistoryRecord(url);
+      if (getMediaUrl() !== url) return;
       if (!record || record.completed) return;
       const duration = getMediaDuration();
       if (!duration || !Number.isFinite(record.position) || record.position <= 0) return;
@@ -1667,12 +1924,16 @@
     const pruneThumbnailCache = async () => {
       try {
         await runThumbnailCacheStore('readwrite', async (store) => {
-          const all = await idbRequest(store.getAll());
-          if (!Array.isArray(all) || all.length <= thumbnailCacheMaxItems) return;
-          all
-            .sort((a, b) => (b.lastAccessedAt || 0) - (a.lastAccessedAt || 0))
-            .slice(thumbnailCacheMaxItems)
-            .forEach((record) => store.delete(record.key));
+          let remaining = await idbRequest(store.count()) - thumbnailCacheMaxItems;
+          if (remaining <= 0) return;
+          const request = store.index('lastAccessedAt').openKeyCursor();
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor || remaining <= 0) return;
+            store.delete(cursor.primaryKey);
+            remaining -= 1;
+            if (remaining > 0) cursor.continue();
+          };
         });
       } catch (e) {
         console.warn('Unable to prune thumbnail cache', e);
@@ -2041,7 +2302,7 @@
       const maxDepth = Math.max(0, normalizePlaylistFolderDepth(depth) - 1);
 
       try {
-        const links = await folderApiRequest(urlToFolder(url), { maxDepth });
+        const links = await requestFolderLinks(urlToFolder(url), { maxDepth });
         const urls = getMediaUrlsFromLinks(links);
         addPlaylistItems(urls, shouldPlay);
       } catch (e) {
@@ -2079,11 +2340,11 @@
       renderPlaylist();
     }
 
-    const playPlaylistIndex = (index) => {
+    const playPlaylistIndex = (index, opts = {}) => {
       if (!Array.isArray(app.playlist) || app.playlist.length === 0) return;
       if (index < 0 || index >= app.playlist.length) return;
       app.playlistIndex = index;
-      actionPlay(app.playlist[index].url);
+      actionPlay(app.playlist[index].url, opts);
       renderPlaylist();
     }
 
@@ -2093,26 +2354,16 @@
       const currentIndex = getPlaylistCurrentIndex();
       if (currentIndex < 0) return;
 
-      var nextIndex = currentIndex + 1;
-
-      if (nextIndex >= app.playlist.length) {
-        if (!app.playlistLoop) {
-          if (reason === 'error') actionStop();
-          return;
-        }
-        nextIndex = 0;
-      }
-
-      if (nextIndex === currentIndex) {
-        if (reason === 'ended' && app.playlistLoop) {
-          playPlaylistIndex(nextIndex);
-        } else if (reason === 'error') {
-          actionStop();
-        }
+      if (reason === 'error') failedPlaylistItems.add(app.playlist[currentIndex]);
+      for (let offset = 1; offset <= app.playlist.length; offset++) {
+        const next = currentIndex + offset;
+        if (next >= app.playlist.length && !app.playlistLoop) break;
+        const nextIndex = next % app.playlist.length;
+        if (failedPlaylistItems.has(app.playlist[nextIndex])) continue;
+        playPlaylistIndex(nextIndex, { automatic: true });
         return;
       }
-
-      playPlaylistIndex(nextIndex);
+      if (reason === 'error') actionStop();
     }
 
     const playNextTrack = () => {
@@ -2452,8 +2703,8 @@
     var videoThumbnailProcessing = false;
     var thumbnailObserver;
     const populateThumbnails = async () => {
-      if (retrieveSetting('thumbnailing') === false) return;
-      const $files = [...document.querySelectorAll('.file')];
+      if (!settings.thumbnailing.get() || libraryState.view === 'list') return;
+      const $files = [...document.querySelectorAll('.file:not([hidden])')];
       setupThumbnailObserver($files);
     }
 
@@ -2540,6 +2791,9 @@
     }
 
     const clearThumbnailQueue = () => {
+      for (const work of [...audioThumbnailQueue, ...videoThumbnailQueue]) {
+        delete work.$file.dataset.thumbnailQueued;
+      }
       audioThumbnailQueue = [];
       videoThumbnailQueue = [];
       if (thumbnailObserver) thumbnailObserver.disconnect();
@@ -2688,12 +2942,13 @@
     }
 
     const hashValueIsLocalUrl = (value) => isString(value) && isLocalUrl(value);
+    const isUnavailableLocalUrl = (value) => hashValueIsLocalUrl(value) && !getLocalSession(value);
     const hashContainsUnrestorableLocalLocation = (hash) => (
       !!hash && (
-        hashValueIsLocalUrl(hash.url) ||
-        hashValueIsLocalUrl(hash.root) ||
-        hashValueIsLocalUrl(hash.location) ||
-        hashValueIsLocalUrl(hash.media)
+        isUnavailableLocalUrl(hash.url) ||
+        isUnavailableLocalUrl(hash.root) ||
+        isUnavailableLocalUrl(hash.location) ||
+        isUnavailableLocalUrl(hash.media)
       )
     );
     const sanitizeRestoredHash = (hash) => {
@@ -2703,13 +2958,17 @@
         return {};
       }
       const restored = { ...hash };
-      if (hashValueIsLocalUrl(restored.subtitle)) delete restored.subtitle;
+      if (isUnavailableLocalUrl(restored.subtitle)) delete restored.subtitle;
       if (restored.playlist && Array.isArray(restored.playlist.urls)) {
-        const urls = restored.playlist.urls.filter((url) => !hashValueIsLocalUrl(url));
+        const originalUrls = restored.playlist.urls;
+        const urls = originalUrls.filter((url) => !isUnavailableLocalUrl(url));
         if (urls.length > 0) {
           restored.playlist = { ...restored.playlist, urls };
-          if (!Number.isFinite(restored.playlist.index) || restored.playlist.index >= urls.length) {
+          const index = restored.playlist.index;
+          if (!Number.isInteger(index) || index < 0 || index >= originalUrls.length || isUnavailableLocalUrl(originalUrls[index])) {
             restored.playlist.index = -1;
+          } else {
+            restored.playlist.index = originalUrls.slice(0, index).filter((url) => !isUnavailableLocalUrl(url)).length;
           }
         } else {
           delete restored.playlist;
@@ -3034,6 +3293,13 @@
       // Don't restart playback if it is the currently playing media
       if (url === getMediaUrl() && $player.src.length > 0) return;
 
+      const requestId = ++playbackRequestId;
+      if (playbackEventController) playbackEventController.abort();
+      playbackEventController = new AbortController();
+      const once = (event, handler) => $player.addEventListener(event, handler, { once: true, signal: playbackEventController.signal });
+      if (url && !opts.automatic) failedPlaylistItems = new WeakSet();
+      playlistProgressStart = null;
+
       if (getMediaUrl()) writeWatchHistory('mediachange');
       resetPlayer();
 
@@ -3060,47 +3326,53 @@
         const loadMedia = async (disableCrossOrigin = false) => {
           applyCrossOriginMode(disableCrossOrigin);
           const playbackUrl = await getPlayableUrlForMedia(url);
+          if (requestId !== playbackRequestId) return false;
           currentMediaUrl = hashState.media = url;
           $player.src = playbackUrl;
           $trick.src = playbackUrl;
           $player.load();
+          return true;
+        }
+
+        const onLoadFailure = (error) => {
+          if (requestId !== playbackRequestId) return;
+          console.warn(`Unable to load media: ${url}`, error);
+          advancePlaylist('error');
         }
 
         const onPlaybackError = () => {
+          if (requestId !== playbackRequestId) return;
           if (crossOriginTarget && !retriedWithoutCors) {
             retriedWithoutCors = true;
             console.warn(`Unable to begin playback with CORS mode; retrying without CORS mode: ${url}`);
-            $player.once('error', onPlaybackError);
-            loadMedia(true);
+            once('error', onPlaybackError);
+            loadMedia(true).catch(onLoadFailure);
             return;
           }
           console.warn(`Unable to begin playback: ${url}`);
           advancePlaylist('error');
         }
 
-        $player.once('error', onPlaybackError);
-        $player.once('play', () => logInfo(`Playback started: ${url}`));
-        $player.once('loadedmetadata', () => updateDuration($player.duration));
-        $player.once('loadedmetadata', updateMediaSessionPositionState);
+        once('error', onPlaybackError);
+        once('play', () => logInfo(`Playback started: ${url}`));
+        once('loadedmetadata', () => updateDuration($player.duration));
+        once('loadedmetadata', updateMediaSessionPositionState);
         if (opts.resumeHistory !== false) {
-          $player.once('loadedmetadata', () => applyWatchHistoryResume(url));
+          once('loadedmetadata', () => applyWatchHistoryResume(url));
         }
         $body.addClass('is-loaded');
         loadMedia(false)
-          .then(() => {
-            if (shouldAutoplay) {
+          .then((loaded) => {
+            if (loaded && requestId === playbackRequestId && shouldAutoplay) {
               const playPromise = $player.play();
               if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.catch((e) => console.warn('Unable to autoplay media', e));
               }
             }
           })
-          .catch((e) => {
-            console.warn(`Unable to load media: ${url}`, e);
-            advancePlaylist('error');
-          });
+          .catch(onLoadFailure);
 
-        $player.once('loadedmetadata', () => {
+        once('loadedmetadata', () => {
           if ($player.videoWidth === 0 && $player.videoHeight === 0) {
             $body.addClass('is-audio');
             if (!$player.paused) schedulePlayerArtworkBackground(url);
@@ -4495,8 +4767,7 @@
         const handle = await window.showDirectoryPicker({ mode: 'read' });
         if (!handle) return;
         const session = registerLocalFolder(handle);
-        setHashRootLocation(session.rootUrl);
-        await createLinks(session.rootUrl);
+        if (!await createLinks(session.rootUrl, { clearSearch: true, rootUrl: session.rootUrl })) return;
         setSearchRootUrl(session.rootUrl);
         refreshSearchIndex({ force: true, rootUrl: session.rootUrl });
         updateHash();
@@ -4532,7 +4803,6 @@
       setOpenUrlError('');
       const opened = await openLocation(input, { playMedia: true, pushHash: true });
       if (opened) {
-        clearSearch({ render: false, updateHash: false });
         hideModals();
       } else {
         setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
@@ -4555,6 +4825,11 @@
             clearSearch();
             return;
           }
+          if (libraryState.mode === 'continue') {
+            searchState.query = query;
+            renderLibraryView();
+            return;
+          }
           if (!searchState.indexed || searchState.indexing) return;
           scheduleSearchResults(query);
         });
@@ -4573,6 +4848,52 @@
           if ($linksSearchInput && typeof $linksSearchInput.focus === 'function') $linksSearchInput.focus();
         });
       }
+    }
+
+    const setupLibraryControls = () => {
+      if (!$libraryToolbar) return;
+      libraryState.view = storageRetrieve('library-view') === 'list' ? 'list' : 'tiles';
+      const sorts = Array.from($('.library-sort').options).map((option) => option.value);
+      const savedSort = storageRetrieve('library-sort');
+      libraryState.sort = sorts.includes(savedSort) ? savedSort : 'name-asc';
+      const setMode = (mode) => {
+        if (libraryState.mode === mode) return;
+        libraryState.mode = mode;
+        if (mode === 'library' && !isSearchEnabled()) clearSearch({ render: false });
+        updateLibraryControls();
+        renderLibraryView();
+      };
+      for (const mode of ['library', 'continue']) {
+        const $tab = $(`.library-tab-${mode}`);
+        $tab.on('click', () => setMode(mode));
+        $tab.on('keydown', (event) => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || !shouldRememberWatchHistory()) return;
+          event.preventDefault();
+          const next = event.key === 'Home' ? 'library' : event.key === 'End' ? 'continue' : (mode === 'library' ? 'continue' : 'library');
+          $(`.library-tab-${next}`).focus();
+          setMode(next);
+        });
+      }
+      for (const view of ['tiles', 'list']) {
+        $(`.library-view-${view}`).on('click', () => {
+          libraryState.view = view;
+          storageStore('library-view', view);
+          updateLibraryControls();
+          if (view === 'list') clearThumbnailQueue();
+          else populateThumbnails();
+        });
+      }
+      $('.library-sort').on('change', (event) => {
+        if (libraryState.mode === 'continue') libraryState.continueSort = event.target.value;
+        else {
+          libraryState.sort = event.target.value;
+          storageStore('library-sort', libraryState.sort);
+        }
+        renderLibraryView();
+      });
+      $('.library-type').on('change', (event) => { libraryState.type = event.target.value; renderLibraryView(); });
+      $('.library-status').on('change', (event) => { libraryState.status = event.target.value; renderLibraryView(); });
+      updateLibraryControls();
     }
 
     const actionDropLocalFile = (e) => {
@@ -4601,6 +4922,7 @@
       setupModals();
       setupDragAndDrop();
       setupSearchControls();
+      setupLibraryControls();
       $body.on('paste', actionPasteAndPlay);
       updatePlaylistLoop();
       renderPlaylist();
@@ -4686,6 +5008,10 @@
       $player.on('loadeddata', syncTrickSrc);
       $player.on('timeupdate', throttle(() => {
         updateProgress();
+        if (!$player.paused) {
+          if (playlistProgressStart === null) playlistProgressStart = $player.currentTime;
+          else if ($player.currentTime - playlistProgressStart >= 1) failedPlaylistItems = new WeakSet();
+        }
         writeWatchHistoryThrottled();
       }, app.options.updateRate.timeupdate));
       $player.on('pause', () => {
@@ -4756,7 +5082,7 @@
 
     const keyboardBroker = (e) => {
       // Don't handle keyboard combinations
-      if (e.ctrlKey || e.altKey) return;
+      if (e.defaultPrevented || e.ctrlKey || e.altKey) return;
       const $openModal = document.querySelector('.modal.show');
       if ($openModal) {
         if (e.key === 'Tab' && trapModalFocus(e, $openModal)) return;
@@ -4767,6 +5093,7 @@
         return;
       }
       const target = e.target;
+      if (target?.closest?.('.library-toolbar, .library-controls')) return;
       if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
       if (target && target.classList && target.classList.contains('progress-bar')) return;
 
@@ -4787,7 +5114,7 @@
           break;
         case 'Backspace':
           e.preventDefault();
-          const $firstLink = $('.links a');
+          const $firstLink = $('.links .folder.parent:not([hidden])');
           if ($firstLink) $firstLink.click();
           break;
         case 'PageUp':
@@ -4856,6 +5183,7 @@
       } else {
         showModal($el);
       }
+      if ($el === $settings && $settings.hasClass('show')) settings.cache.update();
     }
 
     const setModalAccessibilityState = ($el, shown) => {
@@ -4993,7 +5321,7 @@
       return keys.reduce((acc, key) => {
         const setting = settings[key];
         const type = setting.type || 'checkbox';
-        const value = (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
+        const value = type === 'button' ? undefined : (useDefaults && !isUndefined(setting.default) ? setting.default : setting.get());
         const isCheckbox = (type === 'checkbox');
         const isSelect = (type === 'select');
         const checked = (isCheckbox && value === true ? 'checked' : '');
@@ -5407,7 +5735,7 @@
       },
       'watch-history': {
         label: 'Remember playback history',
-        desc: 'Remember playback positions and watched state for recently played media.',
+        desc: 'Remember playback positions and completion status for recent media.',
         event: 'change',
         default: getWatchHistoryDefault(),
         get: () => typeof retrieveSetting('watch-history') !== 'undefined' ? retrieveSetting('watch-history') : settings['watch-history'].default,
@@ -5423,7 +5751,7 @@
         label: 'Clear playback history',
         buttonLabel: 'Clear',
         icon: 'svg-broom',
-        desc: 'Clear remembered playback positions and watched state.',
+        desc: 'Clear remembered playback positions and completion status.',
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5537,12 +5865,13 @@
           await clearThumbnailCache();
           await settings.cache.update();
         },
-        update: async () => {
+        update: throttle(async () => {
+          if (!$settings.hasClass('show')) return;
           const size = await settings.cache.get();
           const formattedSize = addCommas(size);
           const $metadata = $('.setting-cache + .metadata');
           if ($metadata) $metadata.html(formattedSize);
-        }
+        }, 1000)
       },
       'export-config': {
         label: 'Export settings file',
@@ -5576,6 +5905,11 @@
         get: () => {},
         set: () => {
           resetSettings();
+          storageRemove('library-view');
+          storageRemove('library-sort');
+          libraryState.view = 'tiles';
+          libraryState.sort = 'name-asc';
+          renderLibraryView();
           renderSettingsControls(true);
           renderSubtitleSettingsControls(true);
         },
@@ -6439,26 +6773,23 @@
 
           setHashRootLocation(targetRoot);
 
-          if (targetLocation) {
-            await createLinksSafe(targetLocation);
-          } else if (configuredStartLocation) {
-            await createLinksSafe(configuredStartLocation);
-          } else {
-            await createLinksSafe();
-          }
+          const linksRequest = createLinksSafe(targetLocation || configuredStartLocation);
+          const requestId = folderRequestId;
+          await linksRequest;
+          if (requestId === folderRequestId) {
+            setSearchRootUrl(targetRoot || targetLocation || window.location.href);
+            refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
 
-          setSearchRootUrl(targetRoot || targetLocation || window.location.href);
-          refreshSearchIndex({ rootUrl: (targetRoot || targetLocation || window.location.href) });
-
-          if (hasHashSubtitle) {
-            try {
-              await loadSubtitle(hash.subtitle);
-            } catch (e) {
-              console.warn('Unable to load subtitle from hash state', e);
+            if (hasHashSubtitle) {
+              try {
+                await loadSubtitle(hash.subtitle);
+              } catch (e) {
+                console.warn('Unable to load subtitle from hash state', e);
+                clearSubtitles();
+              }
+            } else {
               clearSubtitles();
             }
-          } else {
-            clearSubtitles();
           }
         }
       }
@@ -6493,13 +6824,10 @@
         }
         if (hash && hash.playlist) applyPlaylistState(hash.playlist);
         setHashRootLocation(targetRoot);
-        if (targetLocation) {
-          await createLinksSafe(targetLocation);
-        } else if (configuredStartLocation) {
-          await createLinksSafe(configuredStartLocation);
-        } else {
-          await createLinksSafe();
-        }
+        const linksRequest = createLinksSafe(targetLocation || configuredStartLocation);
+        const requestId = folderRequestId;
+        await linksRequest;
+        if (requestId !== folderRequestId) return;
 
         clearSearch({ render: false, updateHash: false });
         setSearchRootUrl(targetRoot || targetLocation || window.location.href);

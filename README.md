@@ -17,6 +17,7 @@ It can be used as:
 * Import/export `.m3u` playlists and play `.m3u` playlists from the web (when CORS allows).
 * Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
 * Client-side search across indexed media filenames from the current library root.
+* Continue playing from a library tab, with sorting, playback filters, and tile or list views.
 * Open a local folder as a browsable media source in browsers that support the File System Access API, with file-picker fallback elsewhere.
 * Load default behavior from `player.html.json`, and optionally host a static `manifest.json` for PWA install metadata.
 * Upload a custom player poster image (or set one in `player.html.json`) with sensible precedence and export support.
@@ -76,19 +77,29 @@ If you are customizing a hosted deployment, the usual pairing is:
 
 ### Browsing & Library
 * Uses folder listing pages as an API (no backend required).
-* Folder + file tiles for fast navigation through large media libraries.
+* Switch between folder and file tiles and a compact list view. The browser remembers your view and sort choices.
+* Sort filenames naturally, or sort by modified date, size, or recent playback. Unknown dates and sizes stay at the end.
+* Combine audio/video filters with played, unplayed, or in-progress filters. Folder navigation stays available while filtering. Searches show matching media and folders, with a result count only while searching.
+* Continue playing shows unfinished media from the current library root, ordered by recent playback by default. It shares the library area instead of adding a separate shelf above the folders.
+* Switching between Library and Continue playing does not scroll the page or restore a saved tab position. Disabling playback history hides Continue playing and disables progress filtering.
+* List rows show filenames and playback status alongside the add-to-playlist action. Switching views preserves loaded thumbnails.
 * Optional client-side search that indexes media filenames from the current root, supports multi-term matching, and caches the index in `sessionStorage` for the session.
+* Opening a folder clears the current search after the folder loads. If library search is disabled, Continue playing still supports searching its entries. Returning to Library clears that query so folders stay visible.
+* If folder navigations overlap, only the latest request can update the displayed folder, playback, and search root.
 
 ### Playlists
 * Playlist panel: view, add, reorder, previous/next, and looping playback.
 * Import/export `.m3u` playlists.
 * Shareable state in the URL hash (restores library root, folder, search, playlist, media, timestamp, and subtitle selection).
+* Adding a local folder to a playlist respects the configured folder depth. Back and Forward preserve local folder access within the current page session.
+* Automatic queue advancement stops after all available entries fail, even when looping is enabled. A manual playback attempt can retry failed entries.
 
 ### Thumbnails
 * Video thumbnails use pre-rendered server-side thumbnails when present (recommended for large libraries).
 * Video thumbnails fall back to in-browser thumbnail generation otherwise.
 * Animated thumbnails (optional).
 * Thumbnail caching using IndexedDB (view cache size, clear cache).
+* Thumbnail cache size is calculated while Settings is open. Cache eviction uses an index instead of loading every cached image.
 
 ### PWA & Sharing
 * Installable as a PWA (generated manifest by default, or hosted `manifest.json` if present).
@@ -96,7 +107,7 @@ If you are customizing a hosted deployment, the usual pairing is:
 * Direct media URL launcher for easy generated links without building the full encoded `#dr=` share-state value.
 * Local folder browsing via `showDirectoryPicker()` where supported; browsers without folder access fall back to opening one local media file with `<input type="file">`.
 * Optional Wake Lock support to prevent screen sleep while media is playing.
-* Optional playback history that remembers recent media positions and watched state.
+* Optional playback history that remembers recent media positions and completion status.
 * Standard page metadata (`title`, `description`) plus favicon and PWA manifest support.
 
 #### Direct media URL links
@@ -368,13 +379,13 @@ User-facing display and subtitle defaults (most commonly customized):
 * `settings.subtitle-shadow`: `true` uses transparent cue backgrounds with offset text shadow based on `settings.subtitle-background`; `false` uses solid cue background
 * `settings.poster-image`: Optional custom player poster image URL. Supports relative URL, absolute URL, or data URI.
 * `settings.wake-lock`: Prevent screen sleep while media is playing, when supported (`true`/`false`)
-* `settings.watch-history`: Remember recent playback positions and watched state in IndexedDB (`true`/`false`)
+* `settings.watch-history`: Remember recent playback positions and completion status in IndexedDB (`true`/`false`)
 * `settings.blur`: Enable UI blur effects (`true`/`false`)
 * `settings.transitions`: Enable UI transitions (`true`/`false`)
 * `settings.thumbnailing`: Enable video thumbnail generation (`true`/`false`)
 * `settings.animate`: Enable animated thumbnails (`true`/`false`)
 * `settings.playlist-depth`: Folder depth used when adding folders to playlists (`1` to `3`)
-* `settings.search-depth`: Client-side search depth (`0` disables search and hides the search UI, `1` indexes the current folder only, higher values recurse deeper up to `6`)
+* `settings.search-depth`: Client-side library search depth (`0` disables indexing and hides search in Library, `1` indexes the current folder only, higher values recurse deeper up to `6`). Continue playing can still search its history entries when this is `0`.
 
 Poster image behavior:
 
@@ -562,6 +573,10 @@ You can combine watch mode with dev mode:
 uv run build.py --watch --dev
 ```
 
+### Browser Tests
+
+After building, run `node --test tests/*.test.cjs` with Playwright available to Node. The tests use installed Chrome on Windows and Playwright Chromium elsewhere. Directory listings and local folder handles are fixtures. The cache regression test starts its own local HTTP server to exercise the real browser cache. The suite does not need an external media server or access to personal files.
+
 ## Supported browsers
 
 The latest version of these browsers is supported:
@@ -585,7 +600,7 @@ The latest version of these web servers (others may work as well):
 
 ## Other
 
-* `player.html` uses [folder.api](https://github.com/pseudosavant/folder.api) to consume HTTP directory listings like an API
+* `player.html` uses [folder.api 2.1.0](https://github.com/pseudosavant/folder.api/tree/2.1.0) to consume HTTP directory listings like an API
 * `player.html` uses [video-thumbnail.js](https://github.com/pseudosavant/video-thumbnail.js) to render thumbnails from video file URLs
 * `player.html` uses [audio-thumbnail.js](https://github.com/pseudosavant/audio-thumbnail.js/) to render thumbnails from audio file URLs
 

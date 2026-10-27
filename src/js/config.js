@@ -62,7 +62,7 @@
           'subtitle-shadow': false,
           'poster-image': '', // Optional custom poster image URL or data URI for the player background.
           'wake-lock': true, // Prevent screen sleep while media is playing, when supported.
-          'watch-history': true, // Remember playback position and watched state in IndexedDB.
+          'watch-history': true, // Remember playback position and completion status in IndexedDB.
           thumbnailing: true,
           animate: true,
           'playlist-depth': 2,
