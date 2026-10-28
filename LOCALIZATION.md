@@ -2,7 +2,7 @@
 
 This guide defines the meaning and tone of player.html interface text. It is a review reference, not authorization to change translations. Proposed terminology changes should be reviewed before catalog edits.
 
-See the [17-catalog review](LOCALIZATION-REVIEW.md) for current findings, proposed corrections, and unresolved wording decisions.
+Outstanding linguistic review questions are summarized under Open Review Follow-Ups below. Completed review and release records remain available in Git history and GitHub releases.
 
 ## Product And Audience
 
@@ -66,7 +66,7 @@ The English term describes a concept. Translators should choose a natural equiva
 | Subtitle Tracks | The user-facing media-info name for subtitle and caption tracks, including externally loaded files | Embedded-only wording or a new caption-versus-subtitle distinction. The underlying browser-exposed track count is unchanged |
 | Subtitle cue | One timed subtitle text segment | Chapter, queue item, filename, or search term |
 | Transcript search | Search text in the already loaded subtitle track and seek to a matching cue | Transcribe audio, translate subtitles, or search all subtitle files |
-| Auto-load matching subtitles | Load a sidecar subtitle file matching the media filename | Detect speech, translate audio, or guarantee a subtitle exists |
+| Auto-load matching subtitles | Load a sidecar subtitle file matching the video filename. Automatic matching currently excludes audio | Detect speech, translate audio, or guarantee a subtitle exists |
 | Author default | Subtitle positioning supplied by the subtitle author | App default, browser default, or current user preference |
 | Folder depth | Number of directory levels included in a traversal | Unlimited recursion. A value of 1 means the current folder only |
 | On / Off | A setting is enabled or disabled | Present/absent, installed/missing, or a different action |
@@ -93,6 +93,7 @@ Completion and history terms describe the app's saved classification. Privacy se
 | CORS | Browser cross-origin request policy, not proof of a server outage or file absence |
 | HEAD failed | A metadata request failed, not necessarily media playback or every network request |
 | canPlayType | Browser confidence for a MIME type, not a guarantee of successful playback |
+| Volume percentage | Normalized user-facing control level before gain mapping, not a promise of linear gain or perceived loudness. The 33 and 66 percent labels are intentional |
 | Unknown | The value is not known |
 | Unavailable | The value or operation cannot currently be obtained or used |
 | Unsupported | The browser or feature lacks support |
@@ -102,7 +103,7 @@ Preserve product names, filenames, URLs, extensions, config keys, browser API na
 
 ## Locale Conventions To Review
 
-These are proposed review baselines, not a claim of native-speaker approval. Regional wording differences should be recorded as decisions rather than silently treated as errors.
+These are review baselines, not a claim of native-speaker approval. Regional wording differences should be recorded as decisions rather than silently treated as errors.
 
 | Locale | Review baseline |
 | --- | --- |
@@ -110,10 +111,10 @@ These are proposed review baselines, not a claim of native-speaker approval. Reg
 | `es` | Broadly understandable Spanish. Use one consistent address and terminology convention |
 | `fr` | Standard French software language. Keep address, grammatical form, accents, and punctuation consistent |
 | `de` | Standard German UI language. Use one address convention and conventional media terms |
-| `pt` | Explicitly record Brazilian or European lexical choices. Avoid mixing regional conventions or promising both are identical |
+| `pt` | The current catalog uses Brazilian-oriented vocabulary. Keep that regional convention consistent unless a change is approved |
 | `ja` | Familiar Japanese software terminology. Keep action labels and explanatory sentence register consistent within their roles |
 | `zh-Hans` | Simplified Chinese with consistent software and media terminology |
-| `zh-Hant` | Traditional Chinese with a recorded regional vocabulary convention. Do not rely on character conversion alone |
+| `zh-Hant` | The current catalog uses Taiwan-oriented Traditional Chinese vocabulary. Do not rely on character conversion alone |
 | `hi` | Natural Hindi UI wording. Use familiar technical loans where clearer than obscure literal terms |
 | `ar` | Modern Standard Arabic. Check command forms, agreement, plural grammar, and mixed-direction text |
 | `it` | Standard Italian UI language. Keep address and media terminology consistent |
@@ -123,6 +124,27 @@ These are proposed review baselines, not a claim of native-speaker approval. Reg
 | `fa` | Standard Persian UI language. Check terminology, Persian character forms, spacing, and mixed-direction text |
 | `he` | Standard Hebrew UI language. Review gendered phrasing and mixed-direction text without forcing awkward neutral constructions |
 | `tr` | Standard Turkish UI language. Check established state labels, command forms, and case-sensitive characters |
+
+Matching a browser preference such as `pt-PT` to the current `pt` catalog does not make its vocabulary European Portuguese. These regional choices do not by themselves require additional locale catalogs.
+
+## Open Review Follow-Ups
+
+The following items were left open after the initial 17-catalog review. They are optional polish or questions for fluent, contextual review, not confirmed runtime defects or authorization to change translations. Recheck the current catalog and related UI before proposing a change.
+
+| Area and keys | Locales | Follow-up |
+| --- | --- | --- |
+| Subtitle reset, `settings.subtitle-reset.label` | `de`, `nl`, `es`, `fr`, `it`, `pt` | Consider explicitly naming subtitle settings rather than subtitles. Existing descriptions already explain the reset scope, so this is not a destructive-action defect |
+| Playback history, `settings.watch-history.desc` | `tr` | Consider explicitly saying recently played media files rather than last media. No privacy or retention defect was established |
+| Seek duration, `playback.seconds` variant `two` | `ar` | Review the oblique dual required after the prepositions in seek messages instead of the current nominative dual. Default speed presets do not ordinarily produce this interval. Check all uses before changing a shared plural variant, and do not reuse this inflection for unrelated result counts |
+| Completion labels and tooltips, `ui.played` and `ui.this-media-has-been-played` | All | Retain the compact Played classification unless a product terminology change is approved. More explicit saved-history tooltip wording is optional. Do not rename labels to Completed merely because near-end completion is inferred |
+| Unplayed, `ui.unplayed` | `de`, `nl` | Review whether the current not-started wording is the most natural compact UI equivalent. Missing history cannot prove a file was never started, but that limitation does not require verbose no-saved-progress labels |
+| Continue playing, `ui.continue-playing` | `de`, `nl`, `pl`, `tr`, `ja` | Check whether resume-style wording reads naturally as a collection tab rather than an immediate playback command. Assess alternatives in the connected-button UI, not in isolation |
+| Subtitle cues, `transcript.cues`, `transcript.noCues`, `ui.no-matching-cues` | `fr`, `it`, `nl` | Confirm that dialogue- or line-oriented terms also cover non-dialogue cues and cues containing multiple lines. Review count, empty, and no-match messages together |
+| Result counts, `library.results` variant `one` | `hi` | Check zero-count wording with a fluent reader. Hindi selects the one category for both zero and one. Do not impose English zero-plural rules. A count-neutral number-of-results phrase is an option only after review |
+| Setting states, `ui.on` and `ui.off` | `ar`, `fa`, `he` | Existing yes/no wording can be natural with declarative setting labels. No specific confusion was established, so do not replace it merely to copy English on/off vocabulary |
+| Authored positioning, `subtitle.position.author` | `ar`, `fa`, `he`, `ko` | Assess whether explicitly naming the subtitle author improves the existing original-position wording within the narrow selector. The current wording was not established as incorrect |
+
+Native-speaker review should also confirm the naturalness of the approved informal-font labels, especially in the Chinese catalogs, and the Dutch and Korean partial-progress labels. Preserve their corrected meanings rather than reverting to handwriting or active-playback terminology. These checks are linguistic follow-ups, not evidence that the approved corrections should be rolled back.
 
 ## Review Procedure
 
