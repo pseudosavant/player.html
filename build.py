@@ -1,10 +1,12 @@
 import argparse
 import base64
+import json
 import mimetypes
 import pathlib
 import re
 import time
 from datetime import datetime
+from html import escape
 
 ROOT = pathlib.Path(__file__).resolve().parent
 SRC = ROOT / "src"
@@ -12,6 +14,32 @@ DIST = ROOT / "dist"
 TEMPLATE = SRC / "player.html"
 ASSETS = SRC / "assets"
 SVG_DIR = SRC / "svg"
+
+
+def inline_locales(html: str) -> str:
+    catalogs = []
+    english = json.loads(read_text(SRC / "locales" / "en.json"))["messages"]
+    for path in sorted((SRC / "locales").glob("*.json")):
+        data = json.loads(read_text(path))
+        if data["locale"] != path.stem or data["dir"] not in ("ltr", "rtl"):
+            raise ValueError(f"Invalid locale metadata in {path}")
+        if data["messages"].keys() != english.keys():
+            raise ValueError(f"Translation keys differ from English in {path}")
+        def placeholders(message):
+            if isinstance(message, dict) and "other" not in message:
+                raise ValueError(f"Missing plural fallback in {path}")
+            variants = message.values() if isinstance(message, dict) else [message]
+            if not all(isinstance(variant, str) and variant.strip() for variant in variants):
+                raise ValueError(f"Empty or invalid translation in {path}")
+            return {frozenset(re.findall(r"\{(\w+)\}", variant)) for variant in variants}
+        for key, message in data["messages"].items():
+            if isinstance(message, dict) != isinstance(english[key], dict):
+                raise ValueError(f"Translation plural structure differs in {path}: {key}")
+            if placeholders(message) != placeholders(english[key]):
+                raise ValueError(f"Translation placeholders differ in {path}: {key}")
+        payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c").replace("&", "\\u0026")
+        catalogs.append(f'<script type="application/json" data-locale="{escape(data["locale"], quote=True)}" data-name="{escape(data["name"], quote=True)}" data-dir="{data["dir"]}">{payload}</script>')
+    return html.replace("<!-- inline-locales -->", "\n".join(catalogs))
 
 
 def read_text(path: pathlib.Path) -> str:
@@ -401,6 +429,7 @@ def build_variant(out_name: str, *, minify: bool = False) -> tuple[pathlib.Path,
     html = inline_styles(html, minify=minify, metrics=minify_metrics)
     html = remove_dev_stylesheet(html)
     html = inline_svg_sprite(html, minify=minify, metrics=minify_metrics)
+    html = inline_locales(html)
     html = inline_scripts(html, minify=minify, metrics=minify_metrics)
     html = inline_assets(html)
     if minify:

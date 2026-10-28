@@ -7,13 +7,89 @@
 
       player.html also *must be served over HTTPS* for the Google and MS auth flows to work
     */
-    function filePickerMain() {
-      // Show the cloud buttons if OneDrive and/or Gdrive are configured
-      if (isHTTPS()) {
-        if (onedriveCheck()) $('.btn-onedrive').show();
-        if (gdriveCheck())   $('.btn-gdrive').show();
-      }
+    const cloudSdkLoads = new Map();
+    function loadCloudSdk(provider) {
+      if (provider.ready()) return Promise.resolve();
+      if (cloudSdkLoads.has(provider.id)) return cloudSdkLoads.get(provider.id);
+      const pending = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = provider.src;
+        script.async = true;
+        script.dataset.cloudSdk = provider.id;
+        const cleanup = () => {
+          clearTimeout(timer);
+          script.removeEventListener('load', onLoad);
+          script.removeEventListener('error', onError);
+        };
+        const fail = (error) => {
+          cleanup();
+          script.remove();
+          reject(error);
+        };
+        const onLoad = () => {
+          if (!provider.ready()) return fail(new Error(`${provider.name} SDK is unavailable`));
+          cleanup();
+          resolve();
+        };
+        const onError = () => fail(new Error(`Unable to load ${provider.name} SDK`));
+        const timer = setTimeout(() => fail(new Error(`${provider.name} SDK load timed out`)), 15000);
+        script.addEventListener('load', onLoad);
+        script.addEventListener('error', onError);
+        try {
+          document.head.appendChild(script);
+        } catch (error) {
+          fail(error);
+        }
+      }).catch((error) => {
+        cloudSdkLoads.delete(provider.id);
+        throw error;
+      });
+      cloudSdkLoads.set(provider.id, pending);
+      return pending;
     }
+
+    function filePickerMain() {
+      const setButtonMessage = (button, key, name) => {
+        button.dataset.i18nTitle = key;
+        button.dataset.i18nAriaLabel = key;
+        button.dataset.i18nParams = JSON.stringify({ provider: name });
+        global.i18n.apply(button);
+      };
+      const providers = [
+        {
+          id: 'onedrive', name: 'OneDrive', configured: onedriveCheck(),
+          src: 'https://js.live.net/v7.2/OneDrive.js',
+          ready: () => typeof global.OneDrive?.open === 'function'
+        },
+        {
+          id: 'gdrive', name: 'Google Drive', configured: gdriveCheck(),
+          src: 'https://apis.google.com/js/api.js',
+          ready: () => typeof global.gapi?.load === 'function'
+        }
+      ];
+      return Promise.all(providers.map((provider) => {
+        const button = $(`.btn-${provider.id}`);
+        if (!button) return;
+        const enabled = isHTTPS() && provider.configured;
+        button.hidden = !enabled;
+        button.disabled = true;
+        if (!enabled) {
+          button.style.removeProperty('display');
+          return;
+        }
+        button.show();
+        setButtonMessage(button, 'cloud.loading', provider.name);
+        return loadCloudSdk(provider).then(() => {
+          if (button.hidden) return;
+          button.disabled = false;
+          setButtonMessage(button, 'cloud.open', provider.name);
+        }).catch((error) => {
+          if (!button.hidden) setButtonMessage(button, 'cloud.failed', provider.name);
+          console.warn(`Cloud picker unavailable: ${provider.name}`, error);
+        });
+      }));
+    }
+    global.setupCloudPickers = filePickerMain;
 
     function isHTTPS() {
       return location.protocol === 'https:';
@@ -173,6 +249,3 @@
       return p;
     }
     global.gdrive = gdrive;
-
-    filePickerMain();
-  

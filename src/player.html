@@ -3,8 +3,8 @@
 <head>
   <title>player.html</title>
   <meta charset='utf-8'>
-  <meta name='description' content='Drop player.html in a folder of video and audio files and play them on the web' />
-  <meta name='version' content='2.37.0'>
+  <meta name='description' data-i18n-content='ui.drop-player-html-in-a-folder' content='Drop player.html in a folder of video and audio files and play them on the web' />
+  <meta name='version' content='2.38.0'>
   <meta name='Copyright' content='&copy;2026 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='viewport' content='width=device-width, initial-scale=1.0' />
@@ -17,91 +17,91 @@
   <div class='player-container'>
     <div class='media-container'>
       <video class='player' data-volume="3" crossorigin="anonymous" playsinline></video>
-      <div class="media-title"></div>
+      <div class="media-title" dir="auto"></div>
     </div>
     <section class='controls'>
       <div class='progress-track'>
-        <div class='progress-bar' style=' --relative-position: 0%;' role='slider' tabindex='0' aria-label='Seek' aria-valuemin='0' aria-valuemax='0' aria-valuenow='0' aria-valuetext='0:00 of 0:00' aria-disabled='true'></div>
+        <div class='progress-bar' style=' --relative-position: 0%;' role='slider' tabindex='0' data-i18n-aria-label='ui.seek' aria-label='Seek' aria-valuemin='0' aria-valuemax='0' aria-valuenow='0' aria-valuetext='0:00 of 0:00' aria-disabled='true'></div>
         <div class='trick-container' style='--trick-position: 0%'>
           <video class='trick'></video>
         </div>
       </div>
       <section class='controls-sources'>
-        <button class='btn-playlist' type='button' title='Open playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
-        <button class='btn-local-file' type='button' title='Open local folder or media file' aria-label='Open local folder or media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
-        <button class='btn-open-url' type='button' title='Open folder or media URL' aria-label='Open folder or media URL'><svg><use xlink:href='#svg-open-folder'/></svg></button>
-        <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive' aria-label='Open from OneDrive'><svg><use xlink:href='#svg-onedrive'/></svg></button>
-        <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive' aria-label='Open from Google Drive'><svg><use xlink:href='#svg-google-drive'/></svg></button>
+        <button class='btn-playlist' type='button' data-i18n-title='ui.open-playlist' title='Open playlist' data-i18n-aria-label='ui.open-playlist' aria-label='Open playlist'><svg><use xlink:href='#svg-playlist'/></svg></button>
+        <button class='btn-local-file' type='button' data-i18n-title='ui.open-local-folder-or-media-file' title='Open local folder or media file' data-i18n-aria-label='ui.open-local-folder-or-media-file' aria-label='Open local folder or media file'><svg><use xlink:href='#svg-folder-open-vertical'/></svg></button>
+        <button class='btn-open-url' type='button' data-i18n-title='ui.open-folder-or-media-url' title='Open folder or media URL' data-i18n-aria-label='ui.open-folder-or-media-url' aria-label='Open folder or media URL'><svg><use xlink:href='#svg-open-folder'/></svg></button>
+        <button class='btn-cloud btn-onedrive' type='button' data-i18n-title='ui.open-from-onedrive' title='Open from OneDrive' data-i18n-aria-label='ui.open-from-onedrive' aria-label='Open from OneDrive' hidden disabled><svg><use xlink:href='#svg-onedrive'/></svg></button>
+        <button class='btn-cloud btn-gdrive' type='button' data-i18n-title='ui.open-from-google-drive' title='Open from Google Drive' data-i18n-aria-label='ui.open-from-google-drive' aria-label='Open from Google Drive' hidden disabled><svg><use xlink:href='#svg-google-drive'/></svg></button>
       </section>
       <section class='primary-buttons volume-3'>
-        <button class='btn-previous' type='button' title='Previous track [Page Up]' aria-label='Previous track'><svg><use xlink:href='#svg-previous'/></svg></button>
-        <button class='btn-rewind' type='button' title='Go back 15 seconds [Left Arrow]' aria-label='Go back'><svg><use xlink:href='#svg-replay'/></svg></button>
-        <button class='btn-play-pause' type='button' title='Toggle Play/Pause [Spacebar]' aria-label='Play or pause' aria-pressed='false'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
-        <button class='btn-stop' type='button' title='Stop media playback' aria-label='Stop playback'><svg><use xlink:href='#svg-stop'/></svg></button>
-        <button class='btn-fast-forward' type='button' title='Go forward 30 seconds [Right Arrow]' aria-label='Go forward'><svg><use xlink:href='#svg-skip'/></svg></button>
-        <button class='btn-next' type='button' title='Next track [Page Down]' aria-label='Next track'><svg><use xlink:href='#svg-next'/></svg></button>
-        <button class='btn-loop' type='button' title='Toggle playlist looping' aria-label='Toggle playlist looping' aria-pressed='false'>
+        <button class='btn-previous' type='button' data-i18n-title='ui.previous-track-page-up' title='Previous track [Page Up]' data-i18n-aria-label='ui.previous-track' aria-label='Previous track'><svg><use xlink:href='#svg-previous'/></svg></button>
+        <button class='btn-rewind' type='button' data-i18n-title='ui.go-back-15-seconds-left-arrow' title='Go back 15 seconds [Left Arrow]' data-i18n-aria-label='ui.go-back' aria-label='Go back'><svg><use xlink:href='#svg-replay'/></svg></button>
+        <button class='btn-play-pause' type='button' data-i18n-title='ui.toggle-play-pause-spacebar' title='Toggle Play/Pause [Spacebar]' data-i18n-aria-label='ui.play-or-pause' aria-label='Play or pause' aria-pressed='false'><svg class='play'><use xlink:href='#svg-play'/></svg><svg class='pause'><use xlink:href='#svg-pause'/></svg></button>
+        <button class='btn-stop' type='button' data-i18n-title='ui.stop-media-playback' title='Stop media playback' data-i18n-aria-label='ui.stop-playback' aria-label='Stop playback'><svg><use xlink:href='#svg-stop'/></svg></button>
+        <button class='btn-fast-forward' type='button' data-i18n-title='ui.go-forward-30-seconds-right-arrow' title='Go forward 30 seconds [Right Arrow]' data-i18n-aria-label='ui.go-forward' aria-label='Go forward'><svg><use xlink:href='#svg-skip'/></svg></button>
+        <button class='btn-next' type='button' data-i18n-title='ui.next-track-page-down' title='Next track [Page Down]' data-i18n-aria-label='ui.next-track' aria-label='Next track'><svg><use xlink:href='#svg-next'/></svg></button>
+        <button class='btn-loop' type='button' data-i18n-title='ui.toggle-playlist-looping' title='Toggle playlist looping' data-i18n-aria-label='ui.toggle-playlist-looping' aria-label='Toggle playlist looping' aria-pressed='false'>
           <svg class='loop-on'><use xlink:href='#svg-loop-on'/></svg>
           <svg class='loop-off'><use xlink:href='#svg-loop-off'/></svg>
         </button>
-        <button class='btn-volume' type='button' title='Adjust audio volume' aria-label='Adjust audio volume'>
-          <svg class='level-0' title="Muted"><use xlink:href='#svg-speaker-volume-0'/></svg>
-          <svg class='level-1' title="Volume 33%"><use xlink:href='#svg-speaker-volume-1'/></svg>
-          <svg class='level-2' title="Volume 66%"><use xlink:href='#svg-speaker-volume-2'/></svg>
-          <svg class='level-3' title="Volume 100%"><use xlink:href='#svg-speaker-volume-3'/></svg>
+        <button class='btn-volume' type='button' data-i18n-title='ui.adjust-audio-volume' title='Adjust audio volume' data-i18n-aria-label='ui.adjust-audio-volume' aria-label='Adjust audio volume'>
+          <svg class='level-0' data-i18n-title="ui.muted" title="Muted"><use xlink:href='#svg-speaker-volume-0'/></svg>
+          <svg class='level-1' data-i18n-title="ui.volume-33" title="Volume 33%"><use xlink:href='#svg-speaker-volume-1'/></svg>
+          <svg class='level-2' data-i18n-title="ui.volume-66" title="Volume 66%"><use xlink:href='#svg-speaker-volume-2'/></svg>
+          <svg class='level-3' data-i18n-title="ui.volume-100" title="Volume 100%"><use xlink:href='#svg-speaker-volume-3'/></svg>
         </button>
-        <button class='btn-playback-rate' type='button' title='Alter media playback rate' aria-label='Change playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
-        <button class='btn-fullscreen' type='button' title='Toogle fullscreen mode' aria-label='Toggle fullscreen' aria-pressed='false'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
-        <button class='btn-pip' type='button' title='Toggle picture-in-picture mode' aria-label='Toggle picture-in-picture' aria-pressed='false'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
-        <button class='btn-subtitles' type='button' title='Toggle Subtitles' aria-label='Select subtitles' aria-pressed='false'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
+        <button class='btn-playback-rate' type='button' data-i18n-title='ui.alter-media-playback-rate' title='Alter media playback rate' data-i18n-aria-label='ui.change-playback-rate' aria-label='Change playback rate' style='--playback-rate: "1.00"'><svg><use xlink:href='#svg-circle'/></svg></button>
+        <button class='btn-fullscreen' type='button' data-i18n-title='ui.toggle-fullscreen-mode' title='Toogle fullscreen mode' data-i18n-aria-label='ui.toggle-fullscreen' aria-label='Toggle fullscreen' aria-pressed='false'><svg class='collapse'><use xlink:href='#svg-collapse'/></svg><svg class='expand'><use xlink:href='#svg-expand'/></svg></button>
+        <button class='btn-pip' type='button' data-i18n-title='ui.toggle-picture-in-picture-mode' title='Toggle picture-in-picture mode' data-i18n-aria-label='ui.toggle-picture-in-picture' aria-label='Toggle picture-in-picture' aria-pressed='false'><svg class='exit'><use xlink:href='#svg-pip-exit-regular'/></svg><svg class='enter'><use xlink:href='#svg-pip-enter-regular'/></svg></button>
+        <button class='btn-subtitles' type='button' data-i18n-title='ui.toggle-subtitles' title='Select subtitles' data-i18n-aria-label='ui.select-subtitles' aria-label='Select subtitles' aria-pressed='false'><svg><use xlink:href='#svg-subtitles-enabled'/></svg></button>
       </section>
       <section class='controls-settings'>
-        <button class='btn-fileinfo' type='button' title='Show media file information' aria-label='Show media file information'><svg><use xlink:href='#svg-info'/></svg></button>
-        <button class='btn-settings' type='button' title='Open settings' aria-label='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
+        <button class='btn-fileinfo' type='button' data-i18n-title='ui.show-media-file-information' title='Show media file information' data-i18n-aria-label='ui.show-media-file-information' aria-label='Show media file information'><svg><use xlink:href='#svg-info'/></svg></button>
+        <button class='btn-settings' type='button' data-i18n-title='ui.open-settings' title='Open settings' data-i18n-aria-label='ui.open-settings' aria-label='Open settings'><svg><use xlink:href='#svg-settings'/></svg></button>
       </section>
     <div class='current-timestamp' style='--duration: "0:00"; --absolute-position: "0:00";'><span class='position'></span><span class='divider'></span><span class='duration'></span></div>
     </section>
-    <ul class='fileinfo modal' inert aria-hidden='true'>
-      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-      <li class='fileinfo-item modal-item'>Metadata not yet loaded</li>
+    <ul class='fileinfo modal' data-i18n-aria-label='modal.fileinfo' aria-label='File metadata' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' data-i18n-title='ui.close' title='Close' data-i18n-aria-label='ui.close-dialog' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='fileinfo-item modal-item' data-i18n='ui.metadata-not-yet-loaded'>Metadata not yet loaded</li>
     </ul>
-    <ul class='help modal' inert aria-hidden='true'>
-      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-      <li class='help-item modal-item'><span class='key'>Context Menu</span><span class='desc'>Open Settings</span></li>
-      <li class='help-item modal-item'><span class='key'>Spacebar</span><span class='desc'>Toggle Play/Pause</span></li>
-      <li class='help-item modal-item'><span class='key'>F</span><span class='desc'>Toggle Fullscreen</span></li>
-      <li class='help-item modal-item'><span class='key'>I</span><span class='desc'>Media file information</span></li>
-      <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Seek to 0%-90% of media</span></li>
-      <li class='help-item modal-item'><span class='key'>Left Arrow</span><span class='desc'>Go back 10 seconds</span></li>
-      <li class='help-item modal-item'><span class='key'>Right Arrow</span><span class='desc'>Go forward 30 seconds</span></li>
-      <li class='help-item modal-item'><span class='key'>Page Up</span><span class='desc'>Previous track</span></li>
-      <li class='help-item modal-item'><span class='key'>Page Down</span><span class='desc'>Next track</span></li>
-      <li class='help-item modal-item'><span class='key'>R</span><span class='desc'>Alter playback rate</span></li>
-      <li class='help-item modal-item'><span class='key'>S</span><span class='desc'>Select a subtitle</span></li>
-      <li class='help-item modal-item'><span class='key'>Shift+S</span><span class='desc'>Save screenshot of current frame</span></li>
-      <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and Play</span></li>
-      <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
-      <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
+    <ul class='help modal' data-i18n-aria-label='modal.help' aria-label='Keyboard Shortcuts' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' data-i18n-title='ui.close' title='Close' data-i18n-aria-label='ui.close-dialog' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.context-menu'>Context Menu</span><span class='desc' data-i18n='ui.open-settings-2'>Open Settings</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.spacebar'>Spacebar</span><span class='desc' data-i18n='ui.toggle-play-pause'>Toggle Play/Pause</span></li>
+      <li class='help-item modal-item'><span class='key'>F</span><span class='desc' data-i18n='ui.toggle-fullscreen-2'>Toggle Fullscreen</span></li>
+      <li class='help-item modal-item'><span class='key'>I</span><span class='desc' data-i18n='ui.media-file-information'>Media file information</span></li>
+      <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc' data-i18n='ui.seek-to-0-90-of-media'>Seek to 0%-90% of media</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.left-arrow'>Left Arrow</span><span class='desc' data-i18n='ui.go-back-10-seconds'>Seek backward</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.right-arrow'>Right Arrow</span><span class='desc' data-i18n='ui.go-forward-30-seconds'>Seek forward</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.page-up'>Page Up</span><span class='desc' data-i18n='ui.previous-track'>Previous track</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.page-down'>Page Down</span><span class='desc' data-i18n='ui.next-track'>Next track</span></li>
+      <li class='help-item modal-item'><span class='key'>R</span><span class='desc' data-i18n='ui.alter-playback-rate'>Alter playback rate</span></li>
+      <li class='help-item modal-item'><span class='key'>S</span><span class='desc' data-i18n='ui.select-a-subtitle'>Select a subtitle</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.shift-s'>Shift+S</span><span class='desc' data-i18n='ui.save-screenshot-of-current-frame'>Save screenshot of current frame</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.ctrl-v'>Ctrl+V</span><span class='desc' data-i18n='ui.paste-and-play'>Paste and Play</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.backspace'>Backspace</span><span class='desc' data-i18n='ui.go-to-previous-folder'>Go to parent folder</span></li>
+      <li class='help-item modal-item'><span class='key' data-i18n='ui.or-f1'>? or F1</span><span class='desc' data-i18n='ui.this-help-information'>This help information</span></li>
     </ul>
-    <ul class='subtitle-selection modal' inert aria-hidden='true'>
-      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
-      <li class='subtitle-item modal-item'>No subtitles loaded yet</li>
+    <ul class='subtitle-selection modal' data-i18n-aria-label='modal.subtitles' aria-label='Select a subtitle below' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' data-i18n-title='ui.close' title='Close' data-i18n-aria-label='ui.close-dialog' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+      <li class='subtitle-item modal-item' data-i18n='ui.no-subtitles-loaded-yet'>No subtitles loaded yet</li>
     </ul>
-    <ul class='playlist modal' inert aria-hidden='true'>
-      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+    <ul class='playlist modal' data-i18n-aria-label='modal.playlist' aria-label='Playlist' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' data-i18n-title='ui.close' title='Close' data-i18n-aria-label='ui.close-dialog' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
     </ul>
-    <ul class='settings modal' inert aria-hidden='true'>
-      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+    <ul class='settings modal' data-i18n-aria-label='modal.settings' aria-label='Settings' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' data-i18n-title='ui.close' title='Close' data-i18n-aria-label='ui.close-dialog' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
     </ul>
-    <form class='open-url modal' inert aria-hidden='true'>
-      <button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
+    <form class='open-url modal' data-i18n-aria-label='modal.openUrl' aria-label='Open URL' inert aria-hidden='true'>
+      <button class='modal-close-btn' type='button' data-i18n-title='ui.close' title='Close' data-i18n-aria-label='ui.close-dialog' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>
       <div class='modal-item open-url-item'>
-        <label class='open-url-label' for='open-url-input'>Folder or media URL</label>
-        <input id='open-url-input' class='open-url-input' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
+        <label class='open-url-label' for='open-url-input' data-i18n='ui.folder-or-media-url'>Folder or media URL</label>
+        <input id='open-url-input' class='open-url-input' dir='ltr' type='url' placeholder='https://example.com/videos/' autocomplete='off' spellcheck='false'>
         <p class='open-url-error' aria-live='polite'></p>
         <div class='open-url-actions'>
-          <button class='open-url-submit' type='submit'>Open</button>
-          <button class='open-url-cancel' type='button'>Cancel</button>
+          <button class='open-url-submit' type='submit' data-i18n='ui.open'>Open</button>
+          <button class='open-url-cancel' type='button' data-i18n='ui.cancel'>Cancel</button>
         </div>
       </div>
     </form>
@@ -109,13 +109,13 @@
   </div>
   <section class='links-panel'>
     <div class='library-toolbar'>
-      <div class='library-tabs' role='tablist' aria-label='Library content'>
-        <button id='library-tab-library' class='library-tab library-tab-library' type='button' role='tab' aria-controls='library-files' aria-selected='true'>Library</button>
-        <button id='library-tab-continue' class='library-tab library-tab-continue' type='button' role='tab' aria-controls='library-files' aria-selected='false' tabindex='-1'>Continue playing <span class='library-continue-count'>0</span></button>
+      <div class='library-tabs' role='tablist' data-i18n-aria-label='ui.library-content' aria-label='Library content'>
+        <button id='library-tab-library' class='library-tab library-tab-library' type='button' role='tab' aria-controls='library-files' aria-selected='true' data-i18n='ui.library'>Library</button>
+        <button id='library-tab-continue' class='library-tab library-tab-continue' type='button' role='tab' aria-controls='library-files' aria-selected='false' tabindex='-1'><span data-i18n='ui.continue-playing'>Continue playing</span> <span class='library-continue-count'>0</span></button>
       </div>
-      <div class='library-views' role='group' aria-label='Library view'>
-        <button class='library-view-tiles' type='button' title='Tile view' aria-label='Tile view' aria-pressed='true'><svg aria-hidden='true'><use xlink:href='#svg-grid'/></svg></button>
-        <button class='library-view-list' type='button' title='List view' aria-label='List view' aria-pressed='false'><svg aria-hidden='true'><use xlink:href='#svg-list'/></svg></button>
+      <div class='library-views' role='group' data-i18n-aria-label='ui.library-view' aria-label='Library view'>
+        <button class='library-view-tiles' type='button' data-i18n-title='ui.tile-view' title='Tile view' data-i18n-aria-label='ui.tile-view' aria-label='Tile view' aria-pressed='true'><svg aria-hidden='true'><use xlink:href='#svg-grid'/></svg></button>
+        <button class='library-view-list' type='button' data-i18n-title='ui.list-view' title='List view' data-i18n-aria-label='ui.list-view' aria-label='List view' aria-pressed='false'><svg aria-hidden='true'><use xlink:href='#svg-list'/></svg></button>
       </div>
     </div>
     <div class='library-controls'>
@@ -124,46 +124,45 @@
         <input
           id='links-search-input'
           class='links-search-input'
-          aria-label='Search media files'
+          dir='auto'
+          data-i18n-aria-label='ui.search-media-files' aria-label='Search media files'
           type='text'
-          placeholder='Indexing media library...'
+          data-i18n-placeholder='ui.indexing-media-library' placeholder='Indexing media library...'
           autocomplete='off'
           autocapitalize='off'
           autocorrect='off'
           spellcheck='false'
           disabled>
-        <button class='links-search-clear' type='button' hidden>Clear</button>
+        <button class='links-search-clear' type='button' hidden data-i18n='ui.clear'>Clear</button>
       </div>
     </form>
-      <label class='library-field'><span>Sort</span><select class='library-sort' aria-label='Sort files'>
-        <option value='name-asc'>Name A-Z</option>
-        <option value='name-desc'>Name Z-A</option>
-        <option value='date-desc'>Newest</option>
-        <option value='date-asc'>Oldest</option>
-        <option value='size-desc'>Largest</option>
-        <option value='size-asc'>Smallest</option>
-        <option value='recent-desc'>Recent</option>
+      <label class='library-field'><span data-i18n='ui.sort'>Sort</span><select class='library-sort' data-i18n-aria-label='ui.sort-files' aria-label='Sort files'>
+        <option value='name-asc' data-i18n='ui.name-a-z'>Name A-Z</option>
+        <option value='name-desc' data-i18n='ui.name-z-a'>Name Z-A</option>
+        <option value='date-desc' data-i18n='ui.newest'>Newest</option>
+        <option value='date-asc' data-i18n='ui.oldest'>Oldest</option>
+        <option value='size-desc' data-i18n='ui.largest'>Largest</option>
+        <option value='size-asc' data-i18n='ui.smallest'>Smallest</option>
+        <option value='recent-desc' data-i18n='ui.recent'>Recent</option>
       </select></label>
-      <label class='library-field'><span>Media</span><select class='library-type' aria-label='Filter media type'>
-        <option value='all'>All media</option><option value='video'>Video</option><option value='audio'>Audio</option>
+      <label class='library-field'><span data-i18n='info.group.media'>Media</span><select class='library-type' data-i18n-aria-label='ui.filter-media-type' aria-label='Filter media type'>
+        <option value='all' data-i18n='ui.all-media'>All media</option><option value='video' data-i18n='ui.video'>Video</option><option value='audio' data-i18n='ui.audio'>Audio</option>
       </select></label>
-      <label class='library-field'><span>Progress</span><select class='library-status' aria-label='Filter playback progress'>
-        <option value='all'>All states</option><option value='watched'>Played</option><option value='unplayed'>Unplayed</option><option value='in-progress'>In progress</option>
+      <label class='library-field'><span data-i18n='ui.progress'>Progress</span><select class='library-status' data-i18n-aria-label='ui.filter-playback-progress' aria-label='Filter playback progress'>
+        <option value='all' data-i18n='ui.all-states'>All states</option><option value='watched' data-i18n='ui.played'>Played</option><option value='unplayed' data-i18n='ui.unplayed'>Unplayed</option><option value='in-progress' data-i18n='ui.in-progress'>In progress</option>
       </select></label>
     </div>
     <p class='links-search-results-count' aria-live='polite' hidden></p>
     <p class='library-empty' role='status' hidden></p>
     <section id='library-files' class='links' role='tabpanel' aria-labelledby='library-tab-library'>
       <div class='library-list-heading'>
-        <span class='library-heading-name' title='File or folder name'>Name</span>
-        <span class='library-heading-add' title='Add to playlist'>Add</span>
+        <span class='library-heading-name' data-i18n='library.name' data-i18n-title='ui.file-or-folder-name' title='File or folder name'>Name</span>
+        <span class='library-heading-add' data-i18n='library.add' data-i18n-title='ui.add-to-playlist' title='Add to playlist'>Add</span>
       </div>
     </section>
   </section>
   <footer><a href='https://github.com/pseudosavant/player.html' target='_blank'>player.html <span class='version'></span> &copy; Paul Ellis</a></footer>
   <section class='xlinks' style='display: none' data-inline='svg'></section>
-  <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>
-  <script type='text/javascript' src='https://js.live.net/v7.2/OneDrive.js' defer></script>
 
   <!-- Global Config -->
   <script type="module" src="./js/config.js" data-inline></script>
@@ -171,6 +170,9 @@
 
   <!-- Utitilies -->
   <script type="module" src="./js/utils.js" data-inline></script>
+
+  <!-- inline-locales -->
+  <script type="module" src="./js/i18n.js" data-inline></script>
 
   <!-- PWA -->
   <script type="module" src="./js/pwa.js" data-inline></script>
@@ -184,7 +186,7 @@
   <!-- File Pickers -->
   <script type="module" src="./js/file-pickers.js" data-inline></script>
 
-  <!-- folder.api v2.1.0 -->
+  <!-- folder.api v3.0.0 -->
   <script type="module" src="./js/folder-api.js" data-inline></script>
 
   <!-- App code -->

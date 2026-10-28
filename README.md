@@ -18,6 +18,7 @@ It can be used as:
 * Generate video thumbnails (pre-rendered server-side, or on-the-fly in the browser).
 * Client-side search across indexed media filenames from the current library root.
 * Continue playing from a library tab, with sorting, playback filters, and tile or list views.
+* Choose from 17 interface languages automatically from browser preferences or explicitly in Settings, with right-to-left support for Arabic, Persian, and Hebrew.
 * Open a local folder as a browsable media source in browsers that support the File System Access API, with file-picker fallback elsewhere.
 * Load default behavior from `player.html.json`, and optionally host a static `manifest.json` for PWA install metadata.
 * Upload a custom player poster image (or set one in `player.html.json`) with sensible precedence and export support.
@@ -32,6 +33,7 @@ It can be used as:
 * [Feature requests](#feature-requests)
 * [Pre-rendered server-side thumbnails](#pre-rendered-server-side-thumbnails)
 * [Configuration and PWA manifest (`player.html.json` + `manifest.json`)](#configuration-and-pwa-manifest-playerhtmljson--manifestjson)
+* [Languages](#languages)
 * [Advanced deployment patterns](#advanced-deployment-patterns)
 * [Installing ffmpeg](#installing-ffmpeg)
 * [Supported browsers](#supported-browsers)
@@ -367,6 +369,7 @@ Notes:
 
 User-facing display and subtitle defaults (most commonly customized):
 
+* `defaultLanguage`: Language to use when none of the browser's preferred languages are supported. Defaults to `en`. See [Languages](#languages) for supported locale codes. This does not override a supported browser language or an explicit user choice.
 * `settings.hue`: Theme hue (number)
 * `settings.saturation`: Theme saturation from `0` to `100` (use `0` for grayscale themes)
 * The Theme color picker in Settings updates `settings.hue` and `settings.saturation` together.
@@ -429,6 +432,10 @@ Cloud source integration:
 * `cloud.gdrive.clientId`
 * `cloud.gdrive.appId`
 
+Cloud buttons are hidden unless the player is served over HTTPS and all required values for that provider are nonempty strings. OneDrive requires its client ID. Google Drive requires its developer key, client ID, and app ID.
+
+After `player.html.json` loads, configured providers load their SDK scripts during startup. Unconfigured providers make no SDK requests. Library loading and playback do not wait for these scripts. Each cloud button stays disabled until its SDK is ready. Script failures and timeouts leave that provider disabled without affecting the rest of the player. Authentication still starts only when the user opens a cloud picker. The existing SDK versions and authentication flows are unchanged.
+
 Diagnostics:
 
 * `debug`: Enable non-error console logging (`true`/`false`)
@@ -437,6 +444,67 @@ Compatibility notes:
 
 * `subtitles.*` keys are still accepted on load for compatibility, but `settings.*` is the canonical configuration surface for user-facing defaults.
 * Runtime/browser-detected fields may appear in exported files. They are optional and are not required for a hand-authored config file.
+
+## Languages
+
+Settings > Interface > Language defaults to Automatic. A chosen language is saved as `setting-language` in localStorage and takes priority over browser preferences. Choosing Automatic returns to browser-based selection. Changes apply immediately without restarting playback or clearing the queue, subtitles, or local folder access.
+
+The following 17 interface languages are included:
+
+| Language | Locale | Direction |
+| --- | --- | --- |
+| English | `en` | Left to right |
+| Spanish | `es` | Left to right |
+| French | `fr` | Left to right |
+| German | `de` | Left to right |
+| Portuguese | `pt` | Left to right |
+| Japanese | `ja` | Left to right |
+| Simplified Chinese | `zh-Hans` | Left to right |
+| Traditional Chinese | `zh-Hant` | Left to right |
+| Hindi | `hi` | Left to right |
+| Arabic | `ar` | Right to left |
+| Italian | `it` | Left to right |
+| Korean | `ko` | Left to right |
+| Dutch | `nl` | Left to right |
+| Polish | `pl` | Left to right |
+| Persian | `fa` | Right to left |
+| Hebrew | `he` | Right to left |
+| Turkish | `tr` | Left to right |
+
+Automatic selection checks `navigator.languages` in preference order, with `navigator.language` as a fallback. The first supported language wins. Regional variants match their supported base language, such as `fr-CA` to `fr` and `pt-BR` or `pt-PT` to `pt`. Explicitly requested scripts must match the supported writing system. Chinese matching distinguishes both scripts. `zh-CN`, `zh-SG`, and `zh-Hans` match Simplified Chinese. `zh-TW`, `zh-HK`, `zh-MO`, and `zh-Hant` match Traditional Chinese. Explicit script tags take priority over region hints. The configured fallback applies if none of the preferred languages match.
+
+If none of the browser's preferred languages match, `defaultLanguage` in `player.html.json` supplies the fallback. Unsupported configuration values fall back to English. For example, this uses Simplified Chinese for unsupported browser languages while still honoring English browser preferences and explicit user choices:
+
+```json
+{
+  "defaultLanguage": "zh-Hans"
+}
+```
+
+Language is a personal preference, not a forced site setting. Exported configuration retains `defaultLanguage` but does not export the user's language choice as `settings.language`. Filenames, URLs, subtitle contents, provider names, and technical identifiers remain unchanged. Browser-native dialogs and controls use the browser's own language.
+
+### Right-to-left layout
+
+Arabic, Persian, and Hebrew set the page language and direction together. Library columns, connected buttons, modal placement, close buttons, and inline spacing follow the reading direction. Filename and transcript text keep their own direction. URLs and technical metadata are isolated from surrounding text, and interpolated values use Unicode bidi isolation so timestamps and provider names do not reorder the sentence.
+
+The seek bar, playback transport, and timestamps remain left to right. Pointer seeking and arrow-key behavior retain their normal chronological meaning. Video images and authored subtitle text are not mirrored or translated. Switching back to a left-to-right language restores the corresponding layout without reloading media.
+
+### Translation catalogs
+
+See the [localization guide](LOCALIZATION.md) for the product glossary, tone, locale conventions, and linguistic review checklist.
+
+Source catalogs live in `src/locales/<locale>.json`. Each contains locale metadata and 322 stable message keys. The build validates matching keys, plural fallbacks, and interpolation placeholders, then embeds compact UTF-8 JSON directly in both HTML outputs. No translation requests are made at runtime. At startup, only English and the active language are parsed. Other catalogs are parsed on first use and cached for later switches. Missing individual messages fall back to English.
+
+Static labels and attributes use explicit `data-i18n` bindings. Dynamic messages use `i18n.t(key, params)`. Plural forms use `Intl.PluralRules`. Displayed numbers, dates, and filename ordering use the selected locale through `Intl`. Translation text is inserted as text or escaped before HTML interpolation, never executed as markup.
+
+The 17 source catalogs total 370,059 bytes, or 335,919 bytes as compact inline JSON. The complete builds measure as follows, using gzip level 9 and Brotli quality 11:
+
+| Build | Raw bytes | Gzip bytes | Brotli bytes |
+| --- | ---: | ---: | ---: |
+| `player.html` | 903,802 | 209,747 | 171,337 |
+| `player.min.html` | 783,538 | 194,966 | 161,283 |
+
+When introduced, the 17-language localization and RTL changes added about 80 KiB gzipped to the minified build. The build totals above also reflect subsequent dependency updates. Gzip and Brotli reuse repeated keys across the inline catalogs, so the complete HTML compresses better than the sum of independently compressed locale files. Actual transfer size depends on the web server's compression configuration.
 
 ## Advanced deployment patterns
 
@@ -575,7 +643,11 @@ uv run build.py --watch --dev
 
 ### Browser Tests
 
-After building, run `node --test tests/*.test.cjs` with Playwright available to Node. The tests use installed Chrome on Windows and Playwright Chromium elsewhere. Directory listings and local folder handles are fixtures. The cache regression test starts its own local HTTP server to exercise the real browser cache. The suite does not need an external media server or access to personal files.
+After building, run `node --test tests/*.test.cjs` with Playwright available to Node. The tests use installed Chrome on Windows and Playwright Chromium elsewhere. Directory listings and local folder handles are fixtures. The cache regression tests start their own local HTTP servers to exercise the real browser cache, including an old iframe listing after a fetch failure. HTTP directory browsing, search indexing, and folder-to-playlist traversal use fetch with `cache: 'no-store'`. Failed requests do not fall back to potentially cached iframe listings. Local folders continue to use file system handles. The suite does not need an external media server or access to personal files.
+
+Toggle regression tests exercise both generated builds across device scale factors, CSS zoom levels, font sizes, narrow and desktop viewports, and LTR/RTL locales. They verify symmetric thumb insets, configurable track heights, Turkish label widths, native keyboard behavior, visible focus, and reduced motion. Geometry checks allow subpixel layout rounding rather than requiring identical physical pixels on every display.
+
+On Windows, pinch-zoom pixel tests also require installed Microsoft Edge and an interactive desktop session. They launch an isolated Edge window offscreen with its headed renderer, since headless rendering does not reproduce the rounding issue. At 125% display scaling and 4x pinch magnification, screenshot checks verify equal 2px toggle gaps in both states and at fractional vertical positions. These Edge-specific tests are skipped on other platforms. Toggle centering remains CSS-only and does not track device pixel ratio in application code.
 
 ## Supported browsers
 
@@ -600,7 +672,7 @@ The latest version of these web servers (others may work as well):
 
 ## Other
 
-* `player.html` uses [folder.api 2.1.0](https://github.com/pseudosavant/folder.api/tree/2.1.0) to consume HTTP directory listings like an API
+* `player.html` uses [folder.api 3.0.0](https://github.com/pseudosavant/folder.api/tree/3.0.0) to consume HTTP directory listings like an API. HTTP directory requests remain fetch-only with `cache: 'no-store'`. The library limits each listing response to 4 MiB by default, measured after HTTP decompression. This limit does not apply to media files.
 * `player.html` uses [video-thumbnail.js](https://github.com/pseudosavant/video-thumbnail.js) to render thumbnails from video file URLs
 * `player.html` uses [audio-thumbnail.js](https://github.com/pseudosavant/audio-thumbnail.js/) to render thumbnails from audio file URLs
 

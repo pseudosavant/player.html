@@ -9,6 +9,110 @@ const project = path.resolve(__dirname, '..');
 const listing = names => '<!doctype html><title>Directory listing</title><ul>' +
   names.map(name => `<li><a href="${name}">${name}</a></li>`).join('') + '</ul>';
 
+test('player sources reference the folder.api 3.0.0 browser bundle', () => {
+  assert.match(fs.readFileSync(path.join(project, 'src', 'js', 'folder-api.js'), 'utf8'), /^\/\*! folder-api v3\.0\.0 browser bundle\./);
+  assert.match(fs.readFileSync(path.join(project, 'src', 'player.html'), 'utf8'), /<!-- folder\.api v3\.0\.0 -->/);
+});
+
+for (const variant of ['player.html', 'player.min.html']) {
+  test(`${variant}: failed directory fetches never fall back to cached iframe listings`, async t => {
+    let previousProject = true;
+    let directoryRequests = 0;
+    const html = fs.readFileSync(path.join(project, 'dist', variant), 'utf8')
+      .replace(/\bmain\(\);(?=\s*<\/script>)/, 'window.__directoryTest = { requestFolderLinks };');
+    assert.ok(html.includes('window.__directoryTest ='), 'Test instrumentation must match the built app');
+    const server = http.createServer((request, response) => {
+      const pathname = new URL(request.url, 'http://localhost').pathname;
+      response.setHeader('Content-Type', 'text/html');
+      if (pathname === '/player.html') return response.end(html);
+      if (pathname === '/media/') {
+        directoryRequests++;
+        response.setHeader('Cache-Control', 'public, max-age=3600');
+        return response.end(listing([previousProject ? 'old-project.webm' : 'Current.webm']));
+      }
+      response.writeHead(404);
+      response.end('Not found');
+    });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    t.after(() => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }));
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    const browser = await chromium.launch({ headless: true, ...(process.platform === 'win32' ? { channel: 'chrome' } : {}) });
+    t.after(() => browser.close());
+    const page = await browser.newPage();
+    await page.goto(`${origin}/player.html`);
+    await page.waitForFunction(() => !!window.__directoryTest);
+
+    // Prime the navigation cache without routing, which would disable HTTP caching.
+    const iframeFiles = () => page.evaluate(async () => (
+      await window.folderApiRequest(`${location.origin}/media/`, { mode: 'iframe' })
+    ).files.map(file => file.name));
+    assert.deepEqual(await iframeFiles(), ['old-project.webm']);
+    previousProject = false;
+    assert.deepEqual(await iframeFiles(), ['old-project.webm']);
+    assert.equal(directoryRequests, 1, 'The stale iframe listing must actually be cached');
+
+    assert.deepEqual(await page.evaluate(async () => (
+      await window.__directoryTest.requestFolderLinks(`${location.origin}/media/`)
+    ).files.map(file => file.name)), ['Current.webm']);
+    assert.equal(directoryRequests, 2);
+
+    const failure = await page.evaluate(async () => {
+      const originalFetch = window.fetch;
+      const originalError = new TypeError('Simulated directory fetch failure');
+      const requests = [];
+      window.fetch = async (url, options) => {
+        requests.push({ url, cache: options.cache });
+        throw originalError;
+      };
+      try {
+        await window.__directoryTest.requestFolderLinks(`${location.origin}/media/`);
+        return { rejected: false, requests };
+      } catch (error) {
+        return { rejected: true, sameCause: error.cause === originalError, details: error.details, message: error.message, requests };
+      } finally {
+        window.fetch = originalFetch;
+      }
+    });
+    assert.equal(failure.rejected, true, 'A failed fetch must not return stale iframe results');
+    assert.equal(failure.sameCause, true, 'Preserve the original fetch error as the structured error cause');
+    assert.equal(failure.details.code, 'network');
+    assert.equal(failure.details.phase, 'fetch');
+    assert.equal(failure.details.url, `${origin}/media/`);
+    assert.deepEqual(failure.details.cause, { name: 'TypeError', message: 'Simulated directory fetch failure' });
+    assert.match(failure.message, /Simulated directory fetch failure/);
+    assert.deepEqual(failure.requests, [{ url: `${origin}/media/`, cache: 'no-store' }]);
+    assert.equal(await page.locator('iframe').count(), 0);
+    assert.equal(directoryRequests, 2);
+
+    await page.reload();
+    await page.waitForFunction(() => !!window.__directoryTest);
+    const recovered = await page.evaluate(async () => (
+      await window.__directoryTest.requestFolderLinks(`${location.origin}/media/`, {
+        mode: 'iframe', cache: 'force-cache'
+      })
+    ));
+    assert.deepEqual(recovered.files.map(file => file.name), ['Current.webm']);
+    assert.equal(recovered.stats.iframes, 0, 'Callers cannot override the fetch-only policy');
+    assert.equal(recovered.stats.fetches, 1);
+    assert.deepEqual(recovered.errorDetails, []);
+    assert.equal(directoryRequests, 3, 'Reload still fetches the current listing');
+
+    const limited = await page.evaluate(async () => {
+      try {
+        await window.__directoryTest.requestFolderLinks(`${location.origin}/media/`, { maxResponseBytes: 64 });
+        return null;
+      } catch (error) {
+        return error.details;
+      }
+    });
+    assert.equal(limited.code, 'response-limit');
+    assert.equal(limited.phase, 'fetch');
+    assert.equal(limited.url, `${origin}/media/`);
+    assert.equal(directoryRequests, 4);
+    assert.equal(await page.locator('iframe').count(), 0, 'Response-limit failures must not fall back to cached iframe content');
+  });
+}
+
 test('library and search bypass directory responses cached by a previous server', async t => {
   let previousProject = true;
   let currentFile = 'Current.webm';

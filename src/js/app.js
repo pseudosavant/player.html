@@ -1,4 +1,5 @@
 ﻿    const $html = $('html');
+    const { t } = window.i18n;
     const $body = $('body');
     const $playerContainer = $('.player-container');
     const $progressBar = $('.progress-bar');
@@ -30,7 +31,7 @@
       continueCount: 0,
       nodes: new Map()
     };
-    const libraryCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+    let libraryCollator = new Intl.Collator(i18n.locale, { numeric: true, sensitivity: 'base' });
     let libraryRenderRequestId = 0;
     let folderRequestId = 0;
     let playbackRequestId = 0;
@@ -487,9 +488,8 @@
 
     const requestFolderLinks = async (url, opts = {}) => {
       if (isLocalUrl(url)) return createLocalLinks(url, opts);
-      const mode = isSameOriginUrl(url) ? 'auto' : 'fetch';
-      // A cached directory can belong to a different server at the same origin.
-      return folderApiRequest(url, { mode, cache: 'no-store', ...opts });
+      // Iframe fallback cannot enforce freshness when the server's directory changes.
+      return folderApiRequest(url, { ...opts, mode: 'fetch', cache: 'no-store' });
     }
 
     const createLinks = async (url, opts = {}) => {
@@ -641,7 +641,8 @@
       if ($linksSearchInput) {
         const disabled = !continuing && (!enabled || !searchState.indexed || searchState.indexing);
         $linksSearchInput.disabled = disabled;
-        $linksSearchInput.placeholder = (!continuing && searchState.indexing ? 'Indexing media library...' : 'Search media files');
+        $linksSearchInput.removeAttribute('data-i18n-placeholder');
+        $linksSearchInput.placeholder = t(!continuing && searchState.indexing ? 'ui.indexing-media-library' : 'ui.search-media-files');
         $linksSearchInput.attr('aria-disabled', disabled ? 'true' : 'false');
       }
       if ($linksSearchClear) {
@@ -1055,11 +1056,12 @@
     const setOpenUrlError = (message = '') => {
       const $error = $('.open-url-error');
       if (!$error) return;
-      $error.textContent = String(message || '');
+      $error.dataset.errorKey = message || '';
+      $error.textContent = message ? t(message) : '';
     }
 
     const getModalCloseButtonHtml = () => (
-      `<button class='modal-close-btn' type='button' title='Close' aria-label='Close dialog'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>`
+      `<button class='modal-close-btn' type='button' data-i18n-title='ui.close' title='${escapeAttr(t("ui.close"))}' data-i18n-aria-label='ui.close-dialog' aria-label='${escapeAttr(t("ui.close-dialog"))}'><svg><use xlink:href='#svg-dismiss-circle'/></svg></button>`
     );
 
     const getOpenUrlInput = () => $('.open-url-input');
@@ -1127,10 +1129,10 @@
 
     const getLibraryResumeLabel = (record) => {
       if (!record) return '';
-      if (record.completed) return 'Played';
+      if (record.completed) return t('ui.played');
       if (!(record.position > 0)) return '';
       const remaining = Math.max(0, record.duration - record.position);
-      return `Resume ${secondsToString(record.position)} (${secondsToString(remaining)} left)`;
+      return t('library.resume', { position: secondsToString(record.position), remaining: secondsToString(remaining) });
     }
 
     const getLibraryHistory = async () => {
@@ -1176,7 +1178,7 @@
       }
       const $continue = $('.library-tab-continue');
       $continue.hidden = !remember;
-      $('.library-continue-count').textContent = addCommas(continueCount);
+      $('.library-continue-count').textContent = i18n.number(continueCount);
       for (const mode of ['library', 'continue']) {
         const $tab = $(`.library-tab-${mode}`);
         const selected = libraryState.mode === mode;
@@ -1266,7 +1268,7 @@
         }
         node.hidden = false;
         if (entry.folder) {
-          node.querySelector('.label').textContent = parent ? 'Parent Folder' : (searching ? getSearchRelativeLabel(file.url, root) : (file.name || urlToLabel(file.url)));
+          node.querySelector('.label').textContent = parent ? t('library.parent') : (searching ? getSearchRelativeLabel(file.url, root) : (file.name || urlToLabel(file.url)));
         } else {
           const record = file.watchRecord;
           node.classList.toggle('current', file.url === getMediaUrl());
@@ -1284,12 +1286,12 @@
         $links.appendChild(node);
       }
       $libraryEmpty.hidden = entries.length > 0;
-      $libraryEmpty.textContent = libraryState.mode === 'continue' ? 'No unfinished media in this library.' : 'No matching media.';
+      $libraryEmpty.textContent = t(libraryState.mode === 'continue' ? 'library.noUnfinished' : 'library.noMatches');
       if (focused?.isConnected && !focused.closest('[hidden]')) focused.focus({ preventScroll: true });
       const shown = files.length + folders.length;
       updateSearchResultsCount(!searching ? '' : (total > shown
-        ? `Showing ${addCommas(shown)} of ${addCommas(total)} results`
-        : `${addCommas(total)} result${total === 1 ? '' : 's'}`));
+        ? t('library.showing', { shown: i18n.number(shown), total: i18n.number(total) })
+        : t('library.results', { count: total, total: i18n.number(total) })));
       populateThumbnails();
     }
 
@@ -1341,7 +1343,8 @@
     const createFileTemplate = (url, label, optionalClasses = '', preRenderedThumbnailUrl = '', watchProgress = 0) => {
       const escapedUrl = escapeAttr(url);
       const safeLabel = escapeHtml(label);
-      const safeTitle = escapeAttr(`Play ${url}`);
+      const safeTitle = escapeAttr(t('library.play', { url }));
+      const titleParams = escapeAttr(JSON.stringify({ url }));
       const styleParts = [];
       if (preRenderedThumbnailUrl) styleParts.push(`--image-url-0: url('${escapeCssUrl(preRenderedThumbnailUrl)}')`);
       if (watchProgress > 0) styleParts.push(`--watch-progress: ${limitPrecision(watchProgress * 100, 2)}%`);
@@ -1349,11 +1352,11 @@
       const safeStyle = escapeAttr(styleValue);
       const isAudioClass = (isAudio(url) ? 'audio-file' : '');
 
-      return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' title='${safeTitle}' style='${safeStyle}' draggable='false'>
+      return `<a href='${escapedUrl}' class='file ${isAudioClass} ${optionalClasses}' data-i18n-title='library.play' data-i18n-params='${titleParams}' title='${safeTitle}' style='${safeStyle}' draggable='false'>
                 <div class='title' draggable='false'>
-                  <span class='file-label'><span class='label'>${safeLabel}</span><span class='file-resume'></span></span>
-                  <span class='watched-icon' role='img' aria-label='Played' title='This media has been played'><svg aria-hidden='true' focusable='false'><use xlink:href='#svg-checkmark-circle'/></svg></span>
-                  <button class='btn-add-to-playlist' type='button' title='Add to playlist' aria-label='Add to playlist'>
+                  <span class='file-label'><span class='label' dir='auto'>${safeLabel}</span><span class='file-resume'></span></span>
+                  <span class='watched-icon' role='img' data-i18n-aria-label='ui.played' aria-label='${escapeAttr(t("ui.played"))}' data-i18n-title='ui.this-media-has-been-played' title='${escapeAttr(t("ui.this-media-has-been-played"))}'><svg aria-hidden='true' focusable='false'><use xlink:href='#svg-checkmark-circle'/></svg></span>
+                  <button class='btn-add-to-playlist' type='button' data-i18n-title='ui.add-to-playlist' title='${escapeAttr(t("ui.add-to-playlist"))}' data-i18n-aria-label='ui.add-to-playlist' aria-label='${escapeAttr(t("ui.add-to-playlist"))}'>
                     <svg><use xlink:href='#svg-playlist-add'/></svg>
                   </button>
                 </div>
@@ -1365,20 +1368,21 @@
 
     const createFolderTemplate = (url, label, optionalClasses = '') => {
       const escapedUrl = escapeAttr(url);
-      const safeTitle = escapeAttr(`Navigate to ${url}`);
+      const safeTitle = escapeAttr(t('library.navigate', { url }));
+      const titleParams = escapeAttr(JSON.stringify({ url }));
       const isParent = optionalClasses.split(' ').includes('parent');
-      const displayLabel = (isParent ? 'Parent Folder' : label);
+      const displayLabel = (isParent ? t('library.parent') : label);
       const safeLabel = escapeHtml(displayLabel);
       const addButton = (isParent ? '' : `
-                  <button class='btn-add-to-playlist' type='button' title='Add folder to playlist' aria-label='Add folder to playlist'>
+                  <button class='btn-add-to-playlist' type='button' data-i18n-title='ui.add-folder-to-playlist' title='${escapeAttr(t("ui.add-folder-to-playlist"))}' data-i18n-aria-label='ui.add-folder-to-playlist' aria-label='${escapeAttr(t("ui.add-folder-to-playlist"))}'>
                     <svg><use xlink:href='#svg-playlist-add'/></svg>
                   </button>`);
 
-      return `<a href='${escapedUrl}' class='folder ${optionalClasses}' draggable='false' title='${safeTitle}'>
+      return `<a href='${escapedUrl}' class='folder ${optionalClasses}' data-i18n-title='library.navigate' data-i18n-params='${titleParams}' draggable='false' title='${safeTitle}'>
                 <div class='title' draggable='false'>
                   <span class='folder-label'>
                     <svg class='icon'><use xlink:href='#svg-folder-${isParent ? 'arrow' : 'closed'}'/></svg>
-                    <span class="label">${safeLabel}</span>
+                    <span class="label" dir='auto'>${safeLabel}</span>
                   </span>
                   ${addButton}
                 </div>
@@ -2106,10 +2110,10 @@
     const posterWebPQuality = 0.85;
 
     const subtitleFontOptions = [
-      { value: 'sans', label: 'Sans' },
-      { value: 'serif', label: 'Serif' },
-      { value: 'mono', label: 'Monospace' },
-      { value: 'casual', label: 'Casual' }
+      { value: 'sans', label: "subtitle.font.sans" },
+      { value: 'serif', label: "subtitle.font.serif" },
+      { value: 'mono', label: "subtitle.font.mono" },
+      { value: 'casual', label: "subtitle.font.casual" }
     ];
     const subtitleSizeOptions = [
       { value: '50%', label: '50%' },
@@ -2119,12 +2123,12 @@
       { value: '200%', label: '200%' }
     ];
     const subtitlePositionOptions = [
-      { value: 'author', label: 'Author default' },
-      { value: 90, label: 'Bottom' },
-      { value: 75, label: 'Lower-middle' },
-      { value: 60, label: 'Middle' },
-      { value: 35, label: 'Upper-middle' },
-      { value: 20, label: 'Top' }
+      { value: 'author', label: "subtitle.position.author" },
+      { value: 90, label: "subtitle.position.bottom" },
+      { value: 75, label: "subtitle.position.lowerMiddle" },
+      { value: 60, label: "subtitle.position.middle" },
+      { value: 35, label: "subtitle.position.upperMiddle" },
+      { value: 20, label: "subtitle.position.top" }
     ];
 
     const subtitleFontValues = subtitleFontOptions.map((opt) => opt.value);
@@ -2455,7 +2459,7 @@
     }
 
     const importPlaylistFromUrl = async () => {
-      const input = prompt('Enter an M3U URL');
+      const input = prompt(t('playlist.enterUrl'));
       if (!input) return;
 
       var url;
@@ -2555,39 +2559,39 @@
 
       var html = `
         <li class='modal-item playlist-controls'>
-          <button class='btn-playlist-import-url' type='button' title='Import playlist from URL (requires CORS support)'>
+          <button class='btn-playlist-import-url' type='button' data-i18n-title='ui.import-playlist-from-url-requires-cors' title='${escapeAttr(t("ui.import-playlist-from-url-requires-cors"))}'>
             <svg><use xlink:href='#svg-import'/></svg>
-            <span>Import URL</span>
+            <span data-i18n='ui.import-url'>${escapeHtml(t("ui.import-url"))}</span>
           </button>
-          <button class='btn-playlist-import-file' type='button' title='Import playlist file'>
+          <button class='btn-playlist-import-file' type='button' data-i18n-title='ui.import-playlist-file' title='${escapeAttr(t("ui.import-playlist-file"))}'>
             <svg><use xlink:href='#svg-import'/></svg>
-            <span>Import File</span>
+            <span data-i18n='ui.import-file'>${escapeHtml(t("ui.import-file"))}</span>
           </button>
-          <button class='btn-playlist-restore' type='button' title='Restore playlist from localStorage'>
+          <button class='btn-playlist-restore' type='button' data-i18n-title='ui.restore-playlist-from-localstorage' title='${escapeAttr(t("ui.restore-playlist-from-localstorage"))}'>
             <svg><use xlink:href='#svg-import'/></svg>
-            <span>Restore</span>
+            <span data-i18n='ui.restore'>${escapeHtml(t("ui.restore"))}</span>
           </button>
-          <button class='btn-playlist-save' type='button' title='Save playlist to localStorage'>
+          <button class='btn-playlist-save' type='button' data-i18n-title='ui.save-playlist-to-localstorage' title='${escapeAttr(t("ui.save-playlist-to-localstorage"))}'>
             <svg><use xlink:href='#svg-save'/></svg>
-            <span>Save</span>
+            <span data-i18n='ui.save'>${escapeHtml(t("ui.save"))}</span>
           </button>
-          <button class='btn-playlist-export' type='button' title='Export playlist'>
+          <button class='btn-playlist-export' type='button' data-i18n-title='ui.export-playlist' title='${escapeAttr(t("ui.export-playlist"))}'>
             <svg><use xlink:href='#svg-download'/></svg>
-            <span>Export</span>
+            <span data-i18n='ui.export'>${escapeHtml(t("ui.export"))}</span>
           </button>
-          <button class='btn-playlist-add-folder' type='button' title='Add all files from current folder view'>
+          <button class='btn-playlist-add-folder' type='button' data-i18n-title='ui.add-all-files-from-current-folder' title='${escapeAttr(t("ui.add-all-files-from-current-folder"))}'>
             <svg><use xlink:href='#svg-playlist-add'/></svg>
-            <span>Add All</span>
+            <span data-i18n='ui.add-all'>${escapeHtml(t("ui.add-all"))}</span>
           </button>
-          <button class='btn-playlist-clear' type='button' title='Clear playlist'>
+          <button class='btn-playlist-clear' type='button' data-i18n-title='ui.clear-playlist' title='${escapeAttr(t("ui.clear-playlist"))}'>
             <svg><use xlink:href='#svg-delete-dismiss'/></svg>
-            <span>Clear</span>
+            <span data-i18n='ui.clear'>${escapeHtml(t("ui.clear"))}</span>
           </button>
         </li>
       `;
 
       if (!Array.isArray(app.playlist) || app.playlist.length === 0) {
-        html += `<li class='modal-item playlist-empty'>Playlist is empty</li>`;
+        html += `<li class='modal-item playlist-empty' data-i18n='ui.playlist-is-empty'>${escapeHtml(t("ui.playlist-is-empty"))}</li>`;
       } else {
         app.playlist.forEach((item, index) => {
           const isCurrent = (index === currentIndex ? 'current' : '');
@@ -2595,11 +2599,11 @@
           const safeLabel = escapeHtml(item.label);
           html += `
             <li class='modal-item playlist-item ${isCurrent}' data-index='${index}' title='${safeTitle}'>
-              <span class='playlist-label'>${safeLabel}</span>
+              <span class='playlist-label' dir='auto'>${safeLabel}</span>
               <span class='playlist-actions'>
-                <button class='btn-playlist-up' type='button' title='Move up' aria-label='Move up'><svg><use xlink:href='#svg-caret-up'/></svg></button>
-                <button class='btn-playlist-down' type='button' title='Move down' aria-label='Move down'><svg><use xlink:href='#svg-caret-down'/></svg></button>
-                <button class='btn-playlist-remove' type='button' title='Remove from playlist' aria-label='Remove from playlist'><svg><use xlink:href='#svg-playlist-remove'/></svg></button>
+                <button class='btn-playlist-up' type='button' data-i18n-title='ui.move-up' title='${escapeAttr(t("ui.move-up"))}' data-i18n-aria-label='ui.move-up' aria-label='${escapeAttr(t("ui.move-up"))}'><svg><use xlink:href='#svg-caret-up'/></svg></button>
+                <button class='btn-playlist-down' type='button' data-i18n-title='ui.move-down' title='${escapeAttr(t("ui.move-down"))}' data-i18n-aria-label='ui.move-down' aria-label='${escapeAttr(t("ui.move-down"))}'><svg><use xlink:href='#svg-caret-down'/></svg></button>
+                <button class='btn-playlist-remove' type='button' data-i18n-title='ui.remove-from-playlist' title='${escapeAttr(t("ui.remove-from-playlist"))}' data-i18n-aria-label='ui.remove-from-playlist' aria-label='${escapeAttr(t("ui.remove-from-playlist"))}'><svg><use xlink:href='#svg-playlist-remove'/></svg></button>
               </span>
             </li>
           `;
@@ -2817,7 +2821,7 @@
       $progressBar.attr('aria-valuemin', '0');
       $progressBar.attr('aria-valuemax', `${Math.floor(max)}`);
       $progressBar.attr('aria-valuenow', `${Math.floor(current)}`);
-      $progressBar.attr('aria-valuetext', `${secondsToString(current)} of ${secondsToString(max)}`);
+      $progressBar.attr('aria-valuetext', t('playback.position', { position: secondsToString(current), duration: secondsToString(max) }));
       $progressBar.attr('aria-disabled', max > 0 ? 'false' : 'true');
     }
 
@@ -3195,12 +3199,12 @@
     }
     const getFileinfoActionSectionHtml = () => {
       return `
-        <li class='modal-item modal-section-heading fileinfo-actions-heading'>Actions</li>
+        <li class='modal-item modal-section-heading fileinfo-actions-heading' data-i18n='ui.actions'>${escapeHtml(t("ui.actions"))}</li>
         <li class='modal-item setting-item fileinfo-action-item'>
-          <span class='key'>Take screenshot (Shift+S)</span>
+          <span class='key' data-i18n='ui.take-screenshot-shift-s'>${escapeHtml(t("ui.take-screenshot-shift-s"))}</span>
           <button type='button' class='fileinfo-screenshot'>
             <svg><use xlink:href='#svg-screenshot'/></svg>
-            <span>Capture</span>
+            <span data-i18n='ui.capture'>${escapeHtml(t("ui.capture"))}</span>
           </button>
         </li>
       `;
@@ -3859,7 +3863,7 @@
     }
 
     const createDisableSubtitlesItem = () => {
-      const $toggle = $(`<li class='subtitle-item modal-item subtitle-choice disable-subtitles' tabindex='0'>Turn off subtitles</li>`);
+      const $toggle = $(`<li class='subtitle-item modal-item subtitle-choice disable-subtitles' tabindex='0' data-i18n='ui.turn-off-subtitles'>${escapeHtml(t("ui.turn-off-subtitles"))}</li>`);
       $($toggle).on('click', (e) => {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -3987,10 +3991,10 @@
 
       const cueCount = subtitleTranscriptState.cueCount || 0;
       const statusText = (() => {
-        if (subtitleTranscriptState.status === 'loading') return 'Indexing subtitle transcript...';
-        if (subtitleTranscriptState.status === 'error') return `Transcript search unavailable: ${subtitleTranscriptState.error || 'Unknown error'}`;
-        if (cueCount === 0) return 'No searchable subtitle cues found';
-        return `${cueCount} searchable cues`;
+        if (subtitleTranscriptState.status === 'loading') return t('transcript.indexing');
+        if (subtitleTranscriptState.status === 'error') return t('transcript.error', { error: subtitleTranscriptState.error || t('ui.unknownError') });
+        if (cueCount === 0) return t('transcript.noCues');
+        return t('transcript.cues', { count: cueCount, total: i18n.number(cueCount) });
       })();
       const disabled = subtitleTranscriptState.status === 'ready' && cueCount > 0 ? '' : ' disabled';
       const query = escapeAttr(subtitleTranscriptState.query || '');
@@ -3998,18 +4002,18 @@
         ? (subtitleTranscriptState.results.length > 0
           ? subtitleTranscriptState.results.map((result) => `
               <li class='subtitle-transcript-item subtitle-transcript-result modal-item' tabindex='0' data-seek-time='${escapeAttr(result.start)}'>
-                <span class='subtitle-transcript-time'>${secondsToString(result.start)}</span>
-                <span class='subtitle-transcript-text'>${escapeHtml(result.text)}</span>
+                <span class='subtitle-transcript-time' dir='ltr'>${secondsToString(result.start)}</span>
+                <span class='subtitle-transcript-text' dir='auto'>${escapeHtml(result.text)}</span>
               </li>
             `).join('')
-          : `<li class='subtitle-transcript-item modal-item subtitle-transcript-empty'>No matching cues</li>`)
+          : `<li class='subtitle-transcript-item modal-item subtitle-transcript-empty' data-i18n='ui.no-matching-cues'>${escapeHtml(t("ui.no-matching-cues"))}</li>`)
         : '';
 
       const html = `
-        <li class='modal-item subtitle-section-heading subtitle-transcript-heading'>Transcript search</li>
+        <li class='modal-item subtitle-section-heading subtitle-transcript-heading' data-i18n='ui.transcript-search'>${escapeHtml(t("ui.transcript-search"))}</li>
         <li class='subtitle-transcript-item modal-item subtitle-transcript-search'>
           <label class='subtitle-transcript-search-label'>
-            <input class='subtitle-transcript-input' type='search' placeholder='Search loaded subtitles' value='${query}' autocomplete='off' spellcheck='false'${disabled}>
+            <input class='subtitle-transcript-input' dir='auto' type='search' data-i18n-placeholder='ui.search-loaded-subtitles' placeholder='${escapeAttr(t("ui.search-loaded-subtitles"))}' value='${query}' autocomplete='off' spellcheck='false'${disabled}>
             <span class='subtitle-transcript-status'>${escapeHtml(statusText)}</span>
           </label>
         </li>
@@ -4085,7 +4089,7 @@
 
       if (subtitles.length === 0) {
         $body.addClass('no-subtitles');
-        html = `<li class='subtitle-item modal-item'>No subtitles found in current folder</li>`;
+        html = `<li class='subtitle-item modal-item' data-i18n='ui.no-subtitles-found-in-current-folder'>${escapeHtml(t("ui.no-subtitles-found-in-current-folder"))}</li>`;
       } else {
         $body.removeClass('no-subtitles');
 
@@ -4103,6 +4107,7 @@
 
       const list = [...$subtitles.querySelectorAll('.subtitle-choice[data-subtitle-url]')];
       list.forEach((choice) => {
+        choice.dir = 'auto';
         const $choice = $(choice);
         $choice.on('click', (e) => {
           e.preventDefault();
@@ -4275,10 +4280,12 @@
 
       const skipDuration = Math.abs(getSkipDuration());
       const replayDuration = Math.abs(getReplayDuration());
-      const forwardTitle = (skipDuration > 1 ? `${skipDuration} seconds` : `1 frame`);
-      const rewindTitle = (replayDuration > 1 ? `${replayDuration} seconds` : `1 frame`);
-      $('.btn-fast-forward').title = `Go forward ${forwardTitle} [Right Arrow]`;
-      $('.btn-rewind').title       = `Go back ${rewindTitle} [Left Arrow]`;
+      const forwardTitle = skipDuration > 1 ? t('playback.seconds', { count: skipDuration, total: i18n.number(skipDuration) }) : t('playback.frame');
+      const rewindTitle = replayDuration > 1 ? t('playback.seconds', { count: replayDuration, total: i18n.number(replayDuration) }) : t('playback.frame');
+      $('.btn-fast-forward').removeAttribute('data-i18n-title');
+      $('.btn-rewind').removeAttribute('data-i18n-title');
+      $('.btn-fast-forward').title = t('playback.forward', { amount: forwardTitle });
+      $('.btn-rewind').title = t('playback.back', { amount: rewindTitle });
     }
 
     const actionStop = () => {
@@ -4795,7 +4802,7 @@
       const input = ($input && isString($input.value) ? $input.value.trim() : '');
 
       if (!input) {
-        setOpenUrlError('Enter a folder or media URL.');
+        setOpenUrlError('openUrl.required');
         if ($input && typeof $input.focus === 'function') $input.focus();
         return;
       }
@@ -4805,7 +4812,7 @@
       if (opened) {
         hideModals();
       } else {
-        setOpenUrlError('Unable to open URL. Check CORS and directory listing support.');
+        setOpenUrlError('openUrl.failed');
         if ($input && typeof $input.focus === 'function') $input.focus();
       }
     }
@@ -5300,19 +5307,19 @@
     const isSubtitleSetting = (key) => subtitleSettingKeys.has(key);
     const generalSettingSections = [
       {
-        label: 'Interface',
-        keys: ['hue', 'blur', 'transitions', 'poster-upload', 'poster-reset']
+        label: "settings.section.interface",
+        keys: ['language', 'hue', 'blur', 'transitions', 'poster-upload', 'poster-reset']
       },
       {
-        label: 'Playback & Library',
+        label: "settings.section.playback",
         keys: ['wake-lock', 'watch-history', 'watch-history-clear', 'playlist-depth', 'search-depth']
       },
       {
-        label: 'Thumbnails & Storage',
+        label: "settings.section.storage",
         keys: ['thumbnailing', 'animate', 'cache']
       },
       {
-        label: 'Configuration',
+        label: "settings.section.configuration",
         keys: ['export-config', 'export-manifest', 'reset']
       }
     ];
@@ -5331,7 +5338,7 @@
 
         if (typeof value !== 'boolean' && !isSelect) {
           if (setting.type === 'button') {
-            valueAttribute = `value="${setting.buttonLabel}"`;
+            valueAttribute = `value="${escapeAttr(t(setting.buttonLabel))}"`;
           } else if (setting.type === 'color') {
             if (typeof value === 'number') {
               const sat = (key === 'hue' ? settings.saturation.get() : 100);
@@ -5348,7 +5355,7 @@
         const buttonIcon = setting.icon
           ? `<svg><use xlink:href="#${escapeAttr(setting.icon)}"/></svg>`
           : '';
-        const buttonLabel = escapeHtml(setting.buttonLabel || 'Action');
+        const buttonLabel = escapeHtml(t(setting.buttonLabel || 'ui.action'));
         const control = (isSelect
           ? (() => {
               const hasSelectedOption = (setting.options || []).some((opt) => {
@@ -5363,21 +5370,22 @@
                   const optValue = (opt && typeof opt === 'object' ? opt.value : opt);
                   const optLabel = (opt && typeof opt === 'object' ? opt.label : opt);
                   const safeValue = escapeAttr(optValue);
-                  const safeLabel = escapeHtml(optLabel);
+                  const translated = !opt.native && typeof optLabel === 'string' && !/^[\d.%]+$/.test(optLabel);
+                  const safeLabel = escapeHtml(translated ? t(optLabel) : optLabel);
                   const selected = (String(value) === String(optValue) ? ' selected' : '');
-                  return `<option value="${safeValue}"${selected}>${safeLabel}</option>`;
+                  return `<option value="${safeValue}"${opt.native ? ` lang="${safeValue}" dir="auto"` : ''}${translated ? ` data-i18n="${escapeAttr(optLabel)}"` : ''}${selected}>${safeLabel}</option>`;
                 })
                 .join('');
-              return `<select class='setting-${key}'${attrs}>${options}</select>`;
+              return `<select class='setting-${key}' data-i18n-aria-label='${setting.label}' aria-label='${escapeAttr(t(setting.label))}'${attrs}>${options}</select>`;
             })()
           : (type === 'button'
-            ? `<button type="button" class='setting-${key}'${attrs}>${buttonIcon}<span>${buttonLabel}</span></button>`
-            : `<input type="${type}" class='setting-${key}' ${valueAttribute} ${checked}${attrs}>`
+            ? `<button type="button" class='setting-${key}'${attrs}>${buttonIcon}<span data-i18n="${escapeAttr(setting.buttonLabel)}">${buttonLabel}</span></button>`
+            : `<input type="${type}" class='setting-${key}' data-i18n-aria-label='${setting.label}' aria-label='${escapeAttr(t(setting.label))}' ${valueAttribute} ${checked}${attrs}>`
           )
         );
 
         return `${acc}
-          <li class='modal-item ${itemClass}' title='${setting.desc}'><span class='key'>${setting.label}</span>
+          <li class='modal-item ${itemClass}' data-i18n-title='${setting.desc}' title='${escapeAttr(t(setting.desc))}'><span class='key' data-i18n='${setting.label}'>${escapeHtml(t(setting.label))}</span>
             <span class='desc'>
               <label>${control}<span class="metadata"></span></label>
             </span>
@@ -5393,13 +5401,13 @@
         if (sectionKeys.length === 0) return acc;
         sectionKeys.forEach((key) => renderedKeys.add(key));
         return `${acc}
-          <li class='modal-item modal-section-heading settings-section-heading'>${escapeHtml(section.label)}</li>${renderSettingRows(sectionKeys, useDefaults, 'setting-item')}`;
+          <li class='modal-item modal-section-heading settings-section-heading' data-i18n='${section.label}'>${escapeHtml(t(section.label))}</li>${renderSettingRows(sectionKeys, useDefaults, 'setting-item')}`;
       }, '');
 
       const ungroupedKeys = keys.filter((key) => !renderedKeys.has(key));
       if (ungroupedKeys.length === 0) return html;
       return `${html}
-          <li class='modal-item modal-section-heading settings-section-heading'>Other</li>${renderSettingRows(ungroupedKeys, useDefaults, 'setting-item')}`;
+          <li class='modal-item modal-section-heading settings-section-heading' data-i18n='ui.other'>${escapeHtml(t("ui.other"))}</li>${renderSettingRows(ungroupedKeys, useDefaults, 'setting-item')}`;
     }
 
     const bindSettingControls = (keys) => {
@@ -5448,7 +5456,7 @@
       refreshSettingDefaultsFromOptions();
       const keys = Object.keys(settings).filter((key) => isSubtitleSetting(key));
       const rows = renderSettingRows(keys, useDefaults, 'setting-item subtitle-setting-item');
-      const html = `<li class='modal-item subtitle-section-heading subtitle-settings-heading'>Subtitle display settings</li>${rows}`;
+      const html = `<li class='modal-item subtitle-section-heading subtitle-settings-heading' data-i18n='ui.subtitle-display-settings'>${escapeHtml(t("ui.subtitle-display-settings"))}</li>${rows}`;
       const old = [...$subtitles.querySelectorAll('.subtitle-settings-heading, .subtitle-setting-item')];
       old.forEach((el) => $(el).remove());
       $subtitles.insertAdjacentHTML('beforeend', html);
@@ -5498,9 +5506,23 @@
     checkIncorrectDefaultHue();
 
     const settings = {
+      language: {
+        label: 'settings.language.label',
+        desc: 'settings.language.desc',
+        type: 'select',
+        event: 'change',
+        default: 'auto',
+        options: [{ value: 'auto', label: 'settings.language.auto' }, ...i18n.locales.map(item => ({ value: item.locale, label: item.name, native: true }))],
+        get: () => i18n.preference,
+        set: value => {
+          persistSetting('language', value);
+          i18n.setLanguage(value);
+        },
+        update: () => settings.language.set($('.setting-language').value)
+      },
       hue: {
-        label: 'Theme color',
-        desc: 'Set the theme color for player.html, including grayscale values.',
+        label: "settings.hue.label",
+        desc: "settings.hue.desc",
         event: 'input',
         type: 'color',
         default: getThemeHueDefault(),
@@ -5531,8 +5553,8 @@
         update: () => {}
       },
       blur: {
-        label: 'UI Blur Effects',
-        desc: 'Enable/diable blur effects in the UI',
+        label: "settings.blur.label",
+        desc: "settings.blur.desc",
         event: 'change',
         default: normalizeBooleanSetting(getOptionSettingDefault('blur', true), true),
         get: () => typeof retrieveSetting('blur') !== 'undefined' ? retrieveSetting('blur') : settings.blur.default,
@@ -5552,8 +5574,8 @@
         }
       },
       transitions: {
-        label: 'UI Transitions',
-        desc: 'Enable/disable animated transitions in the UI',
+        label: "settings.transitions.label",
+        desc: "settings.transitions.desc",
         event: 'change',
         default: normalizeBooleanSetting(getOptionSettingDefault('transitions', true), true),
         get: () => typeof retrieveSetting('transitions') !== 'undefined' ? retrieveSetting('transitions') : settings.transitions.default,
@@ -5573,8 +5595,8 @@
         }
       },
       'auto-subtitles': {
-        label: 'Auto-load matching subtitles',
-        desc: 'Automatically load a subtitle file that shares the video filename (e.g. .vtt or .srt).',
+        label: "settings.auto-subtitles.label",
+        desc: "settings.auto-subtitles.desc",
         event: 'change',
         default: getAutoSubtitleDefault(),
         get: () => typeof retrieveSetting('auto-subtitles') !== 'undefined' ? retrieveSetting('auto-subtitles') : settings['auto-subtitles'].default,
@@ -5590,8 +5612,8 @@
         }
       },
       'subtitle-font': {
-        label: 'Subtitle font',
-        desc: 'Set subtitle font family.',
+        label: "settings.subtitle-font.label",
+        desc: "settings.subtitle-font.desc",
         event: 'change',
         type: 'select',
         options: subtitleFontOptions,
@@ -5607,8 +5629,8 @@
         }
       },
       'subtitle-size': {
-        label: 'Subtitle size',
-        desc: 'Set subtitle font size.',
+        label: "settings.subtitle-size.label",
+        desc: "settings.subtitle-size.desc",
         event: 'change',
         type: 'select',
         options: subtitleSizeOptions,
@@ -5624,8 +5646,8 @@
         }
       },
       'subtitle-position': {
-        label: 'Subtitle position',
-        desc: 'Fallback vertical position used only when cues have no authored line setting.',
+        label: "settings.subtitle-position.label",
+        desc: "settings.subtitle-position.desc",
         event: 'change',
         type: 'select',
         options: subtitlePositionOptions,
@@ -5641,8 +5663,8 @@
         }
       },
       'subtitle-color': {
-        label: 'Subtitle color',
-        desc: 'Set subtitle text color.',
+        label: "settings.subtitle-color.label",
+        desc: "settings.subtitle-color.desc",
         event: 'input',
         type: 'color',
         default: getSubtitleColorDefault(),
@@ -5657,8 +5679,8 @@
         }
       },
       'subtitle-background': {
-        label: 'Subtitle background',
-        desc: 'Set subtitle background color.',
+        label: "settings.subtitle-background.label",
+        desc: "settings.subtitle-background.desc",
         event: 'input',
         type: 'color',
         default: getSubtitleBackgroundDefault(),
@@ -5673,8 +5695,8 @@
         }
       },
       'subtitle-shadow': {
-        label: 'Text shadow background',
-        desc: 'Use transparent subtitle backgrounds with a drop shadow offset down and right.',
+        label: "settings.subtitle-shadow.label",
+        desc: "settings.subtitle-shadow.desc",
         event: 'change',
         default: getSubtitleShadowDefault(),
         get: () => normalizeSubtitleShadow(retrieveSetting('subtitle-shadow'), settings['subtitle-shadow'].default),
@@ -5698,10 +5720,10 @@
         update: () => {}
       },
       'poster-upload': {
-        label: 'Custom poster image',
-        buttonLabel: 'Upload',
+        label: "settings.poster-upload.label",
+        buttonLabel: "ui.upload",
         icon: 'svg-image-add',
-        desc: 'Upload a custom player poster image (resized to fit 1920x1080 and encoded as WebP when supported).',
+        desc: "settings.poster-upload.desc",
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5709,10 +5731,10 @@
         update: () => {}
       },
       'poster-reset': {
-        label: 'Reset poster image',
-        buttonLabel: 'Reset',
+        label: "settings.poster-reset.label",
+        buttonLabel: "ui.reset",
         icon: 'svg-image-reset',
-        desc: 'Clear custom poster image and return to configured/default poster.',
+        desc: "settings.poster-reset.desc",
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5720,8 +5742,8 @@
         update: () => {}
       },
       'wake-lock': {
-        label: 'Prevent screen sleep',
-        desc: 'Keep the screen awake while audio or video is playing, when supported by the browser.',
+        label: "settings.wake-lock.label",
+        desc: "settings.wake-lock.desc",
         event: 'change',
         default: getWakeLockDefault(),
         get: () => typeof retrieveSetting('wake-lock') !== 'undefined' ? retrieveSetting('wake-lock') : settings['wake-lock'].default,
@@ -5734,8 +5756,8 @@
         }
       },
       'watch-history': {
-        label: 'Remember playback history',
-        desc: 'Remember playback positions and completion status for recent media.',
+        label: "settings.watch-history.label",
+        desc: "settings.watch-history.desc",
         event: 'change',
         default: getWatchHistoryDefault(),
         get: () => typeof retrieveSetting('watch-history') !== 'undefined' ? retrieveSetting('watch-history') : settings['watch-history'].default,
@@ -5748,10 +5770,10 @@
         }
       },
       'watch-history-clear': {
-        label: 'Clear playback history',
-        buttonLabel: 'Clear',
+        label: "settings.watch-history-clear.label",
+        buttonLabel: "ui.clear",
         icon: 'svg-broom',
-        desc: 'Clear remembered playback positions and completion status.',
+        desc: "settings.watch-history-clear.desc",
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5759,10 +5781,10 @@
         update: () => {}
       },
       'subtitle-reset': {
-        label: 'Reset subtitle settings',
-        buttonLabel: 'Reset',
+        label: "settings.subtitle-reset.label",
+        buttonLabel: "ui.reset",
         icon: 'svg-arrow-reset',
-        desc: 'Reset subtitle-specific settings to their defaults.',
+        desc: "settings.subtitle-reset.desc",
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5773,8 +5795,8 @@
         update: () => {}
       },
       thumbnailing: {
-        label: 'Generate Thumbnails',
-        desc: 'Generate thumbnails for video listings. It may use a lot of bandwidth, especially in large folders of videos. Turn off if it causes playback problems.',
+        label: "settings.thumbnailing.label",
+        desc: "settings.thumbnailing.desc",
         event: 'change',
         default: normalizeBooleanSetting(getOptionSettingDefault('thumbnailing', true), true),
         get: () => typeof retrieveSetting('thumbnailing') !== 'undefined' ? retrieveSetting('thumbnailing') : settings.thumbnailing.default,
@@ -5791,8 +5813,8 @@
         }
       },
       animate: {
-        label: 'Animate Thumbnails',
-        desc: 'Generate animated thumbnails. Disable this to save bandwidth and IndexedDB cache space.',
+        label: "settings.animate.label",
+        desc: "settings.animate.desc",
         event: 'change',
         default: normalizeBooleanSetting(getOptionSettingDefault('animate', true), true),
         get: () => typeof retrieveSetting('animate') !== 'undefined' ? retrieveSetting('animate') : settings.animate.default,
@@ -5810,8 +5832,8 @@
         }
       },
       'playlist-depth': {
-        label: 'Playlist folder depth',
-        desc: 'How many folder levels to include when adding a folder to the playlist (1 = current folder only).',
+        label: "settings.playlist-depth.label",
+        desc: "settings.playlist-depth.desc",
         event: 'change',
         type: 'select',
         options: [1, 2, 3],
@@ -5826,8 +5848,8 @@
         }
       },
       'search-depth': {
-        label: 'Search folder depth',
-        desc: 'How many folder levels to include in the client-side search index (0 = disabled, 1 = current folder only).',
+        label: "settings.search-depth.label",
+        desc: "settings.search-depth.desc",
         event: 'change',
         type: 'select',
         options: [0, 1, 2, 3, 4, 5, 6],
@@ -5854,10 +5876,10 @@
         }
       },
       cache: {
-        label: 'Thumbnail cache',
-        buttonLabel: 'Clear',
+        label: "settings.cache.label",
+        buttonLabel: "ui.clear",
         icon: 'svg-broom',
-        desc: 'Amount of IndexedDB space in your browser that is being used to cache thumbnails',
+        desc: "settings.cache.desc",
         event: 'click',
         type: 'button',
         get: async () => Math.floor(await getThumbnailCacheSize() / 1024),
@@ -5868,16 +5890,16 @@
         update: throttle(async () => {
           if (!$settings.hasClass('show')) return;
           const size = await settings.cache.get();
-          const formattedSize = addCommas(size);
+          const formattedSize = i18n.number(size);
           const $metadata = $('.setting-cache + .metadata');
           if ($metadata) $metadata.html(formattedSize);
         }, 1000)
       },
       'export-config': {
-        label: 'Export settings file',
-        buttonLabel: 'Export',
+        label: "settings.export-config.label",
+        buttonLabel: "ui.export",
         icon: 'svg-document-download',
-        desc: `Download the current configuration as ${playerConfigFilename}`,
+        desc: 'settings.export-config.desc',
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5885,10 +5907,10 @@
         update: () => {}
       },
       'export-manifest': {
-        label: 'Export manifest.json',
-        buttonLabel: 'Export',
+        label: "settings.export-manifest.label",
+        buttonLabel: "ui.export",
         icon: 'svg-document-download',
-        desc: `Download a starter ${manifestFilename} for hosting next to player.html`,
+        desc: 'settings.export-manifest.desc',
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5896,10 +5918,10 @@
         update: () => {}
       },
       reset: {
-        label: 'Reset to defaults',
-        buttonLabel: 'Reset',
+        label: "settings.reset.label",
+        buttonLabel: "ui.reset",
         icon: 'svg-arrow-reset',
-        desc: 'Reset all settings to their defaults',
+        desc: "settings.reset.desc",
         event: 'click',
         type: 'button',
         get: () => {},
@@ -5938,7 +5960,7 @@
       settings['search-depth'].default = getSearchDepthDefault();
     }
 
-    const nonPersistedSettingKeys = new Set(['cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'watch-history-clear', 'export-config', 'export-manifest']);
+    const nonPersistedSettingKeys = new Set(['language', 'cache', 'reset', 'subtitle-reset', 'poster-upload', 'poster-reset', 'watch-history-clear', 'export-config', 'export-manifest']);
     const exportPlayerConfig = () => {
       const options = deepCloneValue(app.options);
       if (!isObjectRecord(options.settings)) options.settings = {};
@@ -6148,57 +6170,75 @@
     });
 
     const fileinfoGroups = {
-      media: 'Media',
-      network: 'HTTP & Range',
-      performance: 'Playback Performance',
-      playback: 'Playback State',
-      capabilities: 'Browser Capabilities'
+      media: "info.group.media",
+      network: "info.group.network",
+      performance: "info.group.performance",
+      playback: "info.group.playback",
+      capabilities: "info.group.capabilities"
     };
     const fileinfoGroupOrder = ['media', 'network', 'performance', 'playback', 'capabilities'];
     const fileinfoMapping = {
-      name: { name: 'Filename', group: 'media', desc: 'The decoded name of the currently loaded media file.', format: (v) => decodeURIComponent(v)},
-      duration: {name: 'Duration', group: 'media', desc: 'The media duration reported by the browser, in seconds.', format: (v) => limitPrecision(v, 2)},
-      width: {name: 'Width', group: 'media', desc: 'The intrinsic video width reported by the media element.'},
-      height: {name: 'Height', group: 'media', desc: 'The intrinsic video height reported by the media element.'},
-      subtitles: {name: 'Embedded Subtitles', group: 'media', desc: 'Number of text tracks currently exposed by the media element.'},
-      audioTracks: {name: 'Audio Tracks', group: 'media', desc: 'Number of audio tracks currently exposed by the browser, or 1 when track details are unavailable.'},
-      size: {name: 'Size', group: 'media', desc: 'File size from Content-Length, when the server exposes it.', format: (v) => `${limitPrecision(v / 1024 / 1024, 1)}MB`},
-      mimeType: {name: 'Type', group: 'media', desc: 'Content-Type header reported by the server.'},
-      date: { name: 'Date', group: 'media', desc: 'Last-Modified header reported by the server.', format: (d) => dateFormat(new Date(d))},
-      bitrate: {name: 'Bitrate', group: 'media', desc: 'Estimated average bitrate from file size divided by duration.', format: (v) => `${limitPrecision(v * 8 / 1024, 0)}kbps`},
+      name: { name: "info.name.name", group: 'media', desc: "info.name.desc", format: (v) => decodeURIComponent(v)},
+      duration: {name: "info.duration.name", group: 'media', desc: "info.duration.desc", format: (v) => limitPrecision(v, 2)},
+      width: {name: "info.width.name", group: 'media', desc: "info.width.desc"},
+      height: {name: "info.height.name", group: 'media', desc: "info.height.desc"},
+      subtitles: {name: "info.subtitles.name", group: 'media', desc: "info.subtitles.desc"},
+      audioTracks: {name: "info.audioTracks.name", group: 'media', desc: "info.audioTracks.desc"},
+      size: {name: "info.size.name", group: 'media', desc: "info.size.desc", format: (v) => `${i18n.number(limitPrecision(v / 1024 / 1024, 1))}MB`},
+      mimeType: {name: "info.mimeType.name", group: 'media', desc: "info.mimeType.desc"},
+      date: { name: "info.date.name", group: 'media', desc: "info.date.desc", format: (d) => dateFormat(new Date(d))},
+      bitrate: {name: "info.bitrate.name", group: 'media', desc: "info.bitrate.desc", format: (v) => `${i18n.number(limitPrecision(v * 8 / 1024, 0))}kbps`},
 
-      url: {name: 'URL', group: 'network', desc: 'The current media URL being played.'},
-      redirected: {name: 'Redirected', group: 'network', desc: 'Whether fetch() reports that the media request followed a redirect.'},
-      corsStatus: {name: 'CORS', group: 'network', desc: 'Whether browser CORS policy allowed metadata requests for this media.'},
-      corsError: {name: 'CORS Error', group: 'network', desc: 'Error reported when a CORS metadata request failed.'},
-      rangeRequests: {name: 'Range Requests', group: 'network', desc: 'Result of a small byte-range probe used to check seeking support.'},
-      rangeError: {name: 'Range Error', group: 'network', desc: 'Error reported when the byte-range probe failed.'},
-      contentEncoding: {name: 'Content-Encoding', group: 'network', desc: 'HTTP content encoding applied by the server, if any.'},
-      cacheControl: {name: 'Cache-Control', group: 'network', desc: 'Server cache policy for the media response.'},
-      etag: {name: 'ETag', group: 'network', desc: 'Server validator used to identify a specific version of the file.'},
+      url: {name: "info.url.name", group: 'network', desc: "info.url.desc"},
+      redirected: {name: "info.redirected.name", group: 'network', desc: "info.redirected.desc"},
+      corsStatus: {name: "info.corsStatus.name", group: 'network', desc: "info.corsStatus.desc"},
+      corsError: {name: "info.corsError.name", group: 'network', desc: "info.corsError.desc"},
+      rangeRequests: {name: "info.rangeRequests.name", group: 'network', desc: "info.rangeRequests.desc"},
+      rangeError: {name: "info.rangeError.name", group: 'network', desc: "info.rangeError.desc"},
+      contentEncoding: {name: "info.contentEncoding.name", group: 'network', desc: "info.contentEncoding.desc"},
+      cacheControl: {name: "info.cacheControl.name", group: 'network', desc: "info.cacheControl.desc"},
+      etag: {name: "info.etag.name", group: 'network', desc: "info.etag.desc"},
 
-      mediaError: {name: 'Media Error', group: 'playback', desc: 'Current HTMLMediaElement error state, if playback failed.'},
-      readyState: {name: 'Ready State', group: 'playback', desc: 'How much media data the browser currently has ready for playback.'},
-      networkState: {name: 'Network State', group: 'playback', desc: 'Current network loading state reported by the media element.'},
-      bufferedRanges: {name: 'Buffered', group: 'playback', desc: 'Time ranges already buffered by the browser.'},
-      seekableRanges: {name: 'Seekable', group: 'playback', desc: 'Time ranges the browser can seek within right now.'},
-      canPlayType: {name: 'canPlayType', group: 'playback', desc: 'Browser media engine confidence for the server-reported MIME type.'},
+      mediaError: {name: "info.mediaError.name", group: 'playback', desc: "info.mediaError.desc"},
+      readyState: {name: "info.readyState.name", group: 'playback', desc: "info.readyState.desc"},
+      networkState: {name: "info.networkState.name", group: 'playback', desc: "info.networkState.desc"},
+      bufferedRanges: {name: "info.bufferedRanges.name", group: 'playback', desc: "info.bufferedRanges.desc"},
+      seekableRanges: {name: "info.seekableRanges.name", group: 'playback', desc: "info.seekableRanges.desc"},
+      canPlayType: {name: "info.canPlayType.name", group: 'playback', desc: "info.canPlayType.desc"},
 
-      framerate: {name: 'Estimated Framerate', group: 'performance', desc: 'Approximate frame rate measured from requestVideoFrameCallback samples.', format: (v) => `${limitPrecision(v, 3)}fps`},
-      totalVideoFrames: {name: 'Total Video Frames', group: 'performance', desc: 'Total decoded/rendered video frames reported by getVideoPlaybackQuality().'},
-      droppedVideoFrames: {name: 'Dropped Video Frames', group: 'performance', desc: 'Frames the browser dropped during playback, indicating possible performance pressure.'},
-      corruptedVideoFrames: {name: 'Corrupted Video Frames', group: 'performance', desc: 'Frames reported as corrupted by the browser, when available.'},
-      requestDuration: {name: 'Request Duration', group: 'performance', desc: 'Resource timing duration for the media request, when available.', format: (v) => `${limitPrecision(v, 1)}ms`},
-      transferSize: {name: 'Transfer Size', group: 'performance', desc: 'Bytes transferred over the network from Resource Timing. Cross-origin values may be hidden.', format: (v) => `${limitPrecision(v / 1024, 1)}KB`},
-      encodedBodySize: {name: 'Encoded Body Size', group: 'performance', desc: 'Compressed response body size from Resource Timing. Cross-origin values may require Timing-Allow-Origin.', format: (v) => `${limitPrecision(v / 1024, 1)}KB`},
-      timingNote: {name: 'Timing Note', group: 'performance', desc: 'Explanation for missing or zeroed Resource Timing details.'},
+      framerate: {name: "info.framerate.name", group: 'performance', desc: "info.framerate.desc", format: (v) => `${i18n.number(limitPrecision(v, 3))}fps`},
+      totalVideoFrames: {name: "info.totalVideoFrames.name", group: 'performance', desc: "info.totalVideoFrames.desc"},
+      droppedVideoFrames: {name: "info.droppedVideoFrames.name", group: 'performance', desc: "info.droppedVideoFrames.desc"},
+      corruptedVideoFrames: {name: "info.corruptedVideoFrames.name", group: 'performance', desc: "info.corruptedVideoFrames.desc"},
+      requestDuration: {name: "info.requestDuration.name", group: 'performance', desc: "info.requestDuration.desc", format: (v) => `${i18n.number(limitPrecision(v, 1))}ms`},
+      transferSize: {name: "info.transferSize.name", group: 'performance', desc: "info.transferSize.desc", format: (v) => `${i18n.number(limitPrecision(v / 1024, 1))}KB`},
+      encodedBodySize: {name: "info.encodedBodySize.name", group: 'performance', desc: "info.encodedBodySize.desc", format: (v) => `${i18n.number(limitPrecision(v / 1024, 1))}KB`},
+      timingNote: {name: "info.timingNote.name", group: 'performance', desc: "info.timingNote.desc"},
 
-      fullscreenSupport: {name: 'Fullscreen Support', group: 'capabilities', desc: 'Whether this browser exposes the Fullscreen API for this page.'},
-      pictureInPictureSupport: {name: 'PiP Support', group: 'capabilities', desc: 'Whether this browser exposes native Picture-in-Picture for video.'},
-      wakeLockSupport: {name: 'Wake Lock Support', group: 'capabilities', desc: 'Whether this browser supports preventing screen sleep while playback is active.'},
-      mediaSessionSupport: {name: 'Media Session Support', group: 'capabilities', desc: 'Whether this browser supports OS media controls and lock-screen metadata.'},
-      localFolderSupport: {name: 'Local Folder Support', group: 'capabilities', desc: 'Whether this browser supports choosing a local folder with showDirectoryPicker().'},
-      videoFrameCallbackSupport: {name: 'Video Frame Callback Support', group: 'capabilities', desc: 'Whether this browser can report per-frame video timing through requestVideoFrameCallback().'}
+      fullscreenSupport: {name: "info.fullscreenSupport.name", group: 'capabilities', desc: "info.fullscreenSupport.desc"},
+      pictureInPictureSupport: {name: "info.pictureInPictureSupport.name", group: 'capabilities', desc: "info.pictureInPictureSupport.desc"},
+      wakeLockSupport: {name: "info.wakeLockSupport.name", group: 'capabilities', desc: "info.wakeLockSupport.desc"},
+      mediaSessionSupport: {name: "info.mediaSessionSupport.name", group: 'capabilities', desc: "info.mediaSessionSupport.desc"},
+      localFolderSupport: {name: "info.localFolderSupport.name", group: 'capabilities', desc: "info.localFolderSupport.desc"},
+      videoFrameCallbackSupport: {name: "info.videoFrameCallbackSupport.name", group: 'capabilities', desc: "info.videoFrameCallbackSupport.desc"}
+    };
+    const formatFileinfoValue = (key, value) => {
+      if (typeof value === 'boolean') return t(value ? 'ui.yes' : 'ui.no');
+      if (typeof value === 'number') return i18n.number(value);
+      const messages = {
+        rangeRequests: { 'Local file handle': 'info.localHandle', 'Unavailable': 'info.unavailable' },
+        corsStatus: { 'HEAD failed': 'info.headFailed' },
+        timingNote: { 'Detailed timing may require Timing-Allow-Origin': 'info.timingRestricted' },
+        bufferedRanges: { none: 'ui.none' },
+        seekableRanges: { none: 'ui.none' },
+        mediaError: { none: 'ui.none' },
+        canPlayType: { no: 'ui.no', unknown: 'ui.unknown', maybe: 'info.maybe', probably: 'info.probably' }
+      };
+      const message = messages[key]?.[value];
+      if (message) return t(message);
+      const status = key === 'rangeRequests' && /^(Supported|Unexpected) \(HTTP (\d+)\)$/.exec(value);
+      if (status) return t(status[1] === 'Supported' ? 'info.rangeSupported' : 'info.rangeUnexpected', { status: status[2] });
+      return value;
     };
     const renderFileinfo = (metadata = {}) => {
       app.metadata = metadata;
@@ -6211,12 +6251,12 @@
           return map && map.group === group;
         });
         if (groupKeys.length === 0) return;
-        html += `<li class='modal-item modal-section-heading fileinfo-section-heading'>${escapeHtml(fileinfoGroups[group])}</li>`;
+        html += `<li class='modal-item modal-section-heading fileinfo-section-heading'>${escapeHtml(t(fileinfoGroups[group]))}</li>`;
         groupKeys.forEach((key) => {
           const map = fileinfoMapping[key];
-          const label = map.name;
-          const value = (typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
-          const desc = map.desc || label;
+          const label = t(map.name);
+          const value = formatFileinfoValue(key, typeof map.format === 'function' ? map.format(metadata[key]) : metadata[key]);
+          const desc = t(map.desc || map.name);
           html += `<li class='fileinfo-item modal-item ${key}'><span class='key' title='${escapeAttr(desc)}'>${escapeHtml(label)}</span><span class="value">${escapeHtml(value)}</span></li>`;
         });
       });
@@ -6294,7 +6334,7 @@
     }
 
     const dateFormat = (d) => {
-      const formattedDate = Intl.DateTimeFormat(undefined, {
+      const formattedDate = Intl.DateTimeFormat(i18n.locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -6307,7 +6347,7 @@
 
     const resetFileinfo = () => {
       fileinfoRequestId += 1;
-      $fileinfo.html(`${getModalCloseButtonHtml()}${getFileinfoActionSectionHtml()}<li class="fileinfo-item modal-item">Metadata not yet loaded</li>`);
+      $fileinfo.html(`${getModalCloseButtonHtml()}${getFileinfoActionSectionHtml()}<li class="fileinfo-item modal-item" data-i18n='ui.metadata-not-yet-loaded'>${escapeHtml(t("ui.metadata-not-yet-loaded"))}</li>`);
       bindFileinfoActionHandlers();
       app.metadata = {};
     }
@@ -6717,10 +6757,25 @@
       });
 
       await loadPlayerConfig();
+      i18n.initialize(app.options.defaultLanguage);
 
       setupControls();
+      setupCloudPickers();
       renderSettingsControls();
       renderSubtitleSettingsControls();
+      libraryCollator = new Intl.Collator(i18n.locale, { numeric: true, sensitivity: 'base' });
+      window.addEventListener('playerlanguagechange', () => {
+        libraryCollator = new Intl.Collator(i18n.locale, { numeric: true, sensitivity: 'base' });
+        updateSearchControls();
+        updateProgressBarAria();
+        updatePlaybackRate();
+        renderSubtitleTranscriptControls();
+        const error = $('.open-url-error');
+        if (error?.dataset.errorKey) error.textContent = t(error.dataset.errorKey);
+        if (Object.keys(app.metadata || {}).length > 0) renderFileinfo(app.metadata);
+        renderLibraryView();
+        settings.cache.update();
+      });
       await applyTheme(settings.hue.get(), settings.saturation.get());
       applySubtitleStyleSettings();
       createAnimationCSS();

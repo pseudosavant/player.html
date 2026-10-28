@@ -14,6 +14,7 @@
         debug: false,
         // Optional initial folder or media URL. Relative paths resolve from the page URL.
         startLocation: '',
+        defaultLanguage: 'en',
         cloud: {
           onedrive: {
             clientId: ''

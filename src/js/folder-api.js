@@ -1,16 +1,28 @@
-/*! folder-api v2.1.0 browser bundle. Generated from TypeScript. MIT License. */
+/*! folder-api v3.0.0 browser bundle. Generated from TypeScript. MIT License. */
 
 // src/options.ts
 var integerOption = (value, fallback, minimum, maximum = Number.MAX_SAFE_INTEGER) => typeof value === "number" && Number.isFinite(value) ? Math.min(maximum, Math.max(minimum, Math.trunc(value))) : fallback;
 function normalizeOptions(opts) {
-  const cache = opts?.cache ?? "default";
+  const mode = opts?.mode === "fetch" || opts?.mode === "iframe" ? opts.mode : "auto";
+  const requestedCache = opts?.cache ?? "default";
+  const cache = ["default", "no-store", "no-cache", "reload", "force-cache", "only-if-cached"].includes(requestedCache) ? requestedCache : "default";
+  if (mode === "iframe" && cache !== "default") {
+    throw new TypeError(`mode: 'iframe' only supports cache: 'default'. Iframe navigation cannot honor cache: '${cache}'. Use mode: 'fetch' or mode: 'auto' instead.`);
+  }
+  const listingSelector = opts?.listingSelector;
+  if (listingSelector !== void 0 && (typeof listingSelector !== "string" || !listingSelector.trim())) {
+    throw new TypeError("listingSelector must be a nonempty CSS selector string");
+  }
   return {
     maxDepth: integerOption(opts?.maxDepth, 0, 0),
     maxEntries: integerOption(opts?.maxEntries, 5e4, 1, 5e4),
+    maxResponseBytes: integerOption(opts?.maxResponseBytes, 4 * 1024 * 1024, 1),
     continueOnError: opts?.continueOnError === true,
-    mode: opts?.mode === "fetch" || opts?.mode === "iframe" ? opts.mode : "auto",
-    cache: ["default", "no-store", "no-cache", "reload", "force-cache", "only-if-cached"].includes(cache) ? cache : "default",
+    mode,
+    cache,
+    listingSelector,
     includeMime: opts?.includeMime ?? false,
+    includeProvenance: opts?.includeProvenance === true,
     headConcurrency: integerOption(opts?.headConcurrency, 4, 1),
     timeoutMs: integerOption(opts?.timeoutMs, 15e3, 100, 2147483647),
     sameOriginOnly: opts?.sameOriginOnly ?? true,
@@ -30,6 +42,7 @@ function createRequestController(signal, timeoutMs) {
   const timer = setTimeout(() => controller.abort(new DOMException("Request timed out", "TimeoutError")), timeoutMs);
   return {
     signal: controller.signal,
+    abort: () => controller.abort(),
     dispose: () => {
       clearTimeout(timer);
       signal?.removeEventListener("abort", onAbort);
@@ -37,28 +50,148 @@ function createRequestController(signal, timeoutMs) {
   };
 }
 
+// src/utils/errors.ts
+function pushError(errors, prefix, message) {
+  errors.push(`${prefix}: ${message}`);
+}
+function recordError(sink, detail) {
+  sink.errors.push(detail.message);
+  sink.errorDetails.push(detail);
+}
+function recordParseErrors(sink, errors, url) {
+  for (const message of errors) {
+    const category = message.split(":", 1)[0];
+    recordError(sink, { category, code: category === "limit" ? "limit" : "parse", phase: "parse", url, message });
+  }
+}
+var RequestFailure = class extends Error {
+  constructor(details, cause) {
+    super(details.message);
+    this.details = details;
+    this.cause = cause;
+    this.name = details.code === "timeout" ? "TimeoutError" : "Error";
+  }
+};
+function describeCause(error) {
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return { name: "name" in error ? String(error.name) : "Error", message: String(error.message) };
+  }
+  return { name: "Error", message: String(error) };
+}
+function requestFailure(error, phase, url, timeoutMs) {
+  if (error instanceof RequestFailure) return error;
+  const cause = describeCause(error);
+  const code = cause.name === "TimeoutError" ? "timeout" : phase === "iframe" ? "iframe" : "network";
+  const operation = phase === "head" ? "HEAD" : phase === "fetch" ? "GET" : "iframe";
+  const message = code === "timeout" ? `${operation} ${url} timed out after ${timeoutMs}ms` : `${operation} ${url} failed: ${cause.name}: ${cause.message}`;
+  return new RequestFailure({ category: phase === "head" ? "mime" : "traversal", code, phase, url, message, cause }, error);
+}
+
+// src/utils/document.ts
+var htmlNamespace = "http://www.w3.org/1999/xhtml";
+function listingContentType(raw, phase, url) {
+  const type = raw.split(";", 1)[0].trim().toLowerCase();
+  if (type === "text/html" || type === "application/xhtml+xml") return type;
+  throw new RequestFailure({
+    category: "traversal",
+    code: "content-type",
+    phase,
+    url,
+    message: `${phase === "fetch" ? "GET" : "iframe"} ${url} returned unsupported content-type: ${raw || "(missing)"}`
+  });
+}
+function validateListingDocument(doc, type, url) {
+  if (type === "application/xhtml+xml" && (doc.getElementsByTagNameNS("*", "parsererror").length > 0 || doc.documentElement?.namespaceURI !== htmlNamespace || doc.documentElement.localName !== "html")) {
+    throw new RequestFailure({
+      category: "traversal",
+      code: "parse",
+      phase: "parse",
+      url,
+      message: `Malformed XHTML directory listing at ${url}`
+    });
+  }
+}
+function responseLimit(url, phase, maximum) {
+  return new RequestFailure({
+    category: "limit",
+    code: "response-limit",
+    phase,
+    url,
+    message: `Directory response for ${url} exceeds maxResponseBytes (${maximum} bytes)`
+  });
+}
+function checkSerializedSize(html, url, maximum) {
+  let bytes = 0;
+  for (const character of html) {
+    const point = character.codePointAt(0);
+    bytes += point <= 127 ? 1 : point <= 2047 ? 2 : point <= 65535 ? 3 : 4;
+    if (bytes > maximum) throw responseLimit(url, "iframe", maximum);
+  }
+}
+
 // src/core/fetchDirectory.ts
 async function fetchDirectoryHtml(url, opts, stats) {
   const request = createRequestController(opts.signal, opts.timeoutMs);
+  let res;
+  let complete = false;
   try {
-    const res = await fetch(url, {
+    stats.fetches++;
+    res = await fetch(url, {
       redirect: "follow",
       cache: opts.cache,
       mode: opts.cache === "only-if-cached" ? "same-origin" : void 0,
       signal: request.signal,
       headers: {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        "Accept": "text/html,application/xhtml+xml"
       }
     });
-    stats.fetches++;
-    if (res.status !== 200) throw new Error(`http ${res.status}${res.statusText ? " " + res.statusText : ""}`);
-    const ctype = res.headers.get("content-type") || "";
-    if (!/text\/html/i.test(ctype)) throw new Error(`not html content-type: ${ctype}`);
-    const html = await res.text();
+    if (res.status !== 200) throw new RequestFailure({
+      category: "traversal",
+      code: "http",
+      phase: "fetch",
+      url,
+      status: res.status,
+      message: `GET ${url} returned HTTP ${res.status}${res.statusText ? " " + res.statusText : ""}`
+    });
+    const contentType = listingContentType(res.headers.get("content-type") || "", "fetch", url);
+    const html = await readLimitedBody(res, res.url || url, opts.maxResponseBytes);
     throwIfAborted(opts.signal);
-    return { html, url: res.url || url };
+    complete = true;
+    return { html, url: res.url || url, contentType };
+  } catch (error) {
+    throwIfAborted(opts.signal);
+    throw requestFailure(request.signal.aborted ? request.signal.reason : error, "fetch", url, opts.timeoutMs);
   } finally {
+    if (!complete) {
+      request.abort();
+      if (res?.body && !res.body.locked) void res.body.cancel().catch(() => {
+      });
+    }
     request.dispose();
+  }
+}
+async function readLimitedBody(response, url, maximum) {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const parts = [];
+  let bytes = 0;
+  try {
+    for (; ; ) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > maximum) throw responseLimit(url, "fetch", maximum);
+      parts.push(decoder.decode(value, { stream: true }));
+    }
+    parts.push(decoder.decode());
+    return parts.join("");
+  } catch (error) {
+    void reader.cancel().catch(() => {
+    });
+    throw error;
+  } finally {
+    reader.releaseLock();
   }
 }
 
@@ -70,7 +203,7 @@ async function iframeDirectoryHtml(url, opts, stats) {
   iframe.setAttribute("sandbox", "allow-same-origin");
   Object.assign(iframe.style, { position: "absolute", width: "0", height: "0", border: "0", visibility: "hidden" });
   return await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => fail(new Error("iframe timeout")), opts.timeoutMs);
+    const timer = setTimeout(() => fail(new DOMException("iframe timeout", "TimeoutError")), opts.timeoutMs);
     function cleanup() {
       clearTimeout(timer);
       iframe.removeEventListener("load", onLoad);
@@ -80,7 +213,7 @@ async function iframeDirectoryHtml(url, opts, stats) {
     }
     function fail(error) {
       cleanup();
-      reject(error);
+      reject(opts.signal?.aborted ? opts.signal.reason ?? new DOMException("The operation was aborted", "AbortError") : requestFailure(error, "iframe", url, opts.timeoutMs));
     }
     function onAbort() {
       fail(opts.signal?.reason ?? new DOMException("The operation was aborted", "AbortError"));
@@ -91,7 +224,12 @@ async function iframeDirectoryHtml(url, opts, stats) {
         const doc = iframe.contentDocument;
         if (!doc) throw new Error("Unable to read iframe document. Same-origin access is required.");
         if (doc.URL === "about:blank") return;
-        const result = { html: doc.documentElement?.outerHTML || "", url: doc.URL || url };
+        const finalUrl = doc.URL || url;
+        const contentType = listingContentType(doc.contentType, "iframe", finalUrl);
+        validateListingDocument(doc, contentType, finalUrl);
+        const html = contentType === "application/xhtml+xml" ? new XMLSerializer().serializeToString(doc.documentElement) : doc.documentElement?.outerHTML || "";
+        checkSerializedSize(html, finalUrl, opts.maxResponseBytes);
+        const result = { html, url: finalUrl, contentType };
         cleanup();
         resolve(result);
       } catch (error) {
@@ -162,9 +300,7 @@ function isHiddenName(name) {
 function classifyEntry(href, metadataText) {
   const pathname = typeof href === "string" ? new URL(href).pathname : href.pathname;
   if (pathname.endsWith("/")) return "folder";
-  const last = pathname.split("/").filter(Boolean).pop() || "";
-  if (/^[^.].*\.[^.]+$/.test(last)) return "file";
-  if (/\b(dir|folder|directory)\b/i.test(metadataText)) return "folder";
+  if (/<\s*dir\s*>|\[(?:dir|folder|directory)\]/i.test(metadataText) || /^(?:dir|folder|directory)$/i.test(metadataText.trim())) return "folder";
   return "file";
 }
 function detectHidden(decodedName) {
@@ -172,43 +308,60 @@ function detectHidden(decodedName) {
 }
 
 // src/utils/date.ts
-var isoPattern = /\b(\d{4})-(\d{2})-(\d{2})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:?\d{2})?)?\b/i;
-var apachePattern = /\b(\d{1,2})-([a-z]{3})-(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\b/i;
-var usPattern = /\b(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\b/i;
-var isoGlobalPattern = new RegExp(isoPattern.source, "gi");
-var apacheGlobalPattern = new RegExp(apachePattern.source, "gi");
-function parseDateMeta(text, errors) {
-  const iso = isoPattern.exec(text);
-  if (iso) {
-    const remainder = text.slice(iso.index + iso[0].length);
-    if (/^(?:[:.]|[+-]\d|Z\b)/i.test(remainder) || !iso[4] && /^(?:T|\s+\d+:)/i.test(remainder) || iso[4] && /^\s+[+-]\d/.test(remainder)) return invalidDate(errors);
-    return validatedDate(
-      +iso[1],
-      +iso[2],
-      +iso[3],
-      +(iso[4] || 0),
-      +(iso[5] || 0),
-      +(iso[6] || 0),
-      +(iso[7] || "").padEnd(3, "0").slice(0, 3),
-      iso[8] || "",
-      errors
-    );
+var datePatterns = [
+  /\b(\d{4})-(\d{2})-(\d{2})/i,
+  /\b(\d{1,2})-([a-z]{3})-(\d{4})/i,
+  /\b(\d{1,2})\/(\d{1,2})\/(\d{4})/i
+];
+var clockPattern = /^(?:T|\s+)(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?/i;
+var remainingMetadata = /^\s+(?:\d+(?:,\d{3})*(?:\.\d+)?\s*(?:[KMGTP](?:i?B)?|B|bytes?)?|<dir>|-)\s*$/i;
+function parseDateMetadata(text, errors) {
+  const matches = datePatterns.map((pattern, family2) => ({ match: pattern.exec(text), family: family2 })).filter((candidate) => candidate.match !== null).sort((a, b) => a.match.index - b.match.index);
+  if (matches.length === 0) {
+    if (/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(text)) errors.push("date: ambiguous numeric date pattern");
+    return null;
   }
-  const apache = apachePattern.exec(text);
-  if (apache) {
-    if (/^[:.]/.test(text.slice(apache.index + apache[0].length))) return invalidDate(errors);
-    const month = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(apache[2].toLowerCase()) + 1;
-    return validatedDate(+apache[3], month, +apache[1], +apache[4], +apache[5], +(apache[6] || 0), 0, "", errors);
+  const { match, family } = matches[0];
+  const year = +(family === 0 ? match[1] : match[3]);
+  const month = family === 1 ? ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(match[2].toLowerCase()) + 1 : +(family === 0 ? match[2] : match[1]);
+  const day = +(family === 0 ? match[3] : family === 1 ? match[1] : match[2]);
+  let end = match.index + match[0].length;
+  const clock = clockPattern.exec(text.slice(end));
+  if (clock) end += clock[0].length;
+  else if (family === 1 || /^(?:T|\s+\d+:)/i.test(text.slice(end))) return invalidDate(errors);
+  const meridiem = clock ? /^\s*(AM|PM)\b/i.exec(text.slice(end)) : null;
+  if (meridiem) end += meridiem[0].length;
+  if (family === 2 && (!clock || !meridiem)) {
+    errors.push("date: ambiguous numeric date pattern");
+    return null;
   }
-  const us = usPattern.exec(text);
-  if (us) {
-    const hour = +us[4];
+  const zone = clock ? /^\s*(Z|[+-]\d{2}:?\d{2})(?![\da-z])/i.exec(text.slice(end)) : null;
+  if (zone) end += zone[0].length;
+  const remainder = text.slice(end);
+  if (remainder.trim() && !remainingMetadata.test(remainder)) return invalidDate(errors);
+  let hour = +(clock?.[1] || 0);
+  if (meridiem) {
     if (hour < 1 || hour > 12) return invalidDate(errors);
-    return validatedDate(+us[3], +us[1], +us[2], hour % 12 + (/pm/i.test(us[7]) ? 12 : 0), +us[5], +(us[6] || 0), 0, "", errors);
+    hour = hour % 12 + (/pm/i.test(meridiem[1]) ? 12 : 0);
   }
-  if (/\b\d{4}-\d{2}-\d{2}T/i.test(text)) return invalidDate(errors);
-  if (/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/.test(text)) errors.push("date: ambiguous numeric date pattern");
-  return null;
+  const value = validatedDate(
+    year,
+    month,
+    day,
+    hour,
+    +(clock?.[2] || 0),
+    +(clock?.[3] || 0),
+    +(clock?.[4] || "").padEnd(3, "0").slice(0, 3),
+    zone?.[1] || "",
+    errors
+  );
+  return value === null ? null : {
+    value,
+    raw: text.slice(match.index, end).trim(),
+    timezone: zone ? "explicit" : "assumed-utc",
+    start: match.index,
+    end
+  };
 }
 function validatedDate(year, month, day, hour, minute, second, millisecond, zone, errors) {
   if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return invalidDate(errors);
@@ -221,8 +374,7 @@ function validatedDate(year, month, day, hour, minute, second, millisecond, zone
     const hours = +digits.slice(0, 2);
     const minutes = +digits.slice(2);
     if (hours > 23 || minutes > 59) return invalidDate(errors);
-    const offset = (hours * 60 + minutes) * (zone[0] === "+" ? 1 : -1);
-    date.setTime(date.getTime() - offset * 6e4);
+    date.setTime(date.getTime() - (hours * 60 + minutes) * (zone[0] === "+" ? 1 : -1) * 6e4);
   }
   return date.toISOString();
 }
@@ -231,18 +383,23 @@ function invalidDate(errors) {
   return null;
 }
 function stripDateTime(text) {
-  return text.replace(isoGlobalPattern, "").replace(apacheGlobalPattern, "").replace(/\b\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM)?\b/gi, "");
+  const date = parseDateMetadata(text, []);
+  return date ? text.slice(0, date.start) + text.slice(date.end) : text;
 }
 
 // src/utils/size.ts
-function parseSizeMeta(text) {
+function parseSizeMetadata(text) {
   const metadata = stripDateTime(text).trim();
   const match = /^(\d+(?:,\d{3})*(?:\.\d+)?)\s*([KMGTP](?:i?B)?|B|bytes?)?$/i.exec(metadata);
   if (!match) return null;
   const unit = (match[2] || "").toUpperCase();
   const power = unit && !unit.startsWith("B") ? "KMGTP".indexOf(unit[0]) + 1 : 0;
   const bytes = Number(match[1].replace(/,/g, "")) * Math.pow(1024, power);
-  return Number.isFinite(bytes) ? Math.floor(bytes) : null;
+  return Number.isFinite(bytes) ? {
+    value: Math.floor(bytes),
+    raw: metadata,
+    precision: power > 0 || !Number.isSafeInteger(bytes) ? "estimated" : "exact"
+  } : null;
 }
 
 // src/utils/decode.ts
@@ -255,21 +412,29 @@ function safeDecodeURIComponent(segment, errors) {
   }
 }
 
-// src/utils/errors.ts
-function pushError(errors, prefix, message) {
-  errors.push(`${prefix}: ${message}`);
-}
-
 // src/core/parseDirectory.ts
-function parseDirectoryHtml(baseUrl, html, opts, admitEntry) {
+var dateHeaderLabels = /* @__PURE__ */ new Set([
+  "date",
+  "modified",
+  "last modified",
+  "modified date",
+  "date modified",
+  "last modified date",
+  "date last modified",
+  "modification date",
+  "timestamp",
+  "last write",
+  "last write time"
+]);
+function parseDirectoryHtml(baseUrl, html, opts, admitEntry, contentType = "text/html") {
   throwIfAborted(opts.signal);
   const errors = [];
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  let anchors = doc.querySelectorAll("pre a[href], table a[href], ul a[href], ol a[href]");
-  if (anchors.length === 0) anchors = doc.querySelectorAll("a[href]");
+  const doc = new DOMParser().parseFromString(html, contentType);
+  validateListingDocument(doc, contentType, baseUrl);
+  const anchors = listingAnchors(doc, opts.listingSelector, baseUrl);
   const base = new URL(baseUrl);
   let linkBase = base;
-  const baseHref = doc.querySelector("base[href]")?.getAttribute("href");
+  const baseHref = Array.from(doc.getElementsByTagNameNS(htmlNamespace, "base")).find((element) => element.hasAttribute("href"))?.getAttribute("href");
   if (baseHref !== void 0 && baseHref !== null) {
     try {
       const candidate = new URL(baseHref, base);
@@ -280,15 +445,14 @@ function parseDirectoryHtml(baseUrl, html, opts, admitEntry) {
     }
   }
   const seen = /* @__PURE__ */ new Set();
-  const rows = /* @__PURE__ */ new WeakMap();
-  const columns = /* @__PURE__ */ new WeakMap();
+  const tables = /* @__PURE__ */ new WeakMap();
   const folders = [];
   const files = [];
   for (const anchor of anchors) {
     throwIfAborted(opts.signal);
     const href = anchor.getAttribute("href")?.trim();
-    const container = anchor.closest("th,tr,li");
-    if (!href || href.includes("#") || container?.tagName === "TH") continue;
+    const container = ancestor(anchor, ["th", "tr", "li"]);
+    if (!href || href.includes("#") || container?.localName === "th") continue;
     let url;
     try {
       url = new URL(href, linkBase);
@@ -298,8 +462,9 @@ function parseDirectoryHtml(baseUrl, html, opts, admitEntry) {
     }
     if (!/^https?:$/.test(url.protocol) || opts.sameOriginOnly && url.origin !== base.origin) continue;
     if (url.origin === base.origin && url.pathname === base.pathname && url.search && url.search !== base.search) continue;
-    const metadata = deriveMetadataFields(anchor, container, rows, columns);
-    const kind = classifyEntry(url, metadata.fields.join(" "));
+    const metadata = deriveMetadataFields(anchor, container, tables);
+    const typeText = metadata.schemaKnown ? metadata.fields[metadata.typeIndex ?? -1] || "" : metadata.fields.join(" ");
+    const kind = classifyEntry(url, typeText);
     if (kind === "unknown") continue;
     if (kind === "folder") url = new URL(normalizeDirectoryUrl(url.href));
     const key = kind + ":" + (kind === "folder" ? keyForVisited(url) : keyForFile(url));
@@ -313,70 +478,102 @@ function parseDirectoryHtml(baseUrl, html, opts, admitEntry) {
     seen.add(key);
     const rawName = url.pathname.split("/").filter(Boolean).pop() || "";
     const name = safeDecodeURIComponent(rawName, errors);
-    const dateFields = metadata.dateIndex === void 0 ? metadata.fields : [metadata.fields[metadata.dateIndex] || ""];
+    const fieldsFor = (index) => index !== void 0 ? [metadata.fields[index] || ""] : metadata.schemaKnown ? [] : metadata.fields;
     let date = null;
-    for (const field of dateFields) {
+    for (const field of fieldsFor(metadata.dateIndex)) {
       if (!field.trim() || field.trim() === "-") continue;
-      date = parseDateMeta(field, errors);
-      if (date !== null) break;
+      date = parseDateMetadata(field, errors);
+      if (date) break;
     }
-    const sizeFields = metadata.sizeIndex === void 0 ? metadata.fields : [metadata.fields[metadata.sizeIndex] || ""];
     let size = null;
-    for (const field of sizeFields) {
+    for (const field of fieldsFor(metadata.sizeIndex)) {
       if (!field.trim() || field.trim() === "-") continue;
-      const candidate = parseSizeMeta(field);
-      if (candidate === null) continue;
-      if (size !== null && size !== candidate) {
+      const candidate = parseSizeMetadata(field);
+      if (!candidate) continue;
+      if (size && size.value !== candidate.value) {
         size = null;
         break;
       }
       size = candidate;
     }
-    const entry = { url: url.href, rawName, name, hidden: detectHidden(name), date };
+    const provenance = {};
+    if (opts.includeProvenance) {
+      if (date) provenance.date = { source: "listing", raw: date.raw, timezone: date.timezone };
+      if (kind === "file" && size) provenance.size = { source: "listing", raw: size.raw, precision: size.precision };
+    }
+    const entry = {
+      url: url.href,
+      rawName,
+      name,
+      hidden: detectHidden(name),
+      date: date?.value ?? null,
+      ...Object.keys(provenance).length ? { provenance } : {}
+    };
     if (kind === "folder") folders.push({ ...entry, kind: "folder", size: null });
-    else files.push({ ...entry, kind: "file", size });
+    else files.push({ ...entry, kind: "file", size: size?.value ?? null });
   }
   return { folders, files, errors };
 }
-function deriveMetadataFields(anchor, container, rows, columns) {
-  const row = container?.tagName === "TR" ? container : null;
-  if (row) {
-    const cached = rows.get(row);
-    if (cached) return cached;
-    const table = row.closest("table");
-    let schema = table ? columns.get(table) : void 0;
-    if (table && !schema) {
-      const header = Array.from(table.rows).find((candidate) => Array.from(candidate.cells).some((cell) => cell.tagName === "TH"));
-      const labels = header ? Array.from(header.cells).flatMap((cell) => Array(cell.colSpan).fill(cell.textContent?.trim().toLowerCase() || "")) : [];
-      const sizeIndex = labels.findIndex((label) => /^(?:file\s+)?size$|^length$/.test(label));
-      const dateIndex = labels.findIndex((label) => /modified|date|timestamp|last\s+write/.test(label));
-      schema = { sizeIndex: sizeIndex < 0 ? void 0 : sizeIndex, dateIndex: dateIndex < 0 ? void 0 : dateIndex };
-      columns.set(table, schema);
+function listingAnchors(doc, selector, url) {
+  let containers;
+  if (selector !== void 0) {
+    try {
+      containers = new Set(doc.querySelectorAll(selector));
+    } catch (error) {
+      throw new RequestFailure({
+        category: "traversal",
+        code: "parse",
+        phase: "parse",
+        url,
+        message: `Invalid listingSelector '${selector}' for ${url}`,
+        cause: describeCause(error)
+      }, error);
     }
-    const cellIndex = (column) => {
-      if (column === void 0) return void 0;
-      let offset = 0;
-      return Array.from(row.cells).findIndex((cell) => {
-        offset += cell.colSpan;
-        return column < offset;
-      });
-    };
-    const metadata = {
-      fields: Array.from(row.cells, readMetadataText),
-      sizeIndex: cellIndex(schema?.sizeIndex),
-      dateIndex: cellIndex(schema?.dateIndex)
-    };
-    rows.set(row, metadata);
-    return metadata;
+    if (containers.size === 0) throw new RequestFailure({
+      category: "traversal",
+      code: "parse",
+      phase: "parse",
+      url,
+      message: `listingSelector '${selector}' did not match any elements in ${url}`
+    });
   }
-  const item = container?.tagName === "LI" ? container : null;
-  if (item) return { fields: [readMetadataText(item)] };
+  const anchors = Array.from(doc.getElementsByTagNameNS(htmlNamespace, "a")).filter((anchor) => anchor.hasAttribute("href"));
+  if (containers) {
+    return anchors.filter((anchor) => {
+      for (let element = anchor; element; element = element.parentElement) {
+        if (containers.has(element)) return true;
+      }
+      return false;
+    });
+  }
+  const preferred = anchors.filter((anchor) => ancestor(anchor, ["pre", "table", "ul", "ol"]));
+  return preferred.length ? preferred : anchors;
+}
+function ancestor(element, names) {
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    if (parent.namespaceURI === htmlNamespace && names.includes(parent.localName)) return parent;
+  }
+  return null;
+}
+function deriveMetadataFields(anchor, container, tables) {
+  if (container?.localName === "tr") {
+    const table = ancestor(container, ["table"]);
+    if (table) {
+      let rows = tables.get(table);
+      if (!rows) {
+        rows = tableMetadata(table);
+        tables.set(table, rows);
+      }
+      return rows.get(container) || { fields: [] };
+    }
+  }
+  if (container?.localName === "li") return { fields: [readMetadataText(container)] };
   const adjacentText = (before) => {
     const parts = [];
     for (let node = before ? anchor.previousSibling : anchor.nextSibling; node; node = before ? node.previousSibling : node.nextSibling) {
       if (node.nodeType === 1) {
         const element = node;
-        if (element.matches("a,br") || element.querySelector("a,br")) break;
+        if (element.namespaceURI === htmlNamespace && ["a", "br"].includes(element.localName) || element.getElementsByTagNameNS(htmlNamespace, "a").length || element.getElementsByTagNameNS(htmlNamespace, "br").length) break;
       }
       const lines = (node.textContent || "").split(/\r?\n/);
       if (before) parts.unshift(lines[lines.length - 1]);
@@ -387,28 +584,118 @@ function deriveMetadataFields(anchor, container, rows, columns) {
   };
   return { fields: [(adjacentText(true) + " " + adjacentText(false)).trim()] };
 }
+function tableMetadata(table) {
+  const rows = Array.from(table.getElementsByTagNameNS(htmlNamespace, "tr")).filter((row) => ancestor(row, ["table"]) === table);
+  const layouts = /* @__PURE__ */ new Map();
+  let active = [];
+  let group = null;
+  const headerRows = [];
+  for (const row of rows) {
+    const rowGroup = ancestor(row, ["thead", "tbody", "tfoot", "table"]);
+    if (rowGroup !== group) {
+      active = [];
+      group = rowGroup;
+    }
+    const cells = Array.from(row.children).filter((cell) => cell.namespaceURI === htmlNamespace && ["td", "th"].includes(cell.localName));
+    if (cells.some((cell) => cell.localName === "th") && !cells.some((cell) => cell.localName === "td" && cell.getElementsByTagNameNS(htmlNamespace, "a").length)) headerRows.push(row);
+    const placed = [...active];
+    const next = active.filter((cell) => cell.remaining > 1).map((cell) => ({ ...cell, remaining: cell.remaining - 1 }));
+    let column = 0;
+    let activeIndex = 0;
+    for (const cell of cells) {
+      const width = span(cell, "colspan", 1e3);
+      while (activeIndex < active.length) {
+        const occupied = active[activeIndex];
+        if (occupied.end <= column) activeIndex++;
+        else if (occupied.start < column + width) {
+          column = occupied.end;
+          activeIndex++;
+        } else break;
+      }
+      const position = { cell, start: column, end: column + width };
+      placed.push(position);
+      const height = cell.getAttribute("rowspan")?.trim() === "0" ? Infinity : span(cell, "rowspan", 65534);
+      if (height > 1) next.push({ ...position, remaining: height - 1 });
+      column += width;
+    }
+    layouts.set(row, placed.sort((a, b) => a.start - b.start));
+    active = next.sort((a, b) => a.start - b.start);
+  }
+  let sizeColumn;
+  let dateColumn;
+  let typeColumn;
+  let schemaKnown = false;
+  for (const row of headerRows) {
+    for (const position of layouts.get(row) || []) {
+      const label = position.cell.textContent?.trim().toLowerCase().replace(/\s+/g, " ") || "";
+      if (/^(?:file\s+)?size$|^length$/.test(label)) {
+        sizeColumn = position.start;
+        schemaKnown = true;
+      }
+      const dateLabel = label.replace(/[-_\s]+/g, " ").replace(/ \([^)]*\)$/, "");
+      if (dateHeaderLabels.has(dateLabel)) {
+        dateColumn = position.start;
+        schemaKnown = true;
+      }
+      if (/^(?:type|kind)$/.test(label)) {
+        typeColumn = position.start;
+        schemaKnown = true;
+      }
+      if (/^(?:(?:file ?)?name|description|permissions?|mode)$/.test(label)) schemaKnown = true;
+    }
+  }
+  const result = /* @__PURE__ */ new Map();
+  const text = /* @__PURE__ */ new WeakMap();
+  for (const [row, positions] of layouts) {
+    const index = (column) => column === void 0 ? void 0 : positions.findIndex((position) => position.start <= column && column < position.end);
+    result.set(row, { fields: positions.map((position) => {
+      let value = text.get(position.cell);
+      if (value === void 0) {
+        value = readMetadataText(position.cell);
+        text.set(position.cell, value);
+      }
+      return value;
+    }), schemaKnown, sizeIndex: index(sizeColumn), dateIndex: index(dateColumn), typeIndex: index(typeColumn) });
+  }
+  return result;
+}
+function span(cell, attribute, maximum) {
+  const raw = cell.getAttribute(attribute)?.trim() || "";
+  const value = /^\d+$/.test(raw) ? Number(raw) : 1;
+  return Math.min(maximum, Math.max(1, value));
+}
 function readMetadataText(element) {
   const parts = [];
-  const visit = (node) => {
-    if (node.nodeType === 3) parts.push(node.textContent || "");
-    else if (node.nodeType === 1 && !node.matches("a,ul,ol,table")) {
-      for (const child of node.childNodes) visit(child);
+  const pending = Array.from(element.childNodes).reverse();
+  while (pending.length) {
+    const node = pending.pop();
+    if (node.nodeType === 3 || node.nodeType === 4) parts.push(node.textContent || "");
+    else if (node.nodeType === 1) {
+      const child = node;
+      if (child.namespaceURI !== htmlNamespace || !["a", "ul", "ol", "table"].includes(child.localName)) {
+        for (let index = child.childNodes.length - 1; index >= 0; index--) pending.push(child.childNodes[index]);
+      }
     }
-  };
-  for (const child of element.childNodes) visit(child);
+  }
   return parts.join(" ").trim();
 }
 
 // src/core/recursion.ts
 async function traverse(startUrl, opts, state) {
-  const root = createNode(normalizeDirectoryUrl(startUrl), "self", 0, state.errors);
+  const root = createNode(normalizeDirectoryUrl(startUrl), "self", 0, state);
   const folders = /* @__PURE__ */ new Map([[keyForVisited(new URL(root.url)), root]]);
   const parents = /* @__PURE__ */ new WeakMap();
   const files = /* @__PURE__ */ new Map();
   let limitReported = false;
   const entryCount = () => folders.size + files.size;
   const reportLimit = () => {
-    if (!limitReported) pushError(state.errors, "limit", "entry limit exceeded");
+    if (!limitReported) recordError(state, {
+      category: "limit",
+      code: "limit",
+      phase: "traversal",
+      url: root.url,
+      message: "limit: entry limit exceeded"
+    });
     limitReported = true;
   };
   const canAdd = () => {
@@ -416,45 +703,93 @@ async function traverse(startUrl, opts, state) {
     reportLimit();
     return false;
   };
+  const detach = (node) => {
+    const parent = parents.get(node);
+    if (parent) parent.children = parent.children.filter((child) => child !== node);
+    parents.delete(node);
+  };
+  const attach = (node, parent) => {
+    if (parents.get(node) === parent) return;
+    detach(node);
+    parents.set(node, parent);
+    parent.children.push(node);
+  };
+  const redirectedParent = (node) => {
+    const start = new URL(root.url);
+    if (!isChild(start, new URL(node.url))) return parents.get(node) || root;
+    const startKey = keyForVisited(start);
+    let url = parentDirectory(new URL(node.url));
+    while (url) {
+      const candidate = new URL(url);
+      const key = keyForVisited(candidate);
+      if (key !== startKey && !isChild(start, candidate)) break;
+      const ancestor2 = folders.get(key);
+      if (ancestor2 && ancestor2 !== node && (ancestor2 === root || ancestor2.role === "child")) return ancestor2;
+      url = parentDirectory(candidate);
+    }
+    return root;
+  };
   const loadDocument = async (url) => {
     throwIfAborted(opts.signal);
     if (opts.mode === "iframe") return await iframeDirectoryHtml(url, opts, state.stats);
-    if (opts.mode === "fetch") return await fetchDirectoryHtml(url, opts, state.stats);
+    if (opts.mode === "fetch" || opts.cache !== "default") return await fetchDirectoryHtml(url, opts, state.stats);
     try {
       return await fetchDirectoryHtml(url, opts, state.stats);
-    } catch {
+    } catch (fetchError) {
       throwIfAborted(opts.signal);
-      return await iframeDirectoryHtml(url, opts, state.stats);
+      if (fetchError instanceof RequestFailure && fetchError.details.code === "response-limit") throw fetchError;
+      try {
+        return await iframeDirectoryHtml(url, opts, state.stats);
+      } catch (iframeError) {
+        throwIfAborted(opts.signal);
+        const failure = requestFailure(iframeError, "iframe", url, opts.timeoutMs);
+        failure.details.previous = requestFailure(fetchError, "fetch", url, opts.timeoutMs).details;
+        throw failure;
+      }
     }
   };
-  const loadDirectory = async (node, parent) => {
+  const loadDirectory = async (node) => {
     const requestedKey = keyForVisited(new URL(node.url));
     const loaded = await loadDocument(node.url);
     throwIfAborted(opts.signal);
     const url = normalizeDirectoryUrl(loaded.url);
     const final = new URL(url);
     if (node !== root && opts.sameOriginOnly && final.origin !== new URL(root.url).origin) {
-      throw new Error("Child directory redirected to another origin");
+      throw new RequestFailure({
+        category: "traversal",
+        code: "scope",
+        phase: "traversal",
+        url,
+        message: `Child directory redirected to another origin: ${node.url} -> ${url}`
+      });
     }
     const finalKey = keyForVisited(final);
     if (node !== root && opts.sameOriginOnly && !isChild(new URL(root.url), final) && !folders.has(finalKey)) {
-      throw new Error("Child directory redirected outside the starting directory");
+      throw new RequestFailure({
+        category: "traversal",
+        code: "scope",
+        phase: "traversal",
+        url,
+        message: `Child directory redirected outside the starting directory: ${node.url} -> ${url}`
+      });
     }
     if (finalKey !== requestedKey) {
       const existing = folders.get(finalKey);
       folders.delete(requestedKey);
       if (existing && existing !== node) {
-        if (parent) parent.children = parent.children.filter((child) => child !== node);
+        detach(node);
         if (existing.role !== "child" || state.visited.has(finalKey)) return null;
         node = existing;
       } else {
-        const updated = createNode(url, node.role, node.depth, state.errors);
+        const updated = createNode(url, node.role, node.depth, state);
+        delete node.provenance;
         Object.assign(node, updated);
         folders.set(finalKey, node);
       }
     }
     node.url = url;
     if (node !== root && isChild(new URL(root.url), final)) node.depth = relativeDepth(new URL(root.url), final);
+    if (node !== root && finalKey !== requestedKey) attach(node, redirectedParent(node));
     state.visited.add(finalKey);
     if (node.depth > opts.maxDepth) return null;
     state.maxDepthEncountered = Math.max(state.maxDepthEncountered, node.depth);
@@ -480,10 +815,10 @@ async function traverse(startUrl, opts, state) {
       if (entryCount() + pendingEntries >= opts.maxEntries) return "limit";
       pendingEntries++;
       return "accept";
-    });
+    }, loaded.contentType);
     for (const error of parsed.errors) {
       if (error.startsWith("limit:")) reportLimit();
-      else state.errors.push(error);
+      else recordParseErrors(state, [error], url);
     }
     for (const folder of parsed.folders) {
       throwIfAborted(opts.signal);
@@ -495,12 +830,15 @@ async function traverse(startUrl, opts, state) {
       if (!child) {
         if (!canAdd()) break;
         const depth = role === "child" ? node.depth + relativeDepth(final, candidate) : 0;
-        child = { ...createNode(folder.url, role, depth, state.errors), date: folder.date ?? null };
+        child = {
+          ...createNode(folder.url, role, depth, state),
+          date: folder.date ?? null,
+          ...folder.provenance ? { provenance: folder.provenance } : {}
+        };
         folders.set(key, child);
       }
       if (role === "child" && !parents.has(child) && !state.visited.has(key)) {
-        parents.set(child, node);
-        node.children.push(child);
+        attach(child, node);
       }
     }
     for (const file of parsed.files) {
@@ -515,7 +853,8 @@ async function traverse(startUrl, opts, state) {
         rawName: file.rawName || "",
         hidden: file.hidden || false,
         size: file.size ?? null,
-        date: file.date ?? null
+        date: file.date ?? null,
+        ...file.provenance ? { provenance: file.provenance } : {}
       };
       files.set(key, entry);
       node.files.push(entry);
@@ -527,13 +866,13 @@ async function traverse(startUrl, opts, state) {
   for (const [url, role] of [[rootDirectory(new URL(root.url)), "root"], [parentDirectory(new URL(root.url)), "parent"]]) {
     if (!url || folders.has(keyForVisited(new URL(url)))) continue;
     if (!canAdd()) break;
-    folders.set(keyForVisited(new URL(url)), createNode(url, role, 0, state.errors));
+    folders.set(keyForVisited(new URL(url)), createNode(url, role, 0, state));
   }
   const pending = [];
   const enqueue = (parent) => {
     for (let index = parent.children.length - 1; index >= 0; index--) {
       const node = parent.children[index];
-      if (node.depth <= opts.maxDepth) pending.push({ node, parent });
+      if (node.depth <= opts.maxDepth) pending.push(node);
     }
   };
   enqueue(root);
@@ -544,26 +883,40 @@ async function traverse(startUrl, opts, state) {
       break;
     }
     const next = pending.pop();
-    const key = keyForVisited(new URL(next.node.url));
+    const key = keyForVisited(new URL(next.url));
     if (state.visited.has(key)) continue;
     state.visited.add(key);
     try {
-      const loaded = await loadDirectory(next.node, next.parent);
+      const loaded = await loadDirectory(next);
       if (loaded) enqueue(loaded);
     } catch (error) {
       throwIfAborted(opts.signal);
       if (!opts.continueOnError) throw error;
-      pushError(state.errors, "traversal", `failed to load ${next.node.url}: ${error instanceof Error ? error.message : String(error)}`);
+      const cause = describeCause(error);
+      const failure = error instanceof RequestFailure ? error : new RequestFailure({
+        category: "traversal",
+        code: "parse",
+        phase: "traversal",
+        url: next.url,
+        message: `${cause.name}: ${cause.message}`,
+        cause
+      }, error);
+      recordError(state, {
+        ...failure.details,
+        category: "traversal",
+        message: `traversal: failed to load ${next.url}: ${failure.message}`
+      });
     }
   }
   for (const folder of folders.values()) state.allFolders.push(folder);
   for (const file of files.values()) state.allFiles.push(file);
-  state.safetyCount = entryCount();
   return root;
 }
-function createNode(url, role, depth, errors) {
+function createNode(url, role, depth, sink) {
   const rawName = new URL(url).pathname.split("/").filter(Boolean).pop() || "";
+  const errors = [];
   const name = safeDecodeURIComponent(rawName, errors);
+  recordParseErrors(sink, errors, url);
   return {
     kind: "folder",
     url,
@@ -588,7 +941,7 @@ function relativeDepth(base, candidate) {
 }
 
 // src/core/mime.ts
-async function enrichMime(files, opts, stats, errors) {
+async function enrichMime(files, opts, stats, sink) {
   throwIfAborted(opts.signal);
   if (!opts.includeMime || files.length === 0) return;
   let next = 0;
@@ -599,24 +952,47 @@ async function enrichMime(files, opts, stats, errors) {
       if (file.mime != null && file.size != null) continue;
       const request = createRequestController(opts.signal, opts.timeoutMs);
       try {
+        stats.heads++;
         const res = await fetch(file.url, { method: "HEAD", signal: request.signal });
         throwIfAborted(opts.signal);
-        stats.heads++;
         if (res.ok) {
-          if (file.mime == null) file.mime = res.headers.get("content-type");
+          if (file.mime == null) {
+            file.mime = res.headers.get("content-type");
+            if (opts.includeProvenance && file.mime !== null) {
+              (file.provenance ?? (file.provenance = {})).mime = { source: "head", raw: file.mime };
+            }
+          }
           const length = res.headers.get("content-length");
           if (file.size == null && length && /^\d+$/.test(length)) {
             const size = Number(length);
-            if (Number.isSafeInteger(size) && size >= 0) file.size = size;
+            if (Number.isSafeInteger(size) && size >= 0) {
+              file.size = size;
+              if (opts.includeProvenance) (file.provenance ?? (file.provenance = {})).size = { source: "head", raw: length, precision: "exact" };
+            }
           }
         } else if (res.status === 405 || res.status === 501) {
-          pushError(errors, "mime", `HEAD not supported for ${file.url}`);
+          recordError(sink, {
+            category: "mime",
+            code: "unsupported-method",
+            phase: "head",
+            url: file.url,
+            status: res.status,
+            message: `mime: HEAD not supported for ${file.url}`
+          });
         } else {
-          pushError(errors, "mime", `HEAD ${res.status} for ${file.url}`);
+          recordError(sink, {
+            category: "mime",
+            code: "http",
+            phase: "head",
+            url: file.url,
+            status: res.status,
+            message: `mime: HEAD ${res.status} for ${file.url}`
+          });
         }
-      } catch {
+      } catch (error) {
         throwIfAborted(opts.signal);
-        pushError(errors, "mime", `failed HEAD for ${file.url}`);
+        const failure = requestFailure(request.signal.aborted ? request.signal.reason : error, "head", file.url, opts.timeoutMs);
+        recordError(sink, { ...failure.details, message: `mime: ${failure.message}` });
       } finally {
         request.dispose();
       }
@@ -635,13 +1011,13 @@ async function folderApiRequest(url, options) {
     allFolders: [],
     allFiles: [],
     errors: [],
+    errorDetails: [],
     stats: { fetches: 0, iframes: 0, heads: 0 },
-    safetyCount: 0,
     maxDepthEncountered: 0
   };
   const rootNode = await traverse(url, opts, state);
   if (opts.includeMime) {
-    await enrichMime(state.allFiles, opts, state.stats, state.errors);
+    await enrichMime(state.allFiles, opts, state.stats, state);
   }
   const durationMs = (performance.now?.() ?? Date.now()) - started;
   const entries = [...state.allFolders, ...state.allFiles];
@@ -653,6 +1029,7 @@ async function folderApiRequest(url, options) {
     entries,
     generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
     errors: state.errors,
+    errorDetails: state.errorDetails,
     stats: {
       fetches: state.stats.fetches,
       iframes: state.stats.iframes,
